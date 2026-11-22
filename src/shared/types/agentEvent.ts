@@ -1,4 +1,4 @@
-import { ContentBlock, MessageUsage, TurnMessage } from './newMessages'
+import type { ContentBlock, MessageUsage, TurnMessage } from '@shared/types/message'
 /** Agent事件 */
 export type AgentEvent =
   | AETurnStart

@@ -1,4 +1,4 @@
-import type { TurnMessage } from '@shared/types/newMessages'
+import type { TurnMessage } from '@shared/types/message'
 import TurnItem from './TurnItem'
 import {
   MessageScroller,

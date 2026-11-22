@@ -4,11 +4,11 @@ import type { BaseMessage, ToolMessage } from '@langchain/core/messages'
 import { parseContent, parseReasoning } from '@core/utils/parseStream'
 import { createDebugLog } from '@core/utils/log'
 import { getConversationTitle } from './title'
-import { MessageEventSend } from '@shared/types/newMessageService'
-import { AgentEvent } from '@shared/types/newEvent'
+import type { MessageEventSend } from '@shared/types/messageService'
+import type { AgentEvent } from '@shared/types/agentEvent'
 import init from './init'
 import createEmitter from './emitter'
-import { MessageUsage } from '@shared/types/newMessages'
+import type { MessageUsage } from '@shared/types/message'
 
 interface Props {
   /** 会话ID */

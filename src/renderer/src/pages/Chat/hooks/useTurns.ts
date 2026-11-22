@@ -1,8 +1,8 @@
 import { agentApi, conversationApi } from '@renderer/lib/ipc'
 import { useEffect, useRef, useState } from 'react'
-import type { ContentBlock, TurnMessage } from '@shared/types/newMessages'
-import { MessageEventSend } from '@shared/types/newMessageService'
-import { AgentEvent } from '@shared/types/newEvent'
+import type { ContentBlock, TurnMessage } from '@shared/types/message'
+import type { MessageEventSend } from '@shared/types/messageService'
+import type { AgentEvent } from '@shared/types/agentEvent'
 
 export interface UseTurnsResult {
   /** 当前对话的历史轮 */

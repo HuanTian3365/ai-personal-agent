@@ -1,4 +1,4 @@
-import type { ContentBlock, TurnMessage } from '@shared/types/newMessages'
+import type { ContentBlock, TurnMessage } from '@shared/types/message'
 import MessageBlockUser from './MessageBlockUser'
 import MessageBlockAssistant from './MessageBlockAssistant'
 import MessageBlockReasoning from './MessageBlockReasoning'

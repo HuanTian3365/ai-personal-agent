@@ -7,9 +7,9 @@
  * 渲染层没有追加入口。
  */
 
-import { CreateGroupInput } from '@shared/types/conversationRealize'
-import { AgentEvent } from '@shared/types/newEvent'
-import { MessageEventSend } from '@shared/types/newMessageService'
+import type { CreateGroupInput } from '@shared/types/conversationService'
+import type { AgentEvent } from '@shared/types/agentEvent'
+import type { MessageEventSend } from '@shared/types/messageService'
 
 export const conversationApi = {
   /** ====================  工作区  ==================== */

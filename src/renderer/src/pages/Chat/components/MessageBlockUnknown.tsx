@@ -5,7 +5,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger
 } from '@renderer/components/ui/collapsible'
-import { MUnknown } from '@shared/types/newMessages'
+import type { MUnknown } from '@shared/types/message'
 
 interface Props {
   context: MUnknown

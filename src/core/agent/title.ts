@@ -4,7 +4,7 @@ import { parseContent } from '@core/utils/parseStream'
 // 只依赖 main 的仓储层，不走 `@main`（门面）：门面会拉起 mount → ipc/*，
 // 而 ipc 又反过来 import core/export，绕回去就是循环依赖。
 import { getRepository } from '@main/database'
-import { AgentEvent } from '@shared/types/newEvent'
+import type { AgentEvent } from '@shared/types/agentEvent'
 
 /** 标题最长字数 */
 const MAX_TITLE_LENGTH = 20

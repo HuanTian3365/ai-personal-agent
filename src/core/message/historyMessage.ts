@@ -1,6 +1,6 @@
 import type { AIMessage, BaseMessage, ToolMessage } from '@langchain/core/messages'
 import { getChatGraph } from '@core/graph/chat'
-import type { ContentBlock, MTool, TurnMessage } from '@shared/types/newMessages'
+import type { ContentBlock, MTool, TurnMessage } from '@shared/types/message'
 import { parseContent, parseReasoning } from '../utils/parseStream'
 
 /** 读一个会话的全部历史消息 */

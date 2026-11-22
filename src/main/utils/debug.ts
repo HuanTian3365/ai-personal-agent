@@ -85,7 +85,13 @@ function stringifySafe(value: unknown): string {
  */
 function buildJson(content: unknown[]): string {
   try {
-    return JSON.stringify(content.map((item, index) => ({ index, content: item })), null, 2) + '\n'
+    return (
+      JSON.stringify(
+        content.map((item, index) => ({ index, content: item })),
+        null,
+        2
+      ) + '\n'
+    )
   } catch {
     const fallback = content.map((item, index) => ({ index, content: stringifySafe(item) }))
     return JSON.stringify(fallback, null, 2) + '\n'

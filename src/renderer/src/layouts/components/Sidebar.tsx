@@ -5,7 +5,7 @@ import SidebarFooter from './SidebarFooter'
 import SidebarHeader from './SidebarHeader'
 import SidebarConversationList from './SidebarConversationList'
 import { useConversationList } from '@renderer/hooks/useConversationList'
-import { Workspace } from '@shared/types/conversationDefinition'
+import type { Workspace } from '@shared/types/conversation'
 import SidebarCreateGroupDialog from './SidebarCreateGroupDialog'
 
 export default function Sidebar(): React.JSX.Element {

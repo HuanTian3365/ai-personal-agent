@@ -1,4 +1,4 @@
-import { MError } from '@shared/types/newMessages'
+import type { MError } from '@shared/types/message'
 
 interface Props {
   context: MError

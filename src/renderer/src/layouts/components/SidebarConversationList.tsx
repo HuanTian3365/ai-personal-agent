@@ -10,7 +10,7 @@ import SidebarConversationGroup from './SidebarConversationGroup'
 import SidebarWorkspaceHeader from './SidebarWorkspaceHeader'
 import { CircleX, Loader } from 'lucide-react'
 import type { WorkspaceSection } from '@renderer/hooks/useConversationList'
-import { Workspace } from '@shared/types/conversationDefinition'
+import type { Workspace } from '@shared/types/conversation'
 
 /**
  * 会话列表的三层渲染：工作区（SidebarGroup 区块）→ 分组（SidebarConversationGroup）→ 对话（SidebarConversationItem）

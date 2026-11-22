@@ -2,8 +2,8 @@
  * 此处存放消息处理逻辑
  */
 
-import type { QueueItem } from './newEvent'
-import { ContentBlock, MUser } from './newMessages'
+import type { QueueItem } from '@shared/types/agentEvent'
+import type { ContentBlock, MUser } from '@shared/types/message'
 
 export type MessageEventSend = Omit<MUser, 'type' | 'id'>
 

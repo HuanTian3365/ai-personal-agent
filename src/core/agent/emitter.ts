@@ -1,6 +1,6 @@
-import { AETurnEnd, AgentEvent } from '@shared/types/newEvent'
-import { ContentBlock, MessageUsage } from '@shared/types/newMessages'
-import { MessageEventSend } from '@shared/types/newMessageService'
+import type { AETurnEnd, AgentEvent } from '@shared/types/agentEvent'
+import type { ContentBlock, MessageUsage } from '@shared/types/message'
+import type { MessageEventSend } from '@shared/types/messageService'
 
 interface Result {
   turnStart: (turnId: string, message: MessageEventSend) => void

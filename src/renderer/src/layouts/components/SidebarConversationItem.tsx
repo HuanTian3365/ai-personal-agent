@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { SidebarMenuSubButton } from '@renderer/components/ui/sidebar'
-import type { Conversation } from '@shared/types/conversationDefinition'
+import type { Conversation } from '@shared/types/conversation'
 import { NavLink } from 'react-router'
 
 interface Props {

@@ -14,7 +14,7 @@ import {
   InputGroupAddon,
   InputGroupButton
 } from '@renderer/components/ui/input-group'
-import { MessageEventSend } from '@shared/types/newMessageService'
+import type { MessageEventSend } from '@shared/types/messageService'
 import { ChevronDownIcon, ArrowUpIcon, Square } from 'lucide-react'
 import { useState } from 'react'
 interface Props {
