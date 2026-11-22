@@ -12,7 +12,7 @@ import InputQueue from './components/InputQueue'
  */
 export default function ChatIndex(): React.JSX.Element {
   const { conversationId } = useParams<{ conversationId: string }>()
-  const { turns, title, send, abort } = useTurns(conversationId ?? null)
+  const { turns, title, send, abort, isReplying } = useTurns(conversationId ?? null)
 
   return (
     <div className="w-full h-screen flex flex-col overflow-hidden">
@@ -27,7 +27,7 @@ export default function ChatIndex(): React.JSX.Element {
             {/* 排队框 */}
             <InputQueue />
             {/* 输入框 */}
-            <InputBox isSending={false} onSend={send} onQueue={() => {}} onAbort={abort} />
+            <InputBox isSending={isReplying} onSend={send} onAbort={abort} />
           </div>
         </TurnList>
       </div>
