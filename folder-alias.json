@@ -244,5 +244,14 @@
     },
     "src/core/message/buildHumanMessage.ts": {
         "description": "用户消息构建"
+    },
+    "src/core/agent/init.ts": {
+        "description": "初始化工具"
+    },
+    "src/core/agent/emitter.ts": {
+        "description": "事件封装"
+    },
+    "src/core/agent/title.ts": {
+        "description": "标题生成"
     }
 }

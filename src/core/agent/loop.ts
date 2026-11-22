@@ -3,7 +3,7 @@ import { AIMessage } from '@langchain/core/messages'
 import type { BaseMessage, ToolMessage } from '@langchain/core/messages'
 import { parseContent, parseReasoning } from '@core/utils/parseStream'
 import { createDebugLog } from '@core/utils/log'
-import { getConversationTitle } from '../utils/title'
+import { getConversationTitle } from './title'
 import { MessageEventSend } from '@shared/types/newMessageService'
 import { AgentEvent } from '@shared/types/newEvent'
 import init from './init'
@@ -141,6 +141,19 @@ export async function sendMessage({
   }
 
   /** ====================  巴拉巴拉一大堆,不知道干啥用,回头整理  ==================== */
+  /** 收掉当前这次模型调用开的块 */
+  function closeCall(): void {
+    if (callId === undefined) return
+    if (assistantStarted) {
+      emitter.assistantEnd(messageId, callId, callUsage)
+    } else if (reasoningStarted) {
+      emitter.reasoningEnd(messageId, callId)
+    }
+    callId = undefined
+    callUsage = undefined
+    reasoningStarted = false
+    assistantStarted = false
+  }
   // 流式数据处理
   function emitMessageEvent(payload: unknown): void {
     const [messageChunk] = payload as [BaseMessage | undefined, unknown]
@@ -193,21 +206,6 @@ export async function sendMessage({
       emitter.assistantDelta(messageId, callId, delta)
     }
   }
-
-  /** 收掉当前这次模型调用开的块 */
-  function closeCall(): void {
-    if (callId === undefined) return
-    if (assistantStarted) {
-      emitter.assistantEnd(messageId, callId, callUsage)
-    } else if (reasoningStarted) {
-      emitter.reasoningEnd(messageId, callId)
-    }
-    callId = undefined
-    callUsage = undefined
-    reasoningStarted = false
-    assistantStarted = false
-  }
-
   /** 从 updates 流里挑出「模型要调工具」和「工具跑完了」，推给界面 */
   function emitToolEvents(updates: unknown): void {
     if (updates === null || typeof updates !== 'object') return

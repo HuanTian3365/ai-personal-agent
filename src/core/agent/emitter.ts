@@ -2,7 +2,25 @@ import { AETurnEnd, AgentEvent } from '@shared/types/newEvent'
 import { ContentBlock, MessageUsage } from '@shared/types/newMessages'
 import { MessageEventSend } from '@shared/types/newMessageService'
 
-export default function createEmitter(emit: (event: AgentEvent) => void, conversationId: string) {
+interface Result {
+  turnStart: (turnId: string, message: MessageEventSend) => void
+  turnEnd: (turnId: string, status: AETurnEnd['status'], usage?: AETurnEnd['usage']) => void
+  blockAdd: (turnId: string, block: ContentBlock) => void
+  reasoningStart: (turnId: string, blockId: string) => void
+  reasoningDelta: (turnId: string, blockId: string, text: string) => void
+  reasoningEnd: (turnId: string, blockId: string) => void
+  assistantStart: (turnId: string, blockId: string) => void
+  assistantDelta: (turnId: string, blockId: string, text: string) => void
+  assistantEnd: (turnId: string, blockId: string, usage?: MessageUsage) => void
+  toolStart: (turnId: string, blockId: string, name: string) => void
+  toolArgs: (turnId: string, blockId: string, args: Record<string, unknown> | null) => void
+  toolEnd: (turnId: string, blockId: string, status: 'done' | 'error', result: string) => void
+}
+
+export default function createEmitter(
+  emit: (event: AgentEvent) => void,
+  conversationId: string
+): Result {
   const emitter = {
     /** 启动轮 */
     turnStart: (turnId: string, message: MessageEventSend) =>
