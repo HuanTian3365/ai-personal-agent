@@ -157,7 +157,13 @@ function turnEventHandler(
         ...turn,
         status: event.status,
         usage: event.usage ?? turn.usage,
-        endTime: event.endTime ?? Date.now()
+        endTime: event.endTime ?? Date.now(),
+        // 这一轮结束了，还在 running 的工具块说明没等到结果（比如中途被中断）
+        items: turn.items.map((block) =>
+          block.type === 'tool' && block.status === 'running'
+            ? { ...block, status: 'error' }
+            : block
+        )
       }))
 
     case 'block-add':

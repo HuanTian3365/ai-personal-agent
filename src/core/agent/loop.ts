@@ -58,6 +58,8 @@ export async function sendMessage({
   let assistantStarted = false
   /** 已经发过 tool-args 的调用 id（messages 流和 updates 里可能各出现一次） */
   const toolArgsSent = new Set<string>()
+  /** 已经落进 checkpoint 的调用 id（updates 里出现过完整 AIMessage） */
+  const savedCalls = new Set<string>()
 
   try {
     // messages:流式数据(token) updates:每一步产生的节点
@@ -80,20 +82,25 @@ export async function sendMessage({
         continue
       }
     }
+    // 流走完：收起最后一次调用
+    // 还有没落盘的调用吗？有的话它的半截内容只存在内存里
+    const pendingAfterStream = callId !== undefined && !savedCalls.has(callId)
     closeCall()
     // 流结束但用户已点停止
     if (isAborted()) {
-      await emitAborted()
+      await emitAborted(pendingAfterStream)
       return
     }
     // 结束本轮
     emitter.turnEnd(messageId, 'done')
   } catch (err) {
     debugLog.debugLogError(err)
+    // 中断时这次调用还在流式输出、且没落盘 → 半截内容只存在内存里，要补写
+    const pendingOnAbort = callId !== undefined && !savedCalls.has(callId)
     closeCall()
     // 用户在loop时点击停止导致报错
     if (isAborted()) {
-      await emitAborted()
+      await emitAborted(pendingOnAbort)
       return
     }
     // 真错误,即非停止错误,可能来源于模型或者其他奇怪的地方
@@ -109,12 +116,20 @@ export async function sendMessage({
   } finally {
     await debugLog.debugLogFlush()
   }
-  // 中断事件处理
-  async function emitAborted(): Promise<void> {
-    // 中断时节点还没跑完,state里没有跑一半的回复,这里手动补
+  /**
+   * 中断事件处理
+   *
+   * 内容已经落进 checkpoint 时（比如中断发生在工具执行期间），只补一条空消息打上
+   * aborted 标记。再把手里的 reply / reasoning 写一遍，历史里就会出现两份一模一样的
+   * 思考和正文——那些内容 checkpoint 里已经有了
+   */
+  async function emitAborted(pending: boolean): Promise<void> {
     const aborted = new AIMessage({
-      content: reply,
-      additional_kwargs: { status: 'aborted', reasoning_content: reasoning }
+      content: pending ? reply : '',
+      additional_kwargs: {
+        status: 'aborted',
+        ...(pending && reasoning !== '' ? { reasoning_content: reasoning } : {})
+      }
     })
     try {
       // 把中断信息写入到checkpoint
@@ -203,6 +218,8 @@ export async function sendMessage({
       if (!Array.isArray(produced)) continue
 
       for (const message of produced) {
+        // 这次调用的完整消息出现了 = 它的内容已经落盘，中断时不用再补写一遍
+        if (message.type === 'ai' && message.id !== undefined) savedCalls.add(message.id)
         // 模型这一轮要求调哪些工具。参数只有这里才是完整对象，分片拼不出来
         const toolCalls = (message as AIMessage).tool_calls ?? []
         if (toolCalls.length > 0) {
