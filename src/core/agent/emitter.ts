@@ -60,7 +60,17 @@ export default function createEmitter(emit: (event: AgentEvent) => void, convers
       emit({ type: 'assistant-delta', conversationId, turnId, blockId, text }),
     /** 回复结束 */
     assistantEnd: (turnId: string, blockId: string, usage?: MessageUsage) =>
-      emit({ type: 'assistant-end', conversationId, turnId, blockId, usage })
+      emit({ type: 'assistant-end', conversationId, turnId, blockId, usage }),
+
+    /** 开始调用工具 */
+    toolStart: (turnId: string, blockId: string, name: string) =>
+      emit({ type: 'tool-start', conversationId, turnId, blockId, name }),
+    /** 工具传参 */
+    toolArgs: (turnId: string, blockId: string, args: Record<string, unknown> | null) =>
+      emit({ type: 'tool-args', conversationId, turnId, blockId, args }),
+    /** 工具结果 */
+    toolEnd: (turnId: string, blockId: string, status: 'done' | 'error', result: string) =>
+      emit({ type: 'tool-end', conversationId, turnId, blockId, status, result })
   }
 
   return emitter

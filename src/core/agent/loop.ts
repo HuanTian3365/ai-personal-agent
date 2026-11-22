@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { AIMessage } from '@langchain/core/messages'
-import type { BaseMessage } from '@langchain/core/messages'
+import type { BaseMessage, ToolMessage } from '@langchain/core/messages'
 import { parseContent, parseReasoning } from '@core/utils/parseStream'
 import { createDebugLog } from '@core/utils/log'
 import { getConversationTitle } from '../utils/title'
@@ -195,41 +195,43 @@ export async function sendMessage({
 
   /** 从 updates 流里挑出「模型要调工具」和「工具跑完了」，推给界面 */
   function emitToolEvents(updates: unknown): void {
-    // if (updates === null || typeof updates !== 'object') return
+    if (updates === null || typeof updates !== 'object') return
 
-    // for (const nodeUpdate of Object.values(updates as Record<string, unknown>)) {
-    //   if (nodeUpdate === null || typeof nodeUpdate !== 'object') continue
-    //   const produced = (nodeUpdate as { messages?: BaseMessage[] }).messages
-    //   if (!Array.isArray(produced)) continue
+    for (const nodeUpdate of Object.values(updates as Record<string, unknown>)) {
+      if (nodeUpdate === null || typeof nodeUpdate !== 'object') continue
+      const produced = (nodeUpdate as { messages?: BaseMessage[] }).messages
+      if (!Array.isArray(produced)) continue
 
-    //   for (const message of produced) {
-    //     // 模型这一轮要求调哪些工具
-    //     // 工具参数完整了（分片拼不出来，只有 updates 里的对象是完整的）
-    //     for (const call of (message as AIMessage).tool_calls ?? []) {
-    //       if (call.id === undefined || toolArgsSent.has(call.id)) continue
-    //       toolArgsSent.add(call.id)
-    //       emit({
-    //         type: 'tool-args',
-    //         conversationId,
-    //         turnId,
-    //         blockId: call.id,
-    //         args: (call.args ?? null) as Record<string, unknown> | null
-    //       })
-    //     }
+      for (const message of produced) {
+        // 模型这一轮要求调哪些工具。参数只有这里才是完整对象，分片拼不出来
+        const toolCalls = (message as AIMessage).tool_calls ?? []
+        if (toolCalls.length > 0) {
+          // 模型决定调工具 = 这次模型调用已经说完，正文/思考块先收尾
+          closeCall()
+        }
+        for (const call of toolCalls) {
+          if (call.id === undefined) continue
+          emitter.toolStart(messageId, call.id, call.name)
+          if (toolArgsSent.has(call.id)) continue
+          toolArgsSent.add(call.id)
+          emitter.toolArgs(
+            messageId,
+            call.id,
+            (call.args ?? null) as Record<string, unknown> | null
+          )
+        }
 
-    //     // 工具跑完：ToolNode 把结果作为一条 tool 消息追加进 state
-    //     if (message.getType() === 'tool') {
-    //       const toolMessage = message as ToolMessage
-    //       emit({
-    //         type: 'tool-end',
-    //         conversationId,
-    //         id: toolMessage.tool_call_id,
-    //         name: toolMessage.name ?? 'tool',
-    //         result: parseContent(toolMessage.content),
-    //         status: toolMessage.status === 'error' ? 'error' : 'done'
-    //       })
-    //     }
-    //   }
-    // }
+        // 工具跑完：ToolNode 把结果作为一条 tool 消息追加进 state
+        if (message.type === 'tool') {
+          const toolMessage = message as ToolMessage
+          emitter.toolEnd(
+            messageId,
+            toolMessage.tool_call_id ?? '',
+            toolMessage.status === 'error' ? 'error' : 'done',
+            parseContent(toolMessage.content)
+          )
+        }
+      }
+    }
   }
 }

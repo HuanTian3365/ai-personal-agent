@@ -215,6 +215,32 @@ function turnEventHandler(
         usage: event.usage ?? turn.usage
       }))
 
+    case 'tool-start':
+      return patchTurn(turns, event.turnId, (turn) => ({
+        ...turn,
+        items: [
+          ...turn.items,
+          {
+            type: 'tool',
+            id: event.blockId,
+            name: event.name,
+            args: null,
+            result: null,
+            status: 'running'
+          }
+        ]
+      }))
+
+    case 'tool-args':
+      return patchBlock(turns, event.turnId, event.blockId, (block) =>
+        block.type === 'tool' ? { ...block, args: event.args } : block
+      )
+
+    case 'tool-end':
+      return patchBlock(turns, event.turnId, event.blockId, (block) =>
+        block.type === 'tool' ? { ...block, status: event.status, result: event.result } : block
+      )
+
     default:
       return turns
   }
