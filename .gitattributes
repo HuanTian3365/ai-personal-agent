@@ -1,0 +1,3 @@
+# 统一行尾：仓库存储与工作区检出都使用 LF
+# eol=lf 优先级高于 core.autocrlf，避免 Windows 下 checkout 时被改写成 CRLF
+* text=auto eol=lf

@@ -1,0 +1,248 @@
+{
+    "src/renderer": {
+        "description": "界面端"
+    },
+    "src/main": {
+        "description": "应用端"
+    },
+    "src/core": {
+        "description": "核心：对话图、模型、消息映射"
+    },
+    "src/preload": {
+        "description": "接口管理"
+    },
+    "src/shared": {
+        "description": "跨层共享"
+    },
+    "src/shared/ipc.ts": {
+        "description": "IPC 通道名"
+    },
+    "src/shared/types": {
+        "description": "领域类型"
+    },
+    "src/shared/types/messages.ts": {
+        "description": "消息视图类型"
+    },
+    "src/shared/types/agents.ts": {
+        "description": "事件协议"
+    },
+    "src/shared/types/conversationList.ts": {
+        "description": "对话列表三层类型"
+    },
+    "src/core/index.ts": {
+        "description": "门面"
+    },
+    "src/core/export.ts": {
+        "description": "对外出口"
+    },
+    "src/core/agent/loop.ts": {
+        "description": "一轮对话"
+    },
+    "src/core/graph": {
+        "description": "对话图"
+    },
+    "src/core/graph/chat.ts": {
+        "description": "图定义与读历史"
+    },
+    "src/core/graph/saver.ts": {
+        "description": "checkpoint 存储"
+    },
+    "src/core/graph/state.ts": {
+        "description": "图状态"
+    },
+    "src/core/llm/model.ts": {
+        "description": "初始化模型"
+    },
+    "src/core/utils": {
+        "description": "工具函数"
+    },
+    "src/core/utils/getHistoryMessage.ts": {
+        "description": "读会话历史消息"
+    },
+    "src/core/utils/log.ts": {
+        "description": "原始输出日志"
+    },
+    "src/core/utils/mappingMessage.ts": {
+        "description": "LangChain → 界面消息映射"
+    },
+    "src/core/utils/parseStream.ts": {
+        "description": "解析流式正文与思考"
+    },
+    "src/core/utils/title.ts": {
+        "description": "生成对话标题"
+    },
+    "src/core/test": {
+        "description": "自检脚本"
+    },
+    "src/main/index.ts": {
+        "description": "主进程入口"
+    },
+    "src/main/export.ts": {
+        "description": "对外出口"
+    },
+    "src/main/mount.ts": {
+        "description": "IPC 注册中心"
+    },
+    "src/main/debug.ts": {
+        "description": "调试写文件"
+    },
+    "src/main/ipc/agent.ts": {
+        "description": "对话 IPC 注册"
+    },
+    "src/main/ipc/conversation.ts": {
+        "description": "会话 IPC 注册"
+    },
+    "src/main/ipc/dialog.ts": {
+        "description": "系统对话框 IPC 注册"
+    },
+    "src/main/database": {
+        "description": "数据库层"
+    },
+    "src/main/database/index.ts": {
+        "description": "连接管理"
+    },
+    "src/main/database/types.ts": {
+        "description": "连接类型"
+    },
+    "src/main/database/init": {
+        "description": "建库"
+    },
+    "src/main/database/init/migrate.ts": {
+        "description": "迁移入口"
+    },
+    "src/main/database/init/sql.ts": {
+        "description": "建表SQL"
+    },
+    "src/main/database/init/data.ts": {
+        "description": "默认数据"
+    },
+    "src/main/database/service": {
+        "description": "数据访问"
+    },
+    "src/main/database/service/types.ts": {
+        "description": "接口定义"
+    },
+    "src/main/database/service/impl/sqlite/converter.ts": {
+        "description": "行转换"
+    },
+    "src/main/database/service/impl/sqlite/index.ts": {
+        "description": "Sqlite实现"
+    },
+    "src/main/database/service/impl/sqlite/utils.ts": {
+        "description": "排序工具"
+    },
+    "src/preload/index.ts": {
+        "description": "预加载入口"
+    },
+    "src/preload/mount.ts": {
+        "description": "window.api 组装"
+    },
+    "src/preload/api/agent.ts": {
+        "description": "对话 API 暴露"
+    },
+    "src/preload/api/conversation.ts": {
+        "description": "会话 API 暴露"
+    },
+    "src/preload/api/dialog.ts": {
+        "description": "对话框 API 暴露"
+    },
+    "src/renderer/src/lib/ipc.ts": {
+        "description": "window.api 调用封装"
+    },
+    "src/renderer/src/router/routers.tsx": {
+        "description": "路由表"
+    },
+    "src/renderer/src/hooks/useConversationList.ts": {
+        "description": "会话列表"
+    },
+    "src/renderer/src/hooks/useTheme.ts": {
+        "description": "主题"
+    },
+    "src/renderer/src/pages/Chat/hooks/useChat.ts": {
+        "description": "对话"
+    },
+    "src/renderer/src/layouts/components/Sidebar.tsx": {
+        "description": "框架"
+    },
+    "src/renderer/src/layouts/components/SidebarHeader.tsx": {
+        "description": "顶部"
+    },
+    "src/renderer/src/layouts/components/SidebarFooter.tsx": {
+        "description": "底部"
+    },
+    "src/renderer/src/layouts/components/SidebarConversationList.tsx": {
+        "description": "列表"
+    },
+    "src/renderer/src/layouts/components/SidebarWorkspaceHeader.tsx": {
+        "description": "工作区标题"
+    },
+    "src/renderer/src/layouts/components/SidebarConversationItem.tsx": {
+        "description": "对话标题"
+    },
+    "src/renderer/src/layouts/components/SidebarConversationGroup.tsx": {
+        "description": "分组标题"
+    },
+    "src/renderer/src/pages/Chat/components/ChatHeader.tsx": {
+        "description": "头部"
+    },
+    "src/renderer/src/pages/Chat/components/Composer.tsx": {
+        "description": "输入框"
+    },
+    "src/renderer/src/pages/Chat/components/MessageList.tsx": {
+        "description": "消息列表"
+    },
+    "src/renderer/src/pages/Chat/components/MessageItem.tsx": {
+        "description": "单条消息"
+    },
+    "src/renderer/src/pages/Chat/components/MessageBlocks.tsx": {
+        "description": "内容块分发"
+    },
+    "src/renderer/src/pages/Chat/components/MessageBlockText.tsx": {
+        "description": "正文块"
+    },
+    "src/renderer/src/pages/Chat/components/MessageBlockReasoning.tsx": {
+        "description": "思考块"
+    },
+    "src/renderer/src/pages/Chat/components/MessageBlockError.tsx": {
+        "description": "错误块"
+    },
+    "src/renderer/src/pages/Chat/components/MessageBlockUnknown.tsx": {
+        "description": "未知块兜底"
+    },
+    "src/renderer/src/pages/Chat/components/MessageBlockTool.tsx": {
+        "description": "工具块"
+    },
+    "src/renderer/src/pages/Chat/components/MessageBlockAssistant.tsx": {
+        "description": "助手消息"
+    },
+    "src/renderer/src/pages/Chat/components/MessageBlockSystem.tsx": {
+        "description": "系统消息"
+    },
+    "src/renderer/src/pages/Chat/components/MessageBlockUser.tsx": {
+        "description": "用户消息"
+    },
+    "src/renderer/src/pages/Chat/components/TurnItem.tsx": {
+        "description": "单论消息内容"
+    },
+    "src/renderer/src/pages/Chat/components/TurnList.tsx": {
+        "description": "消息列表"
+    },
+    "src/renderer/src/pages/Chat/components/InputBox.tsx": {
+        "description": "输入框"
+    },
+    "src/renderer/src/pages/Chat/components/InputQueue.tsx": {
+        "description": "发送排队列表"
+    },
+    "src/core/message": {
+        "description": "消息相关"
+    },
+    "src/core/message/getHistoryMessage.ts": {
+        "description": "获取会话历史"
+    },
+    "src/core/message/HistoryMessage.ts": {
+        "description": "会话历史操作"
+    },
+    "src/core/message/buildHumanMessage.ts": {
+        "description": "用户消息构建"
+    }
+}

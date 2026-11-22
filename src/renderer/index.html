@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>幻雨</title>
+    <!--
+      内容安全策略（CSP）：限制页面能加载、能连接哪些来源。
+      现在这条只允许「同源」的静态资源，是最严格的起点。
+
+      ⚠️ 将来一定会踩的坑：接 LLM API、WebSocket 语音流、远程图片/字体时，
+      对应类别必须在这里放行，否则请求会被浏览器直接拦掉（控制台报 CSP 错误）：
+        connect-src  控制 fetch / XHR / WebSocket
+        img-src      控制图片
+        media-src    控制音频播放
+        font-src     控制字体
+      如果图省事写成 default-src 'unsafe-inline' 之类，等于把这道防线拆了。
+
+      参考：https://developer.mozilla.org/zh-CN/docs/Web/HTTP/CSP
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
+    />
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
