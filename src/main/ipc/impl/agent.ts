@@ -1,9 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import { BrowserWindow } from 'electron'
 import { IPC } from '@shared/ipc'
-import type { SendResult } from '@shared/types/agents'
 import { sendMessage } from '@core/export'
-import { MessageEventSend } from '@shared/types/newMessageService'
+import { MessageEventSend, SendResult } from '@shared/types/newMessageService'
 import { AgentEvent } from '@shared/types/newEvent'
 
 /**

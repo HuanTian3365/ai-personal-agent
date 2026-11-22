@@ -1,4 +1,3 @@
-import { QueueItem } from './agents'
 import { ContentBlock, MessageUsage, TurnMessage } from './newMessages'
 /** Agent事件 */
 export type AgentEvent =
@@ -101,6 +100,16 @@ export interface AEBlockAdd {
   conversationId: string
   turnId: string
   block: ContentBlock
+}
+
+/**
+ * 排队项。
+ *
+ * 生成期间用户又发的一条先躺在这里，等本轮结束才发。
+ */
+export interface QueueItem {
+  id: string
+  text: string
 }
 
 /** 队列消息 */

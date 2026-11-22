@@ -1,8 +1,7 @@
 import { ipcRenderer } from 'electron'
 import { IPC } from '@shared/ipc'
-import type { ActiveStream, QueueItem, SendResult } from '@shared/types/agents'
-import { MessageEventSend } from '@shared/types/newMessageService'
-import { AgentEvent } from '@shared/types/newEvent'
+import { AgentEvent, QueueItem } from '@shared/types/newEvent'
+import { ActiveStream, MessageEventSend, SendResult } from '@shared/types/newMessageService'
 
 const agentApi = {
   // to main -> 发送对话

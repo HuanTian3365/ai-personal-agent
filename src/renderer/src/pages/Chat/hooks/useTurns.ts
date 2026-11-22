@@ -143,7 +143,7 @@ function turnEventHandler(
   /** 接收到的事件 */
   event: AgentEvent
 ): TurnMessage[] {
-  console.log(event)
+  console.log('[TurnEvent]:', event)
   switch (event.type) {
     case 'turn-start': {
       const at = turns.findIndex((turn) => turn.id === event.turn.id)

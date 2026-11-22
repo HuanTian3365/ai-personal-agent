@@ -96,7 +96,6 @@ function parseLangChainMessage(messages: BaseMessage[]): TurnMessage[] {
     /** ====================  工具结果:按tool_call_id填回对应的块  ==================== */
     if (msg.type === 'tool') {
       const toolMessage = msg as ToolMessage
-      console.log(toolMessage)
       const target = findToolBlock(toolMessage.tool_call_id)
       if (target !== undefined) {
         target.result = parseContent(toolMessage.content)
