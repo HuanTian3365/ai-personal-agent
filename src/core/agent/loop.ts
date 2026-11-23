@@ -90,7 +90,7 @@ export async function sendMessage({
       return
     }
     // 结束本轮
-    emitter.turnEnd(messageId, 'done')
+    emitter.turnEnd(messageId, 'done', blockState.usage)
   } catch (err) {
     debugLog.debugLogError(err)
     // 存在正在输出的消息且它还没落地 | 必须在closeBlock前算 closeBlock会清掉id
@@ -111,7 +111,7 @@ export async function sendMessage({
       source: 'model'
     })
     // 结束本轮
-    emitter.turnEnd(messageId, 'done')
+    emitter.turnEnd(messageId, 'done', blockState.usage)
     throw err
   } finally {
     await debugLog.debugLogFlush()
@@ -145,7 +145,7 @@ export async function sendMessage({
     } catch (err) {
       console.error('[loop] 写入 aborted 消息失败:', err instanceof Error ? err.message : err)
     }
-    emitter.turnEnd(messageId, 'aborted')
+    emitter.turnEnd(messageId, 'aborted', blockState.usage)
   }
 
   /** 清除当前消息状态,发它对应的end事件 */
@@ -154,7 +154,7 @@ export async function sendMessage({
     if (id === undefined) return
     // 如果有正文消息,触发assistant-end事件
     if (blockState.isAssistant) {
-      emitter.assistantEnd(messageId, id, blockState.usage)
+      emitter.assistantEnd(messageId, id)
     }
     // 如果有思考消息,触发reasoning-end事件
     else if (blockState.isReasoning) {
@@ -162,7 +162,6 @@ export async function sendMessage({
     }
     // 只清块自身的状态 | reasoning/replying要留给emitAborted补写 换调用时才整体替换
     blockState.id = undefined
-    blockState.usage = undefined
     blockState.isReasoning = false
     blockState.isAssistant = false
   }
@@ -195,18 +194,6 @@ export async function sendMessage({
     // 获取正文内容
     const delta = parseContent(messageChunk.content)
     blockState.replying += delta
-
-    // 用量只在收尾块上出现,先攒着,等这条消息收尾时带给assistant-end
-    const usage = (messageChunk as AIMessage).usage_metadata
-    if (usage !== undefined) {
-      blockState.usage = {
-        inputTokens: usage.input_tokens,
-        outputTokens: usage.output_tokens,
-        cacheReadTokens: usage.input_token_details?.cache_read ?? 0,
-        cacheWriteTokens: usage.input_token_details?.cache_creation ?? 0,
-        totalTokens: usage.total_tokens
-      }
-    }
 
     // 思考处理
     if (think !== '') {
@@ -264,13 +251,29 @@ export async function sendMessage({
          */
 
         // 标记这次模型调用已经写进checkpoint了,好让中断时判断要不要补写内容
-        if (block.type === 'ai' && block.id !== undefined) savedBlocks.add(block.id)
+        // 顺带记用量:同一条消息可能重复投递,只在首次见到时加,否则会翻倍
+        if (block.type === 'ai' && block.id !== undefined) {
+          if (!savedBlocks.has(block.id)) addUsage((block as AIMessage).usage_metadata)
+          savedBlocks.add(block.id)
+        }
 
         // 判断是否跟工具相关并作出行动
         emeToolAction(block)
       }
     }
 
+    /** 累加一次模型调用的用量 | 只用 usage_metadata */
+    function addUsage(usage: AIMessage['usage_metadata']): void {
+      if (usage === undefined) return
+      const details = usage.input_token_details
+      blockState.usage = {
+        inputTokens: blockState.usage.inputTokens + usage.input_tokens,
+        outputTokens: blockState.usage.outputTokens + usage.output_tokens,
+        cacheReadTokens: blockState.usage.cacheReadTokens + (details?.cache_read ?? 0),
+        cacheWriteTokens: blockState.usage.cacheWriteTokens + (details?.cache_creation ?? 0),
+        totalTokens: blockState.usage.totalTokens + usage.total_tokens
+      }
+    }
     /**
      * 工具事件监听
      *

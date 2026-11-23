@@ -1,5 +1,5 @@
 import type { AETurnEnd, AgentEvent } from '@shared/types/agentEvent'
-import type { ContentBlock, MessageUsage } from '@shared/types/message'
+import type { ContentBlock } from '@shared/types/message'
 import type { MessageEventSend } from '@shared/types/messageService'
 
 interface Result {
@@ -11,7 +11,7 @@ interface Result {
   reasoningEnd: (turnId: string, blockId: string) => void
   assistantStart: (turnId: string, blockId: string) => void
   assistantDelta: (turnId: string, blockId: string, text: string) => void
-  assistantEnd: (turnId: string, blockId: string, usage?: MessageUsage) => void
+  assistantEnd: (turnId: string, blockId: string) => void
   toolStart: (turnId: string, blockId: string, name: string) => void
   toolArgs: (turnId: string, blockId: string, args: Record<string, unknown> | null) => void
   toolEnd: (turnId: string, blockId: string, status: 'done' | 'error', result: string) => void
@@ -78,8 +78,8 @@ export default function createEmitter(
     assistantDelta: (turnId: string, blockId: string, text: string) =>
       emit({ type: 'assistant-delta', conversationId, turnId, blockId, text }),
     /** 回复结束 */
-    assistantEnd: (turnId: string, blockId: string, usage?: MessageUsage) =>
-      emit({ type: 'assistant-end', conversationId, turnId, blockId, usage }),
+    assistantEnd: (turnId: string, blockId: string) =>
+      emit({ type: 'assistant-end', conversationId, turnId, blockId }),
 
     /** 开始调用工具 */
     toolStart: (turnId: string, blockId: string, name: string) =>

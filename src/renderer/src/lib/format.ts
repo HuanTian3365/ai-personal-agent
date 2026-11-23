@@ -2,11 +2,6 @@
 // 不足1秒按1秒算 避免界面出现0秒
 const MIN_DURATION_MS = 1000
 
-// 两位补零 24小时制
-function pad2(n: number): string {
-  return String(n).padStart(2, '0')
-}
-
 // 用时格式化 -> 分段输出时/分/秒 | 不足1秒按1秒算
 // 例: 999 -> 1秒 | 65000 -> 1分5秒 | 3723000 -> 1时2分3秒
 export function formatDuration(ms: number): string {
@@ -39,5 +34,30 @@ export function formatClock(time: number | Date, now: number | Date = Date.now()
 
   const monthDay = `${date.getMonth() + 1}月${date.getDate()}日`
   if (date.getFullYear() === ref.getFullYear()) return `${monthDay} ${clock}`
+
+  // 两位补零 24小时制
+  function pad2(n: number): string {
+    return String(n).padStart(2, '0')
+  }
+
   return `${date.getFullYear()}年${monthDay} ${clock}`
+}
+
+// 用量格式化 -> isK为true以K为单位 否则原数加千分位 | 不足1000一律用原数
+// 例: (1496,true) -> 1.5K tok | (1496,false) -> 1,496 tok | (999,true) -> 999 tok
+export function formatTokenCount(count: number, isK = false): string {
+  const safe = Number.isFinite(count) && count > 0 ? Math.round(count) : 0
+  // 不转K或者不足1000 直接用原数
+  if (!isK || safe < 1000) return ` ${withThousands(safe)} tok`
+
+  const k = safe / 1000
+  // 100K以下保留一位小数 再大取整 免得数字太长
+  const text = k < 100 ? k.toFixed(1).replace(/\.0$/, '') : withThousands(Math.round(k))
+
+  // 整数加千分位 | 1235 -> 1,235
+  function withThousands(n: number): string {
+    return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  }
+
+  return ` ${text}K tok`
 }

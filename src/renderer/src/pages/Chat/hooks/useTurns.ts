@@ -216,10 +216,8 @@ function turnEventHandler(
       )
 
     case 'assistant-end':
-      // MAssistant没有状态字段,这里只把用量记到轮上
       return patchTurn(turns, event.turnId, (turn) => ({
-        ...turn,
-        usage: event.usage ?? turn.usage
+        ...turn
       }))
 
     case 'tool-start':

@@ -53,10 +53,25 @@ function parseLangChainMessage(messages: BaseMessage[]): TurnMessage[] {
         const text = parseContent(msg.content)
         const reasoning = parseReasoning(msg)
         const toolCalls = ai.tool_calls ?? []
+
+        const turn = currentTurn()
+        // 统计用量信息
+        if (ai.usage_metadata !== undefined && turn !== undefined) {
+          const usage = ai.usage_metadata
+          const details = usage.input_token_details
+          const prev = turn.usage
+          turn.usage = {
+            inputTokens: prev.inputTokens + usage.input_tokens,
+            outputTokens: prev.outputTokens + usage.output_tokens,
+            cacheWriteTokens: prev.cacheWriteTokens + (details?.cache_creation ?? 0),
+            cacheReadTokens: prev.cacheReadTokens + (details?.cache_read ?? 0),
+            totalTokens: prev.totalTokens + usage.total_tokens
+          }
+        }
+
         // 会话是否被中断,中断的话视为此轮被中断
         const aborted = msg.hyCustom?.aborted === true
         if (aborted) {
-          const turn = currentTurn()
           if (turn !== undefined) turn.status = 'aborted'
         }
 

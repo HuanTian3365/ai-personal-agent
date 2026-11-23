@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { TurnMessage } from '@shared/types/message'
-import { CopyIcon, Loader } from 'lucide-react'
+import { CopyIcon, Database, Loader } from 'lucide-react'
 
 import { cn } from '@renderer/lib/utils'
-import { formatClock, formatDuration } from '@renderer/lib/timeFormat'
+import { formatClock, formatDuration, formatTokenCount } from '@renderer/lib/format'
 import { MessageFooter } from '@renderer/components/ui/message'
 import { copyText } from '@renderer/lib/copy'
 import { Button } from '@renderer/components/ui/button'
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@renderer/components/ui/hover-card'
 
 interface Props {
   turn: TurnMessage
@@ -74,6 +75,48 @@ export default function TurnStatus({ turn, isLast, children }: Props): React.JSX
               <CopyIcon />
             </Button>
           )}
+          {/* 用量展示 */}
+          <div>
+            <HoverCard>
+              <HoverCardTrigger>
+                <div className="flex flex-row items-center gap-1">
+                  <Database size={16} />
+                  用量{formatTokenCount(turn.usage.totalTokens, true)}
+                </div>
+              </HoverCardTrigger>
+              <HoverCardContent className="p-4">
+                <div className="flex flex-row items-center justify-between gap-1">
+                  <div className="flex flex-row items-center gap-1">
+                    <Database size={16} />
+                    本轮用量
+                  </div>
+                  {formatTokenCount(turn.usage.totalTokens)}
+                </div>
+                <hr className="border-t border-gray-500 m-0 my-2" />
+                <div className="*:flex *:flex-row *:items-center *:justify-between *:w-full *:text-sm *:text-gray-300 *:mt-1">
+                  <div>
+                    <p>缓存命中</p>
+                    <p>
+                      {((turn.usage.cacheReadTokens / turn.usage.inputTokens) * 100).toFixed(2) +
+                        '%'}
+                    </p>
+                  </div>
+                  <div>
+                    <p>未缓存输入</p>
+                    <p>{turn.usage.cacheWriteTokens}</p>
+                  </div>
+                  <div>
+                    <p>缓存读取</p>
+                    <p>{turn.usage.cacheReadTokens}</p>
+                  </div>
+                  <div>
+                    <p>输出</p>
+                    <p>{turn.usage.outputTokens}</p>
+                  </div>
+                </div>
+              </HoverCardContent>
+            </HoverCard>
+          </div>
           {/* 结束时间 */}
           <div>{turn.endTime ? formatClock(turn.endTime) : null}</div>
         </MessageFooter>

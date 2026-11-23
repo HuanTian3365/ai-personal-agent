@@ -16,7 +16,7 @@ export interface TurnMessage {
   /** 本轮轮状态 */
   status: 'running' | 'done' | 'aborted'
   /** 本轮用量 */
-  usage?: MessageUsage
+  usage: MessageUsage
   /** 开始时间:agent开始执行时间 */
   startTime?: number
   /** 结束时间:agent结束执行时间 */
@@ -26,15 +26,15 @@ export interface TurnMessage {
 /** 消息用量 */
 export interface MessageUsage {
   /** 输入Token */
-  inputTokens?: number
+  inputTokens: number
   /** 输出Token */
-  outputTokens?: number
+  outputTokens: number
   /** 缓存读Token */
-  cacheReadTokens?: number
+  cacheReadTokens: number
   /** 缓存写Token */
-  cacheWriteTokens?: number
+  cacheWriteTokens: number
   /** 总Token */
-  totalTokens?: number
+  totalTokens: number
 }
 
 /** ====================  内部类型实现  ==================== */

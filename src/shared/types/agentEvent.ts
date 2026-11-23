@@ -72,7 +72,6 @@ export interface AEAssistantDelta extends AEBlockBase {
 /** 回复结束 */
 export interface AEAssistantEnd extends AEBlockBase {
   type: 'assistant-end'
-  usage?: MessageUsage // 这次模型调用的用量
   modelName?: string
   modelProvider?: string
 }
