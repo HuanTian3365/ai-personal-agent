@@ -2,6 +2,7 @@ import type { AIMessage, BaseMessage, ToolMessage } from '@langchain/core/messag
 import { getChatGraph } from '@core/graph/chat'
 import type { ContentBlock, MTool, TurnMessage } from '@shared/types/message'
 import { parseContent, parseReasoning } from './parseStream'
+import { debugContent } from '@main/utils/debug'
 
 /** 读一个会话的全部历史消息 */
 export async function getHistoryMessage(conversationId: string): Promise<TurnMessage[]> {
@@ -27,6 +28,7 @@ function parseLangChainMessage(messages: BaseMessage[]): TurnMessage[] {
   const currentTurn = (): TurnMessage | undefined => result[result.length - 1]
 
   messages.forEach((msg, index) => {
+    debugContent(msg)
     const id = msg.id ?? `msg-${index}`
     /** ====================  用户消息|插入消息  ==================== */
     if (msg.type === 'human') {

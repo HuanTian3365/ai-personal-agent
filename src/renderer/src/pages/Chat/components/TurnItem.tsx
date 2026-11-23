@@ -6,6 +6,7 @@ import MessageBlockTool from './MessageBlockTool'
 import MessageBlockUnknown from './MessageBlockUnknown'
 import MessageBlockError from './MessageBlockError'
 import MessageBlockSystem from './MessageBlockSystem'
+import TurnStatus from './TurnStatus'
 
 interface Props {
   turn: TurnMessage
@@ -21,19 +22,19 @@ export default function TurnItem({ turn }: Props): React.JSX.Element {
     <div className="flex flex-col gap-3">
       {/* 发送消息 */}
       {turn.user !== null && <MessageBlockUser context={turn.user} />}
-      {/* 回复消息 */}
-      {turn.items.length > 0 && (
-        <div className="flex flex-col gap-2">
-          {turn.items.map((block, index) => (
-            <TurnBlock block={block} key={`${block.type}-${index}`} />
-          ))}
-        </div>
-      )}
-      {turn.status == 'aborted' && <div>Ciallo is aborted</div>}
+      {/* 状态条 + 本轮回复内容 */}
+      <TurnStatus turn={turn}>
+        {turn.items.length > 0 && (
+          <div className="flex flex-col gap-2">
+            {turn.items.map((block, index) => (
+              <TurnBlock block={block} key={`${block.type}-${index}`} />
+            ))}
+          </div>
+        )}
+      </TurnStatus>
     </div>
   )
 }
-
 /**
  * 轮内的一个块：按块类型挑对应的展示组件
  */
