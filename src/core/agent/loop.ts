@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto'
 import { AIMessage } from '@langchain/core/messages'
 import type { BaseMessage, ToolMessage } from '@langchain/core/messages'
 import { parseContent, parseReasoning } from '@core/message/parseStream'
-import { createDebugLog } from '@core/utils/log'
 import { getConversationTitle } from './title'
 import type { MessageEventSend } from '@shared/types/messageService'
 import type { AgentEvent } from '@shared/types/agentEvent'
@@ -40,9 +39,7 @@ export async function sendMessage({
   // 注册事件机
   const emitter = createEmitter(emit, conversationId)
   // 初始化标题
-  getConversationTitle(historyMessage.length === 0, conversationId, userMessage, emit)
-  // 初始化调试日志
-  const debugLog = createDebugLog(conversationId)
+  getConversationTitle(historyMessage.length === 0, conversationId, userMessage, emitter.title)
   // 启动轮
   emitter.turnStart(messageId, message)
 
@@ -92,7 +89,6 @@ export async function sendMessage({
     // 结束本轮
     emitter.turnEnd(messageId, 'done', blockState.usage)
   } catch (err) {
-    debugLog.debugLogError(err)
     // 存在正在输出的消息且它还没落地 | 必须在closeBlock前算 closeBlock会清掉id
     const pending = blockState.id !== undefined && !savedBlocks.has(blockState.id)
     // 清除消息状态,发收尾事件
@@ -113,8 +109,6 @@ export async function sendMessage({
     // 结束本轮
     emitter.turnEnd(messageId, 'done', blockState.usage)
     throw err
-  } finally {
-    await debugLog.debugLogFlush()
   }
 
   /** ====================  辅助函数  ==================== */

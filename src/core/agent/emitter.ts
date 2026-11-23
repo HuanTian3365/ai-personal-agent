@@ -3,6 +3,7 @@ import type { ContentBlock } from '@shared/types/message'
 import type { MessageEventSend } from '@shared/types/messageService'
 
 interface Result {
+  title: (title: string) => void
   turnStart: (turnId: string, message: MessageEventSend) => void
   turnEnd: (turnId: string, status: AETurnEnd['status'], usage?: AETurnEnd['usage']) => void
   blockAdd: (turnId: string, block: ContentBlock) => void
@@ -22,6 +23,13 @@ export default function createEmitter(
   conversationId: string
 ): Result {
   const emitter = {
+    /** 更新标题 */
+    title: (title: string) =>
+      emit({
+        type: 'title',
+        conversationId,
+        title
+      }),
     /** 启动轮 */
     turnStart: (turnId: string, message: MessageEventSend) =>
       emit({

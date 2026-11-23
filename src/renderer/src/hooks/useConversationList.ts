@@ -81,7 +81,7 @@ export function useConversationList(): UseWorkspaceListResult {
       ])
       setWorkspaces(nextWorkspaces)
       setGroups(nextGroups)
-      setConversations(nextConversations.map((c) => ({ ...c, title: c.title || 'TODO:新对话' })))
+      setConversations(nextConversations.map((c) => ({ ...c, title: c.title })))
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))

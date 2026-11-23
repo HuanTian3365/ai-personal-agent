@@ -199,7 +199,6 @@ function parseLangChainMessage(messages: BaseMessage[]): TurnMessage[] {
         user: null,
         items: [],
         status: 'done',
-        // TODO:累加用量
         usage: {
           inputTokens: 0,
           outputTokens: 0,

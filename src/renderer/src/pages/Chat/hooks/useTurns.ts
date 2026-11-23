@@ -100,6 +100,7 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
       setTurns((prev) => turnEventHandler(prev, event))
       if (event.type === 'turn-start') setIsReplying(true)
       if (event.type === 'turn-end') setIsReplying(false)
+      if (event.type === 'title') setTitle(event.title)
     })
     return off
   }, [conversationId])

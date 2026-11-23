@@ -4,7 +4,6 @@ import { parseContent } from '@core/message/parseStream'
 // 只依赖 main 的仓储层，不走 `@main`（门面）：门面会拉起 mount → ipc/*，
 // 而 ipc 又反过来 import core/export，绕回去就是循环依赖。
 import { getRepository } from '@main/database'
-import type { AgentEvent } from '@shared/types/agentEvent'
 
 /** 标题最长字数 */
 const MAX_TITLE_LENGTH = 100
@@ -26,7 +25,7 @@ export async function getConversationTitle(
   isFirstTurn: boolean,
   conversationId: string,
   message: HumanMessage,
-  emit: (event: AgentEvent) => void
+  emit: (title: string) => void
 ): Promise<void> {
   // 非首次对话,不处理
   if (!isFirstTurn) return
@@ -42,7 +41,7 @@ export async function getConversationTitle(
     if (title.length === 0) return
 
     await getRepository().updateConversationTitle(conversationId, title)
-    emit({ type: 'title', conversationId, title })
+    emit(title)
   } catch {
     // 失败静默
   }
