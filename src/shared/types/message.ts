@@ -43,6 +43,8 @@ export interface MUser {
   type: 'user'
   /** 用户消息id->kwargs.id */
   id: string
+  /** 发送时间 */
+  time?: number
   /** 用户输入内容 */
   content?: string
   /** 扩展信息 */

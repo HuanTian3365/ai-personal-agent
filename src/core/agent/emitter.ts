@@ -31,6 +31,7 @@ export default function createEmitter(
           id: turnId,
           user: {
             ...message,
+            time: Date.now(),
             id: turnId,
             type: 'user'
           },

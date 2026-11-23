@@ -2,7 +2,6 @@ import type { AIMessage, BaseMessage, ToolMessage } from '@langchain/core/messag
 import { getChatGraph } from '@core/graph/chat'
 import type { ContentBlock, MTool, TurnMessage } from '@shared/types/message'
 import { parseContent, parseReasoning } from './parseStream'
-import { debugContent } from '@main/utils/debug'
 
 /** 读一个会话的全部历史消息 */
 export async function getHistoryMessage(conversationId: string): Promise<TurnMessage[]> {
@@ -28,93 +27,113 @@ function parseLangChainMessage(messages: BaseMessage[]): TurnMessage[] {
   const currentTurn = (): TurnMessage | undefined => result[result.length - 1]
 
   messages.forEach((msg, index) => {
-    debugContent(msg)
     const id = msg.id ?? `msg-${index}`
-    /** ====================  用户消息|插入消息  ==================== */
-    if (msg.type === 'human') {
-      const insertFlag = msg.hyCustom?.insertFlag === true
-      insertTurn({
-        id,
-        type: 'user',
-        content: parseContent(msg.content),
-        // 只有插入才带expandInfo,普通发起不带
-        ...(insertFlag ? { expandInfo: { insertFlag: true } } : {})
-      })
-      return
-    }
-    /** ====================  助手消息|思考内容  ==================== */
-    if (msg.type === 'ai') {
-      const ai = msg as AIMessage
-      const text = parseContent(msg.content)
-      const reasoning = parseReasoning(msg)
-      const toolCalls = ai.tool_calls ?? []
-      // 会话是否被中断,中断的话视为此轮被中断
-      const aborted = msg.hyCustom?.aborted === true
-      if (aborted) {
-        const turn = currentTurn()
-        if (turn !== undefined) turn.status = 'aborted'
+    // 当前消息产生时间
+    const ts = msg.hyField?.createdAt ?? 0
+    try {
+      /** ====================  用户消息|插入消息  ==================== */
+      if (msg.type === 'human') {
+        const insertFlag = msg.hyCustom?.insertFlag === true
+        insertTurn(
+          {
+            id,
+            type: 'user',
+            time: ts,
+            content: parseContent(msg.content),
+            // 只有插入才带expandInfo,普通发起不带
+            ...(insertFlag ? { expandInfo: { insertFlag: true } } : {})
+          },
+          ts
+        )
+        return
       }
+      /** ====================  助手消息|思考内容  ==================== */
+      if (msg.type === 'ai') {
+        const ai = msg as AIMessage
+        const text = parseContent(msg.content)
+        const reasoning = parseReasoning(msg)
+        const toolCalls = ai.tool_calls ?? []
+        // 会话是否被中断,中断的话视为此轮被中断
+        const aborted = msg.hyCustom?.aborted === true
+        if (aborted) {
+          const turn = currentTurn()
+          if (turn !== undefined) turn.status = 'aborted'
+        }
 
-      if (text !== '') {
-        insertTurn({
-          id,
-          type: 'assistant',
-          content: text,
-          // 没有思考就不带这个字段
-          ...(reasoning === ''
-            ? {}
-            : { reasoning: { id, type: 'reasoning', content: reasoning, status: 'done' } })
+        if (text !== '') {
+          insertTurn(
+            {
+              id,
+              type: 'assistant',
+              content: text,
+              // 没有思考就不带这个字段
+              ...(reasoning === ''
+                ? {}
+                : { reasoning: { id, type: 'reasoning', content: reasoning, status: 'done' } })
+            },
+            ts
+          )
+        } else if (reasoning !== '') {
+          // 有思考,没正文,思考单独成块
+          insertTurn({ id, type: 'reasoning', content: reasoning, status: 'done' }, ts)
+        } else if (!aborted && toolCalls.length === 0) {
+          // 空响应:既没正文也没思考也没工具调用,兜底成错误块
+          // 被中断的那条正常就是空的,不算错误
+          insertTurn(
+            {
+              id,
+              type: 'error',
+              message: '这条消息没有内容（既没正文、也没思考、也没工具调用）。',
+              source: 'model'
+            },
+            ts
+          )
+        }
+
+        // 处理ai发起的工具调用,每个发起调用作为一个工具块,工具结果按id回填
+        toolCalls.forEach((call, callIndex) => {
+          insertTurn(
+            {
+              id: call.id || `tool-${index}-${callIndex}`,
+              type: 'tool',
+              name: call.name,
+              // 模型不提供这次调用的说明，先留空
+              description: '',
+              args: (call.args ?? null) as Record<string, unknown> | null,
+              result: null,
+              // 结果还没回填,先记成正在跑;ToolMessage 到了再改成 done / error
+              status: 'running'
+            } as MTool,
+            ts
+          )
         })
-      } else if (reasoning !== '') {
-        // 有思考,没正文,思考单独成块
-        insertTurn({ id, type: 'reasoning', content: reasoning, status: 'done' })
-      } else if (!aborted && toolCalls.length === 0) {
-        // 空响应:既没正文也没思考也没工具调用,兜底成错误块
-        // 被中断的那条正常就是空的,不算错误
-        insertTurn({
-          id,
-          type: 'error',
-          message: '这条消息没有内容（既没正文、也没思考、也没工具调用）。',
-          source: 'model'
-        })
+        return
       }
 
-      // 处理ai发起的工具调用,每个发起调用作为一个工具块,工具结果按id回填
-      toolCalls.forEach((call, callIndex) => {
-        insertTurn({
-          id: call.id || `tool-${index}-${callIndex}`,
-          type: 'tool',
-          name: call.name,
-          // 模型不提供这次调用的说明，先留空
-          description: '',
-          args: (call.args ?? null) as Record<string, unknown> | null,
-          result: null,
-          // 结果还没回填,先记成正在跑;ToolMessage 到了再改成 done / error
-          status: 'running'
-        } as MTool)
-      })
-      return
-    }
-
-    /** ====================  工具结果:按tool_call_id填回对应的块  ==================== */
-    if (msg.type === 'tool') {
-      const toolMessage = msg as ToolMessage
-      const target = findToolBlock(toolMessage.tool_call_id)
-      if (target !== undefined) {
-        target.result = parseContent(toolMessage.content)
-        target.status = toolMessage.status === 'error' ? 'error' : 'done'
+      /** ====================  工具结果:按tool_call_id填回对应的块  ==================== */
+      if (msg.type === 'tool') {
+        const toolMessage = msg as ToolMessage
+        const target = findToolBlock(toolMessage.tool_call_id)
+        if (target !== undefined) {
+          target.result = parseContent(toolMessage.content)
+          target.status = toolMessage.status === 'error' ? 'error' : 'done'
+        }
+        return
       }
-      return
-    }
 
-    /** ====================  系统内容  ==================== */
-    if (msg.type === 'system') {
-      insertTurn({ id, type: 'system', content: parseContent(msg.content) })
-      return
-    }
+      /** ====================  系统内容  ==================== */
+      if (msg.type === 'system') {
+        insertTurn({ id, type: 'system', content: parseContent(msg.content) }, ts)
+        return
+      }
 
-    /** ====================  未知消息  ==================== */
-    insertTurn({ id, type: 'unknown', rawType: 'BaseMessage', raw: msg })
+      /** ====================  未知消息  ==================== */
+      insertTurn({ id, type: 'unknown', rawType: 'BaseMessage', raw: msg }, ts)
+    } finally {
+      // 每次循环结束都更新轮结束时间,这样轮结束时间就是最后一条消息的时间
+      const turn = currentTurn()
+      if (turn !== undefined && ts > 0) turn.endTime = ts
+    }
   })
 
   // 最后一轮也要收尾
@@ -152,7 +171,7 @@ function parseLangChainMessage(messages: BaseMessage[]): TurnMessage[] {
   }
 
   /** 轮消息构建 */
-  function insertTurn(content: ContentBlock): void {
+  function insertTurn(content: ContentBlock, ts: number): void {
     // 第一个消息或者一条非插入的用户消息->开新的一轮
     if (
       result.length === 0 ||
@@ -173,9 +192,8 @@ function parseLangChainMessage(messages: BaseMessage[]): TurnMessage[] {
           cacheWriteTokens: 0,
           totalTokens: 0
         },
-        // TODO: 未来实现
-        startTime: 0,
-        endTime: 0
+        startTime: ts,
+        endTime: ts
       })
     }
     // 获取当前轮
