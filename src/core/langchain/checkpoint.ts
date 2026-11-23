@@ -29,8 +29,6 @@ import type { HyCustom, HyExpand, HyField } from './hyMessage'
 
 const MESSAGES = 'hy_message'
 const CONVERSATIONS = 'hy_conversation'
-/** 旧表 | 迁移期间还可能存在，存在时 getTuple 回退去读它 */
-const LEGACY_CHECKPOINTS = 'hy_checkpoints'
 
 /** 消息行 */
 interface MessageRow {
@@ -66,8 +64,6 @@ const EMPTY_LEDGER = '{}'
 class SqliteSaver extends BaseCheckpointSaver {
   private readonly database: BetterSqlite3.Database
   private ready = false
-  /** 旧 checkpoint 表是否还在 | 迁移完成后会 DROP，缓存一次省得反复查 */
-  private legacyTable: boolean | null = null
 
   private countStmt!: BetterSqlite3.Statement
   private insertStmt!: BetterSqlite3.Statement
@@ -122,17 +118,6 @@ CREATE TABLE IF NOT EXISTS ${MESSAGES} (
     )
 
     this.ready = true
-  }
-
-  /** 旧 checkpoint 表还在不在 | 迁移脚本 DROP 之后就只走新路 */
-  private hasLegacyTable(): boolean {
-    if (this.legacyTable === null) {
-      const row = this.database
-        .prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?`)
-        .get(LEGACY_CHECKPOINTS) as { name: string } | undefined
-      this.legacyTable = row !== undefined
-    }
-    return this.legacyTable
   }
 
   /** 从 config 里取 thread_id | 缺了直接抛 不猜 */
@@ -219,7 +204,7 @@ CREATE TABLE IF NOT EXISTS ${MESSAGES} (
    * 读最新状态
    *
    * 账本在会话行上 正文在消息表里 拼回一个 CheckpointTuple 调用方看不出区别。
-   * `langgraph_state` 还是空的（迁移前的老会话）就走旧 checkpoint 表。
+   * 只有 hy_message 一处数据源 不再兼容旧的 checkpoint 表。
    */
   async getTuple(config: RunnableConfig): Promise<CheckpointTuple | undefined> {
     this.ensureSchema()
@@ -229,9 +214,7 @@ CREATE TABLE IF NOT EXISTS ${MESSAGES} (
     if (row === undefined) return undefined
 
     // 没账本 = 这个会话还没跑过图
-    if (row.langgraph_state === EMPTY_LEDGER || row.langgraph_state === '') {
-      return this.hasLegacyTable() ? this.legacyTuple(config) : undefined
-    }
+    if (row.langgraph_state === EMPTY_LEDGER || row.langgraph_state === '') return undefined
 
     const ledger = JSON.parse(row.langgraph_state) as Ledger
     if (typeof ledger.checkpoint_id !== 'string') return undefined
@@ -363,43 +346,6 @@ CREATE TABLE IF NOT EXISTS ${MESSAGES} (
     }
     message.hyField = field
     message.hyCustom = kwargs.hy_custom ?? {}
-  }
-
-  /** 迁移前的兜底 | 直接读旧 checkpoint 表最新一行 */
-  private async legacyTuple(config: RunnableConfig): Promise<CheckpointTuple | undefined> {
-    const threadId = this.threadIdOf(config)
-    const checkpointNs = config.configurable?.checkpoint_ns ?? ''
-    const row = this.database
-      .prepare(
-        `SELECT checkpoint_id, checkpoint, metadata, type FROM ${LEGACY_CHECKPOINTS}
-         WHERE thread_id = ? AND checkpoint_ns = ? ORDER BY checkpoint_id DESC LIMIT 1`
-      )
-      .get(threadId, checkpointNs) as
-      | { checkpoint_id: string; checkpoint: Buffer; metadata: Buffer; type: string | null }
-      | undefined
-    if (row === undefined) return undefined
-
-    const checkpoint = (await this.serde.loadsTyped(
-      row.type ?? 'json',
-      row.checkpoint
-    )) as Checkpoint
-    const metadata = (await this.serde.loadsTyped(
-      row.type ?? 'json',
-      row.metadata
-    )) as CheckpointMetadata
-
-    return {
-      checkpoint,
-      config: {
-        configurable: {
-          thread_id: threadId,
-          checkpoint_ns: checkpointNs,
-          checkpoint_id: row.checkpoint_id
-        }
-      },
-      metadata,
-      pendingWrites: []
-    }
   }
 }
 

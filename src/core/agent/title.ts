@@ -35,7 +35,7 @@ export async function getConversationTitle(
     const model = await getBaseModel()
     const res = await model.invoke([
       new SystemMessage(SYSTEM),
-      new HumanMessage(`<user_message>\n${message.content}\n</user_message>`)
+      new HumanMessage(`<user_message>\n${parseContent(message.content)}\n</user_message>`)
     ])
 
     const title = parseContent(res.content).replace(/\s+/g, ' ').trim().slice(0, MAX_TITLE_LENGTH)
