@@ -16,11 +16,7 @@ import type { BaseMessage } from '@langchain/core/messages'
 import { BaseChatModel } from '@langchain/core/language_models/chat_models'
 import type { ChatResult } from '@langchain/core/outputs'
 import { MessagesAnnotation, START, StateGraph } from '@langchain/langgraph'
-import {
-  closeCheckpointStore,
-  getCheckpointStore,
-  openCheckpointStore
-} from '../langchain/checkpoint'
+import { closeCheckpointStore, getCheckpointStore, openCheckpointStore } from '../graph/checkpoint'
 
 const THREAD = 'conv-growth'
 const MESSAGES = 'hy_message'

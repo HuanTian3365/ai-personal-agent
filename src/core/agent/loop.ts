@@ -131,14 +131,16 @@ export async function sendMessage({
     const aborted = new AIMessage({
       content: pending ? blockState.replying : '',
       additional_kwargs: {
-        status: 'aborted',
+        // reasoning_content是provider格式 原样留在这里
         ...(pending && blockState.reasoning !== ''
           ? { reasoning_content: blockState.reasoning }
           : {})
       }
     })
+    // 中断标记是业务字段 走hy_custom 跟消息一起落进hy_message
+    aborted.hyCustom = { aborted: true }
     try {
-      // 把中断信息写入到checkpoint
+      // 把中断信息写入到消息表
       await model.updateState({ configurable: loopConfig.configurable }, { messages: [aborted] })
     } catch (err) {
       console.error('[loop] 写入 aborted 消息失败:', err instanceof Error ? err.message : err)

@@ -14,11 +14,7 @@ import { AIMessage, HumanMessage, RemoveMessage, ToolMessage } from '@langchain/
 import type { BaseMessage } from '@langchain/core/messages'
 import { JsonPlusSerializer } from '@langchain/langgraph-checkpoint'
 import type { Checkpoint, CheckpointMetadata } from '@langchain/langgraph-checkpoint'
-import {
-  closeCheckpointStore,
-  getCheckpointStore,
-  openCheckpointStore
-} from '../langchain/checkpoint'
+import { closeCheckpointStore, getCheckpointStore, openCheckpointStore } from '../graph/checkpoint'
 
 const serde = new JsonPlusSerializer()
 const THREAD = 'conv-roundtrip'

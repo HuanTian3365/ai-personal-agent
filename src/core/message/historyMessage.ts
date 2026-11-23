@@ -10,7 +10,7 @@ export async function getHistoryMessage(conversationId: string): Promise<TurnMes
   // 根据会话ID获取最新快照
   const snapshot = await graph.getState({ configurable: { thread_id: conversationId } })
   // 读取快照消息
-  const messages = (snapshot.values?.messages ?? []) as BaseMessage[]
+  const messages = snapshot.values?.messages ?? []
   return parseLangChainMessage(messages)
 }
 
@@ -32,7 +32,7 @@ function parseLangChainMessage(messages: BaseMessage[]): TurnMessage[] {
     const id = msg.id ?? `msg-${index}`
     /** ====================  用户消息|插入消息  ==================== */
     if (msg.type === 'human') {
-      const insertFlag = msg.additional_kwargs?.insertFlag === true
+      const insertFlag = msg.hyCustom?.insertFlag === true
       insertTurn({
         id,
         type: 'user',
@@ -49,7 +49,7 @@ function parseLangChainMessage(messages: BaseMessage[]): TurnMessage[] {
       const reasoning = parseReasoning(msg)
       const toolCalls = ai.tool_calls ?? []
       // 会话是否被中断,中断的话视为此轮被中断
-      const aborted = msg.additional_kwargs?.status === 'aborted'
+      const aborted = msg.hyCustom?.aborted === true
       if (aborted) {
         const turn = currentTurn()
         if (turn !== undefined) turn.status = 'aborted'

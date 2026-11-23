@@ -56,16 +56,14 @@ export async function callModel(
   const model = await getModelWithTools()
   // 每一步开头先看有没有「插入」的消息 它们要成为这一步的输入
   // 已经生成到一半的那段文字不会被改写 插入只能等这个边界(和DSH的step边界是同一种语义)
-  // 只有在这里(真的被本轮领取)才写insertFlag: 它跟消息一起落进checkpoint
+  // 只有在这里(真的被本轮领取)才打insertFlag: 它跟消息一起落进hy_custom
   // 重开对话时投影还认得出「这是插入的」
-  const inserts = takeInserts(config).map(
-    (item) =>
-      new HumanMessage({
-        content: item.text,
-        id: item.id,
-        additional_kwargs: { insertFlag: true }
-      })
-  )
+  const inserts = takeInserts(config).map((item) => {
+    const message = new HumanMessage({ content: item.text, id: item.id })
+    // 插入标记是业务字段 走hy_custom 不塞additional_kwargs
+    message.hyCustom = { insertFlag: true }
+    return message
+  })
   const messages = inserts.length === 0 ? state.messages : [...state.messages, ...inserts]
   // 不覆盖response.id: LangGraph的messages流靠message.id判断「这条是不是已经推过」
   // 换掉它会让末尾那条完整消息失去去重依据 被当成新消息再推一遍

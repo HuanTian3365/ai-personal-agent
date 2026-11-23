@@ -15,11 +15,7 @@ import { existsSync, readdirSync, statSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 import BetterSqlite3 from 'better-sqlite3'
 import type { BaseMessage, ToolMessage } from '@langchain/core/messages'
-import {
-  closeCheckpointStore,
-  getCheckpointStore,
-  openCheckpointStore
-} from '../langchain/checkpoint'
+import { closeCheckpointStore, getCheckpointStore, openCheckpointStore } from '../graph/checkpoint'
 
 const MESSAGES = 'hy_message'
 const CONVERSATIONS = 'hy_conversation'

@@ -18,11 +18,7 @@ import { END, MessagesAnnotation, START, StateGraph } from '@langchain/langgraph
 import { ToolNode, toolsCondition } from '@langchain/langgraph/prebuilt'
 import { tool } from '@langchain/core/tools'
 import { z } from 'zod'
-import {
-  closeCheckpointStore,
-  getCheckpointStore,
-  openCheckpointStore
-} from '../langchain/checkpoint'
+import { closeCheckpointStore, getCheckpointStore, openCheckpointStore } from '../graph/checkpoint'
 
 const THREAD = 'conv-graph'
 const CONVERSATIONS = 'hy_conversation'
