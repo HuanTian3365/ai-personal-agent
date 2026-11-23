@@ -43,8 +43,8 @@ export default function MessageBlockTool({ context }: Props): React.JSX.Element 
             <div>
               输入:
               <CodeBlock size="sm">
-                <CodeBlockContent wrap className="max-h-64">
-                  <pre>{argsContent}</pre>
+                <CodeBlockContent wrap className="max-h-64 scrollbar-subtle text-wrap ">
+                  <pre className="text-wrap w-full">{argsContent}</pre>
                 </CodeBlockContent>
               </CodeBlock>
             </div>
@@ -53,8 +53,8 @@ export default function MessageBlockTool({ context }: Props): React.JSX.Element 
             <div>
               输出:
               <CodeBlock size="sm">
-                <CodeBlockContent wrap className="max-h-64">
-                  {context.result}
+                <CodeBlockContent wrap className="max-h-64 scrollbar-subtle text-wrap ">
+                  <pre className="text-wrap w-full">{context.result}</pre>
                 </CodeBlockContent>
               </CodeBlock>
             </div>

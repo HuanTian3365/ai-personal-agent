@@ -1,6 +1,12 @@
 /**
  * 当前DDL版本
- * 修改SQL语句时，请务必更新此版本号
+ *
+ * 版本号一变，migrate 会删光业务表重建（旧数据不留）。
+ * 所以只有「表结构不兼容、旧数据没救了」才升它。
+ *
+ * 加表、加列这类兼容变更不要升版本号：
+ * - 加表：直接写进下面的 DDL，都是 IF NOT EXISTS
+ * - 加列：写进 DDL 管新库，老库靠 migrate 的补列逻辑（PRAGMA table_info + ALTER）
  */
 export const SCHEMA_VERSION = 8
 /** 建表语句 */
@@ -50,9 +56,28 @@ CREATE TABLE IF NOT EXISTS hy_conversation
     sort_index     INTEGER NOT NULL,                                                -- 组内手动排序，升序=显示顺序；新对话取 MIN-1 插到最前，允许负数
     created_at     BIGINT  NOT NULL,                                                -- 创建时间，Unix 毫秒
     updated_at     BIGINT  NOT NULL,                                                -- 最后修改时间，Unix 毫秒；「最近更新」视图排序依据
+    langgraph_state TEXT   NOT NULL DEFAULT '{}',                                   -- LangGraph 执行账本 JSON：{ checkpoint_id, channel_versions, versions_seen, 其余 channel }
     FOREIGN KEY (group_id) REFERENCES hy_group (id) ON DELETE SET NULL
 );
 CREATE INDEX IF NOT EXISTS ix_conversation_manual ON hy_conversation (group_id, sort_index); -- 手动排序视图
 CREATE INDEX IF NOT EXISTS ix_conversation_recent ON hy_conversation (group_id, updated_at DESC); -- 最近更新视图
 CREATE INDEX IF NOT EXISTS ix_conversation_workspace ON hy_conversation (workspace_id, updated_at DESC); -- 按工作区取对话
+
+-- 消息：一条消息一行，LangChain 序列化格式原样保存
+-- 取代原来的 hy_checkpoints（每步一份全量快照，O(n^2)）
+CREATE TABLE IF NOT EXISTS hy_message
+(
+    id              TEXT PRIMARY KEY,                -- 消息主键，本地生成 UUID v4
+    conversation_id TEXT    NOT NULL,                -- 所属对话，即 LangGraph 的 thread_id
+    seq             INTEGER NOT NULL,                -- 会话内序号，从 1 起单调递增
+
+    source_data     TEXT    NOT NULL,                -- LangChain 序列化外壳 { lc, type, id }
+    message         TEXT    NOT NULL,                -- kwargs 完整 JSON，含 hy_custom
+
+    metadata        TEXT    NOT NULL DEFAULT '{}',   -- LangGraph 的 CheckpointMetadata { source, step, parents }
+    expand          TEXT    NOT NULL DEFAULT '{}',   -- 底层扩展 { status }，转换层专用
+    created_at      BIGINT  NOT NULL,                -- 写入时间，Unix 毫秒
+
+    UNIQUE (conversation_id, seq)                    -- 同一会话内 seq 唯一，取数靠它排序
+);
 `

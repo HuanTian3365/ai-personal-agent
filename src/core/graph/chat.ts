@@ -13,7 +13,7 @@ import { END, START, StateGraph } from '@langchain/langgraph'
 import { ToolNode, toolsCondition } from '@langchain/langgraph/prebuilt'
 import { tools } from '../tools'
 import { ChatState } from './state'
-import { getCheckpointStore } from './checkpoint'
+import { getCheckpointStore } from '@core/langchain/checkpoint'
 import { callModel } from './nodes'
 
 // 返回类型由StateGraph的泛型递归推导(节点名会进类型参数) 手写一遍不现实
