@@ -1,30 +1,16 @@
 import { randomUUID } from 'node:crypto'
-import { BrowserWindow } from 'electron'
 import { IPC } from '@shared/ipc'
 import { sendMessage } from '@core/export'
+import { broadcast } from '../broadcast'
+import { abortRun, finishRun, startRun } from '../../runtime/agent'
 import type { MessageEventSend, SendResult } from '@shared/types/messageService'
-import type { AgentEvent } from '@shared/types/agentEvent'
 
 /**
- * 正在运行的对话
+ * agent 域的事件注册。
  *
- * key: 会话ID
- *
- * value: 停止信号
+ * 只做三件事:挂 handler、校验参数、转发给 runtime / core。
+ * 中断信号的台账在 runtime/agent.ts,事件出口在 ipc/broadcast.ts。
  */
-const running = new Map<string, AbortController>()
-
-/**
- * 把 core 推出来的事件转发给所有渲染进程。
- * 用 getAllWindows() 而不是把窗口实例传进 mount()，
- * 因为 main/index.ts 里 mount(ipcMain) 在 createWindow() 之前调用，那时还没有窗口。
- */
-function broadcast(event: AgentEvent): void {
-  for (const win of BrowserWindow.getAllWindows()) {
-    win.webContents.send(IPC.agent.event, event)
-  }
-}
-
 export default function registerAgentIpc(ipcMain: Electron.IpcMain): void {
   /**
    * 发送对话。
@@ -41,8 +27,7 @@ export default function registerAgentIpc(ipcMain: Electron.IpcMain): void {
         throw new Error('agent.send: text 必须是非空字符串')
       }
       // 设置中断信号
-      const controller = new AbortController()
-      running.set(conversationId, controller)
+      const controller = startRun(conversationId)
       // 发送消息
       try {
         await sendMessage({
@@ -55,7 +40,7 @@ export default function registerAgentIpc(ipcMain: Electron.IpcMain): void {
         })
         return { status: 'sent' }
       } finally {
-        running.delete(conversationId)
+        finishRun(conversationId)
       }
     }
   )
@@ -65,6 +50,6 @@ export default function registerAgentIpc(ipcMain: Electron.IpcMain): void {
     if (typeof conversationId !== 'string') {
       throw new Error('agent.abort: conversationId 必须是字符串')
     }
-    running.get(conversationId)?.abort()
+    abortRun(conversationId)
   })
 }
