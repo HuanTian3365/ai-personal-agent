@@ -1,16 +1,17 @@
 /**
- * 解析 loop 的流式输出。
+ * 消息内容提取 | 从LangChain消息里取出正文与思考
  *
- * LangGraph 的 messages 流每轮推来一个 chunk：正文在 content 里，
- * 思考被 provider 塞在 additional_kwargs.reasoning_content 里。
- * 这两个函数各抠一样。
+ * 调用方:loop(流式chunk与工具结果)historyMessage(历史投影)title(标题文本)test(自检)
+ * 所以这里不假设chunk形态 | 只要对象带对应字段就能用
+ * 两个函数都只返回string|取不到就是空串,从不抛错
  */
 
 /**
- * 取正文增量。
+ * 取正文
  *
- * content 可能是字符串，也可能是 block 数组——OpenAI 兼容接口两种形态都会出现，
- * 取决于模型返回的是纯文本还是多段内容。
+ * content有两种形态:纯文本给string,多段内容给block数组(OpenAI兼容接口两种都会出现)
+ * 数组里只认type:'text'的block,其他类型(image_url工具片段等)一律跳过
+ * 多段之间用\n拼接,取不到返回空串
  */
 export function parseContent(content: unknown): string {
   if (typeof content === 'string') return content
@@ -33,10 +34,11 @@ export function parseContent(content: unknown): string {
 }
 
 /**
- * 取思考增量。
+ * 取思考
  *
- * glm / deepseek 这类模型把思考放在 additional_kwargs.reasoning_content，
- * 不在 content 里——只读 content 会把它整段丢掉（见 docs/待实现/05.BUG）。
+ * glm|deepseek这类模型把思考放在additional_kwargs.reasoning_content,不在content里
+ * 只读content会把整段思考丢掉(踩过,见docs/待实现/05.BUG)
+ * 参数不要求BaseMessage|任何带additional_kwargs的对象都能用
  */
 export function parseReasoning(chunk: { additional_kwargs?: Record<string, unknown> }): string {
   const value = chunk.additional_kwargs?.['reasoning_content']

@@ -9,7 +9,6 @@ import type { AgentEvent } from '@shared/types/agentEvent'
 import { init, initBlockState } from './init'
 import type { BlockState, InitResult } from './init'
 import createEmitter from './emitter'
-import { debugContent } from '@main/utils/debug'
 
 interface Props {
   /** 会话ID */
@@ -256,7 +255,6 @@ export async function sendMessage({
 
       // 遍历消息列表
       for (const block of blocks) {
-        console.log(block.type, block.constructor.name, block.id)
         /**
          * block是一条消息 | 可能是AIMessage / AIMessageChunk / ToolMessage / HumanMessage / RemoveMessage
          * 这里按消息类型(type)分派:现在做 记savedBlocks | 收尾正在流的调用 | 发工具start/args/end
@@ -279,7 +277,6 @@ export async function sendMessage({
     function emeToolAction(block: BaseMessage): void {
       // 获取模型要调用的工具
       const toolCalls = (block as AIMessage).tool_calls ?? []
-      debugContent(toolCalls)
       // 模型决定调工具=这次模型调用已经说完,正文/思考消息先收尾
       if (toolCalls.length > 0) {
         closeBlock()

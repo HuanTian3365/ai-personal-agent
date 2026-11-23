@@ -1,5 +1,5 @@
 import { HumanMessage, SystemMessage } from '@langchain/core/messages'
-import { getModel } from '@core/llm/model'
+import { getBaseModel } from '@core/llm/model'
 import { parseContent } from '@core/message/parseStream'
 // 只依赖 main 的仓储层，不走 `@main`（门面）：门面会拉起 mount → ipc/*，
 // 而 ipc 又反过来 import core/export，绕回去就是循环依赖。
@@ -32,7 +32,7 @@ export async function getConversationTitle(
   if (!isFirstTurn) return
   // 首次对话,尝试生成标题
   try {
-    const model = await getModel()
+    const model = await getBaseModel()
     const res = await model.invoke([
       new SystemMessage(SYSTEM),
       new HumanMessage(`<user_message>\n${message.content}\n</user_message>`)
