@@ -1,6 +1,7 @@
 import { ChatGraph, getChatGraph, toRunnableConfig } from '@core/graph/chat'
 import buildHumanMessage from '@core/message/buildHumanMessage'
 import { LangGraphRunnableConfig } from '@langchain/langgraph'
+import type { MessageUsage } from '@shared/types/message'
 import type { MessageEventSend } from '@shared/types/messageService'
 import { BaseMessage, HumanMessage } from 'langchain'
 
@@ -14,7 +15,7 @@ interface InitProps {
   /** 是否中断 */
   signal?: AbortSignal
 }
-interface InitResult {
+export interface InitResult {
   /** 模型实例 */
   model: ChatGraph
   /** 本轮运行时配置 */
@@ -29,7 +30,7 @@ interface InitResult {
 /**
  * 初始化函数,这里负责把loop需要的参数一次性提供出来,这里不做逻辑处理,只负责产出数据
  */
-export default async function init({
+export async function init({
   conversationId,
   signal,
   message,
@@ -52,5 +53,30 @@ export default async function init({
     isAborted,
     historyMessage,
     userMessage
+  }
+}
+
+export interface BlockState {
+  /** 当前消息id */
+  id: string | undefined
+  /** 当前消息用量 */
+  usage: MessageUsage | undefined
+  /** 当前消息是否正在思考 */
+  isReasoning: boolean
+  /** 当前消息是否正在回复 */
+  isAssistant: boolean
+  /** 正在思考的内容 */
+  reasoning: string
+  /** 正在回复的文本 */
+  replying: string
+}
+export function initBlockState(): BlockState {
+  return {
+    id: undefined,
+    usage: undefined,
+    isReasoning: false,
+    isAssistant: false,
+    reasoning: '',
+    replying: ''
   }
 }
