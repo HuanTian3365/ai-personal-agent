@@ -5,7 +5,7 @@
  * 只用 node:assert，不引入测试框架。断言失败直接抛错，进程退出码非 0。
  */
 import assert from 'node:assert/strict'
-import { parseContent, parseReasoning } from '../utils/parseStream'
+import { parseContent, parseReasoning } from '../message/parseStream'
 
 /** 打印一条通过的检查项 */
 function ok(name: string): void {

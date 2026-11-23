@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { AIMessage } from '@langchain/core/messages'
 import type { BaseMessage, ToolMessage } from '@langchain/core/messages'
-import { parseContent, parseReasoning } from '@core/utils/parseStream'
+import { parseContent, parseReasoning } from '@core/message/parseStream'
 import { createDebugLog } from '@core/utils/log'
 import { getConversationTitle } from './title'
 import type { MessageEventSend } from '@shared/types/messageService'
