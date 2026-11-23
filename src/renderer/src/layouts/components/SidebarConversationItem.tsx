@@ -11,6 +11,7 @@ export default function SidebarConversationItem({ conversation }: Props): React.
   return (
     <SidebarMenuSubButton
       className="[&.active]:bg-sidebar-accent [&.active]:text-sidebar-accent-foreground"
+      title={conversation.title}
       render={<NavLink to={'/chat/' + conversation.id} end />}
     >
       <span className="truncate">{conversation.title}</span>

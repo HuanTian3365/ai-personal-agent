@@ -5,7 +5,12 @@ export default function ChatHeader({ title }: { title: string }): React.JSX.Elem
   const params = useParams()
   return (
     <div>
-      <p className="px-2 text-base font-bold">{title}</p>
+      <p
+        className="px-2 text-base font-bold text-ellipsis overflow-hidden text-nowrap "
+        title={title}
+      >
+        {title}
+      </p>
       <Tabs defaultValue="account">
         <TabsList variant="line">
           <TabsTrigger value="account">对话</TabsTrigger>
