@@ -14,48 +14,34 @@ import {
   InputGroupAddon,
   InputGroupButton
 } from '@renderer/components/ui/input-group'
-import { MessageEventSend } from '@shared/types/newMessageService'
+import type { MessageEventSend } from '@shared/types/messageService'
 import { ChevronDownIcon, ArrowUpIcon, Square } from 'lucide-react'
 import { useState } from 'react'
 interface Props {
-  /** 发送状态 true:发送中 false:等待输入 */
+  /** 生成状态 true:她正在回复 false:等待输入 */
   isSending: boolean
   onSend: (message: MessageEventSend) => Promise<boolean>
-  onQueue: (value: string) => void
   onAbort: () => void
 }
 
-export default function InputBox({
-  isSending,
-  onSend,
-  onQueue,
-  onAbort
-}: Props): React.JSX.Element {
+export default function InputBox({ isSending, onSend, onAbort }: Props): React.JSX.Element {
   /** 用户输入内容 */
   const [text, setText] = useState('')
   /** 是否有输入 */
   const hasInput = text.trim().length > 0
-  /** 点击行为 */
+  /** 点击行为：等待输入时是发送，生成中一律是停止 */
   async function handleAction(): Promise<void> {
-    // 未发送->发送
-    if (!isSending) {
-      const pending = text
-      setText('')
-      const sent = await onSend({
-        content: pending
-      })
-      // 没发出去就把原文放回,用户已重新输入则不覆盖
-      if (!sent) setText((current) => (current === '' ? pending : current))
-    }
-    // 发送中,且输入框有内容->排队
-    else if (text.length > 0) {
-      onQueue(text)
-      setText('')
-    }
-    // 发送中,且输入框没内容->中断
-    else {
+    // 生成中：按钮就是停止，输入框里的内容原样留着（排队还没做）
+    if (isSending) {
       onAbort()
+      return
     }
+    const pending = text
+    if (pending.trim() === '') return
+    setText('')
+    const sent = await onSend({ content: pending })
+    // 没发出去就把原文放回,用户已重新输入则不覆盖
+    if (!sent) setText((current) => (current === '' ? pending : current))
   }
 
   /**
@@ -76,6 +62,8 @@ export default function InputBox({
             // 回车发送、Shift+Enter 换行。isComposing 是输入法组字中的回车（选词），不能当发送；
             // 生成中不接回车：那时按钮是「停止」，敲个回车就中断太容易误触
             if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+              // 生成中不接回车：那时回车等于中断，太容易误触
+              if (isSending) return
               e.preventDefault()
               void handleAction()
             }
@@ -136,7 +124,7 @@ export default function InputBox({
             variant="default"
             className="ml-auto rounded-full"
           >
-            {!isSending || hasInput ? <ArrowUpIcon /> : <Square />}
+            {isSending ? <Square /> : <ArrowUpIcon />}
           </Button>
         </InputGroupAddon>
       </InputGroup>

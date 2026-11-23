@@ -1,4 +1,4 @@
-import { MSystem } from '@shared/types/newMessages'
+import type { MSystem } from '@shared/types/message'
 import { Card } from '@renderer/components/ui/card'
 
 interface Props {

@@ -1,5 +1,5 @@
-import type { Conversation, Group, Workspace } from '@shared/types/conversationDefinition'
-import type { CreateGroupInput } from '@shared/types/conversationRealize'
+import type { Conversation, Group, Workspace } from '@shared/types/conversation'
+import type { CreateGroupInput } from '@shared/types/conversationService'
 
 /**
  * 存储层唯一对外契约。

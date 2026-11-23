@@ -9,7 +9,7 @@ import {
   TraceTitle,
   TraceCollapsibleContent
 } from '@renderer/components/ui/trace'
-import { MReasoning } from '@shared/types/newMessages'
+import type { MReasoning } from '@shared/types/message'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 

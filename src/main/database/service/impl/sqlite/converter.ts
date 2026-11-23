@@ -1,4 +1,4 @@
-import type { Conversation, Group, Workspace } from '@shared/types/conversationDefinition'
+import type { Conversation, Group, Workspace } from '@shared/types/conversation'
 
 /** 数据库行是 unknown 系类型，统一别名后逐字段断言 */
 export type Row = Record<string, unknown>

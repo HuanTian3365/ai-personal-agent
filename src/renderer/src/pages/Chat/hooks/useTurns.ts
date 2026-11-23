@@ -1,8 +1,8 @@
 import { agentApi, conversationApi } from '@renderer/lib/ipc'
 import { useEffect, useRef, useState } from 'react'
-import type { ContentBlock, TurnMessage } from '@shared/types/newMessages'
-import { MessageEventSend } from '@shared/types/newMessageService'
-import { AgentEvent } from '@shared/types/newEvent'
+import type { ContentBlock, TurnMessage } from '@shared/types/message'
+import type { MessageEventSend } from '@shared/types/messageService'
+import type { AgentEvent } from '@shared/types/agentEvent'
 
 export interface UseTurnsResult {
   /** 当前对话的历史轮 */
@@ -24,7 +24,7 @@ export interface UseTurnsResult {
 }
 
 /**
- * 只负责「读历史轮」。
+ * 只负责[读历史轮]
  *
  * 发送与流式那套还没接到轮结构上，这里不做——等发送链路改造时再补。
  */
@@ -143,13 +143,14 @@ function turnEventHandler(
   /** 接收到的事件 */
   event: AgentEvent
 ): TurnMessage[] {
-  console.log(event)
+  console.log('[TurnEvent]:', event)
   switch (event.type) {
     case 'turn-start': {
+      // 事件给出的轮是否在本地
       const at = turns.findIndex((turn) => turn.id === event.turn.id)
-      // 首次见到：直接追加（新的一轮）
+      // 首次见到:直接追加
       if (at === -1) return [...turns, event.turn]
-      // 已经存在（历史里已拉回来 / 快照重复投递）：只把它标成正在跑，别动已有的 items
+      // 已经存在(历史里已拉回来|快照重复投递),只把它标成正在跑,别动已有的items
       return turns.map((turn, index) => (index === at ? { ...turn, status: 'running' } : turn))
     }
     case 'turn-end':
@@ -157,7 +158,13 @@ function turnEventHandler(
         ...turn,
         status: event.status,
         usage: event.usage ?? turn.usage,
-        endTime: event.endTime ?? Date.now()
+        endTime: event.endTime ?? Date.now(),
+        // 这一轮结束了,还在running的工具块说明没等到结果(比如中途被中断)
+        items: turn.items.map((block) =>
+          block.type === 'tool' && block.status === 'running'
+            ? { ...block, status: 'error' }
+            : block
+        )
       }))
 
     case 'block-add':
@@ -187,7 +194,7 @@ function turnEventHandler(
 
     case 'assistant-start':
       return patchTurn(turns, event.turnId, (turn) => {
-        // 同一 blockId 的思考块并进助手块
+        // 同一blockId的思考块并进助手块
         const at = turn.items.findIndex((b) => b.id === event.blockId)
         const hit = at === -1 ? undefined : turn.items[at]
         if (hit?.type === 'reasoning') {
@@ -209,17 +216,49 @@ function turnEventHandler(
       )
 
     case 'assistant-end':
-      // MAssistant 没有状态字段，这里只把用量记到轮上
+      // MAssistant没有状态字段,这里只把用量记到轮上
       return patchTurn(turns, event.turnId, (turn) => ({
         ...turn,
         usage: event.usage ?? turn.usage
       }))
+
+    case 'tool-start':
+      return patchTurn(turns, event.turnId, (turn) => ({
+        ...turn,
+        items: [
+          ...turn.items,
+          {
+            type: 'tool',
+            id: event.blockId,
+            name: event.name,
+            args: null,
+            result: null,
+            status: 'running'
+          }
+        ]
+      }))
+
+    case 'tool-args':
+      return patchBlock(turns, event.turnId, event.blockId, (block) =>
+        block.type === 'tool' ? { ...block, args: event.args } : block
+      )
+
+    case 'tool-end':
+      return patchBlock(turns, event.turnId, event.blockId, (block) =>
+        block.type === 'tool' ? { ...block, status: event.status, result: event.result } : block
+      )
 
     default:
       return turns
   }
 }
 
+/**
+ * 按轮ID改一轮
+ *
+ * 命中那一轮才执行fn 其余原样返回 | 未命中直接返回原数组 引用不变
+ * 同引用setState会被React跳过 所以事件乱序或历史还没拉回来时不会白跑一次渲染
+ */
 function patchTurn(
   turns: TurnMessage[],
   turnId: string,
@@ -230,6 +269,13 @@ function patchTurn(
   return turns.map((turn, index) => (index === at ? fn(turn) : turn))
 }
 
+/**
+ * 按「轮ID + 块ID」改一块
+ *
+ * patchTurn再套一层:进到轮里按块ID找 items命中才执行fn
+ * fn内要按block.type守卫 类型不符就原样返回 避免往别的块上塞字段
+ * 注意:块未命中时这一轮仍会被重建(引用变 内容不变) 只多一次无意义的渲染
+ */
 function patchBlock(
   turns: TurnMessage[],
   turnId: string,

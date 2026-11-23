@@ -6,14 +6,13 @@ import InputBox from './components/InputBox'
 import InputQueue from './components/InputQueue'
 
 /**
- * 对话页：现在只做「读历史并回显」。
+ * 对话页：读历史 + 发送 + 流式。
  *
- * 发送、流式、排队、插入那套逻辑整体下掉了（原件在 `pages/ChatBak`），
- * 等发送链路改成轮结构再接回来。
+ * 排队、插入还没做（见 docs/待实现/03.TODO-发起-消息排队.md）。
  */
 export default function ChatIndex(): React.JSX.Element {
   const { conversationId } = useParams<{ conversationId: string }>()
-  const { turns, title, send, abort } = useTurns(conversationId ?? null)
+  const { turns, title, send, abort, isReplying } = useTurns(conversationId ?? null)
 
   return (
     <div className="w-full h-screen flex flex-col overflow-hidden">
@@ -28,7 +27,7 @@ export default function ChatIndex(): React.JSX.Element {
             {/* 排队框 */}
             <InputQueue />
             {/* 输入框 */}
-            <InputBox isSending={false} onSend={send} onQueue={() => {}} onAbort={abort} />
+            <InputBox isSending={isReplying} onSend={send} onAbort={abort} />
           </div>
         </TurnList>
       </div>

@@ -1,8 +1,8 @@
 import { ipcRenderer } from 'electron'
 import { IPC } from '@shared/ipc'
-import type { Conversation, Group, Workspace } from '@shared/types/conversationDefinition'
-import type { CreateGroupInput } from '@shared/types/conversationRealize'
-import { TurnMessage } from '@shared/types/newMessages'
+import type { Conversation, Group, Workspace } from '@shared/types/conversation'
+import type { CreateGroupInput } from '@shared/types/conversationService'
+import type { TurnMessage } from '@shared/types/message'
 
 /**
  * 会话域的三个子域，对应列表三层：工作区 → 分组 → 对话。

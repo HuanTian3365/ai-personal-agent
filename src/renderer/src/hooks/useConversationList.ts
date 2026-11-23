@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { Conversation, Group, Workspace } from '@shared/types/conversationDefinition'
+import type { Conversation, Group, Workspace } from '@shared/types/conversation'
 import { agentApi, conversationApi } from '@renderer/lib/ipc'
 import { useNavigate } from 'react-router'
-import type { CreateGroupInput } from '@shared/types/conversationRealize'
+import type { CreateGroupInput } from '@shared/types/conversationService'
 
 /**
  * 侧栏要用的三种形状（下面两个接口 + 这个返回类型）与文件末尾的 buildWorkspaceSections 是一套，

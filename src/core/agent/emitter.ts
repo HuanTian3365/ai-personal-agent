@@ -1,8 +1,26 @@
-import { AETurnEnd, AgentEvent } from '@shared/types/newEvent'
-import { ContentBlock, MessageUsage } from '@shared/types/newMessages'
-import { MessageEventSend } from '@shared/types/newMessageService'
+import type { AETurnEnd, AgentEvent } from '@shared/types/agentEvent'
+import type { ContentBlock, MessageUsage } from '@shared/types/message'
+import type { MessageEventSend } from '@shared/types/messageService'
 
-export default function createEmitter(emit: (event: AgentEvent) => void, conversationId: string) {
+interface Result {
+  turnStart: (turnId: string, message: MessageEventSend) => void
+  turnEnd: (turnId: string, status: AETurnEnd['status'], usage?: AETurnEnd['usage']) => void
+  blockAdd: (turnId: string, block: ContentBlock) => void
+  reasoningStart: (turnId: string, blockId: string) => void
+  reasoningDelta: (turnId: string, blockId: string, text: string) => void
+  reasoningEnd: (turnId: string, blockId: string) => void
+  assistantStart: (turnId: string, blockId: string) => void
+  assistantDelta: (turnId: string, blockId: string, text: string) => void
+  assistantEnd: (turnId: string, blockId: string, usage?: MessageUsage) => void
+  toolStart: (turnId: string, blockId: string, name: string) => void
+  toolArgs: (turnId: string, blockId: string, args: Record<string, unknown> | null) => void
+  toolEnd: (turnId: string, blockId: string, status: 'done' | 'error', result: string) => void
+}
+
+export default function createEmitter(
+  emit: (event: AgentEvent) => void,
+  conversationId: string
+): Result {
   const emitter = {
     /** 启动轮 */
     turnStart: (turnId: string, message: MessageEventSend) =>
@@ -60,7 +78,17 @@ export default function createEmitter(emit: (event: AgentEvent) => void, convers
       emit({ type: 'assistant-delta', conversationId, turnId, blockId, text }),
     /** 回复结束 */
     assistantEnd: (turnId: string, blockId: string, usage?: MessageUsage) =>
-      emit({ type: 'assistant-end', conversationId, turnId, blockId, usage })
+      emit({ type: 'assistant-end', conversationId, turnId, blockId, usage }),
+
+    /** 开始调用工具 */
+    toolStart: (turnId: string, blockId: string, name: string) =>
+      emit({ type: 'tool-start', conversationId, turnId, blockId, name }),
+    /** 工具传参 */
+    toolArgs: (turnId: string, blockId: string, args: Record<string, unknown> | null) =>
+      emit({ type: 'tool-args', conversationId, turnId, blockId, args }),
+    /** 工具结果 */
+    toolEnd: (turnId: string, blockId: string, status: 'done' | 'error', result: string) =>
+      emit({ type: 'tool-end', conversationId, turnId, blockId, status, result })
   }
 
   return emitter

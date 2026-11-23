@@ -9,7 +9,7 @@ import {
   TraceTitle,
   TraceCollapsibleContent
 } from '@renderer/components/ui/trace'
-import { MTool } from '@shared/types/newMessages'
+import type { MTool } from '@shared/types/message'
 
 interface Props {
   context: MTool

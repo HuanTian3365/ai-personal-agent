@@ -1,4 +1,4 @@
-import { MAssistant } from '@shared/types/newMessages'
+import type { MAssistant } from '@shared/types/message'
 import MessageBlockReasoning from './MessageBlockReasoning'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
