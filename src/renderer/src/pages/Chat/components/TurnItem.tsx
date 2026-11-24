@@ -5,7 +5,7 @@ import MessageBlockReasoning from './MessageBlockReasoning'
 import MessageBlockTool from './MessageBlockTool'
 import MessageBlockUnknown from './MessageBlockUnknown'
 import MessageBlockError from './MessageBlockError'
-import MessageBlockSystem from './MessageBlockSystem'
+import MessageBlockTips from './MessageBlockTips'
 import TurnStatus from './TurnStatus'
 
 interface Props {
@@ -53,9 +53,9 @@ export default function TurnItem({ turn, isLast }: Props): React.JSX.Element {
       /** 工具调用消息 */
       case 'tool':
         return <MessageBlockTool context={block} />
-      /** 系统消息 */
-      case 'system':
-        return <MessageBlockSystem context={block} />
+      /** 提示消息 */
+      case 'tips':
+        return <MessageBlockTips context={block} />
       /** 错误消息 */
       case 'error':
         return <MessageBlockError context={block} />

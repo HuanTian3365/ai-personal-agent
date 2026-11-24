@@ -12,6 +12,7 @@ import { z } from 'zod'
 /** 意图字段|可选,不填也能正常调用 */
 const INTENT = z
   .string()
+  .optional()
   .describe('一句话说明你为什么要调用这个工具、想达成什么。不要复述工具名，说原因')
 
 /** 给工具注入intent参数|返回新工具,原工具不动 */

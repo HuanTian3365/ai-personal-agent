@@ -1,5 +1,5 @@
 /** 消息格式 */
-export type ContentBlock = MUser | MAssistant | MReasoning | MTool | MError | MUnknown | MSystem
+export type ContentBlock = MUser | MAssistant | MReasoning | MTool | MError | MUnknown | MTips
 
 /**
  * 轮对话信息
@@ -120,10 +120,14 @@ export interface MUnknown {
   raw: unknown
 }
 
-/** 系统消息内容 */
-export interface MSystem {
-  type: 'system'
+/** 提示消息内容
+ *
+ * 不是协议层的 system 消息 | 是我们自己发出的状态提示(中断.插入等)
+ * 发给模型时走 user 通道 不占 system 层级 避免覆盖人格
+ */
+export interface MTips {
+  type: 'tips'
   id: string
-  /** 系统消息内容 */
+  /** 提示内容 */
   content: string
 }

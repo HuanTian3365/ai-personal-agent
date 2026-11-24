@@ -134,9 +134,11 @@ function parseLangChainMessage(messages: BaseMessage[]): TurnMessage[] {
         return
       }
 
-      /** ====================  系统内容  ==================== */
-      if (msg.type === 'system') {
-        insertTurn({ id, type: 'system', content: parseContent(msg.content) }, ts)
+      /** ====================  提示内容  ==================== */
+      // generic(ChatMessage) 是本项目 tips 的主载体 靠 type 判定 不打额外标记
+      // system 是协议层兜底 万一 state 里出现 SystemMessage 也投影成 tips
+      if (msg.type === 'generic' || msg.type === 'system') {
+        insertTurn({ id, type: 'tips', content: parseContent(msg.content) }, ts)
         return
       }
 
