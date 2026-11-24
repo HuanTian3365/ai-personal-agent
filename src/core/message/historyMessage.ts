@@ -112,8 +112,6 @@ function parseLangChainMessage(messages: BaseMessage[]): TurnMessage[] {
               id: call.id || `tool-${index}-${callIndex}`,
               type: 'tool',
               name: call.name,
-              // 模型不提供这次调用的说明，先留空
-              description: '',
               args: (call.args ?? null) as Record<string, unknown> | null,
               result: null,
               // 结果还没回填,先记成正在跑;ToolMessage 到了再改成 done / error

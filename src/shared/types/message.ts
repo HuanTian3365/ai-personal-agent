@@ -93,8 +93,6 @@ export interface MTool {
   id: string
   /** 工具名 */
   name: string
-  /** agent描述,让他简短说明他要干什么 */
-  description?: string
   /** 调用参数(模型给的原始对象) */
   args: Record<string, unknown> | null
   /** 工具返回的文本,还没跑完是null */
