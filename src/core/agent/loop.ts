@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { AIMessage } from '@langchain/core/messages'
-import type { BaseMessage, ToolMessage } from '@langchain/core/messages'
+import { ToolMessage } from '@langchain/core/messages'
+import type { BaseMessage } from '@langchain/core/messages'
 import { parseContent, parseReasoning } from '@core/message/parseStream'
 import { getConversationTitle } from './title'
 import type { MessageEventSend } from '@shared/types/messageService'
@@ -48,8 +49,10 @@ export async function sendMessage({
   // reasoning/replying=已流出内容 服务于emitAborted回填 只在换调用时清
   let blockState: BlockState = initBlockState()
 
-  /** 当前正在调用的工具id */
+  /** 当前正在调用ToolMessage的id(发起调用) */
   const toolArgsSent = new Set<string>()
+  /** 当前已经收到ToolMessage的id(调用完成) */
+  const toolResults = new Set<string>()
   /** 已经落到checkpoint的消息id */
   const savedBlocks = new Set<string>()
 
@@ -133,9 +136,27 @@ export async function sendMessage({
     })
     // 中断标记是业务字段 走hy_custom 跟消息一起落进hy_message
     aborted.hyCustom = { aborted: true }
+
+    // 已经发起,但没等到结果的工具调用各补一条error的ToolMessage
+    // 否则checkpoint里会留下孤立的tool_calls下一轮请求会被严格实现的provider拒绝
+    const orphans: ToolMessage[] = []
+    for (const callId of toolArgsSent) {
+      if (toolResults.has(callId)) continue
+      orphans.push(
+        new ToolMessage({
+          tool_call_id: callId,
+          content: 'System: 工具调用被中断',
+          status: 'error'
+        })
+      )
+    }
+
     try {
-      // 把中断信息写入到消息表
-      await model.updateState({ configurable: loopConfig.configurable }, { messages: [aborted] })
+      // 顺序必须是 先补齐的 ToolMessage 再 aborted 标记 反过来就对不上了
+      await model.updateState(
+        { configurable: loopConfig.configurable },
+        { messages: [...orphans, aborted] }
+      )
     } catch (err) {
       console.error('[loop] 写入 aborted 消息失败:', err instanceof Error ? err.message : err)
     }
@@ -298,9 +319,12 @@ export async function sendMessage({
       // 工具跑完发送结束事件
       if (block.type === 'tool') {
         const toolMessage = block as ToolMessage
+        const callId = toolMessage.tool_call_id ?? ''
+        // 记录这个工具已经运行完成
+        if (callId !== '') toolResults.add(callId)
         emitter.toolEnd(
           messageId,
-          toolMessage.tool_call_id ?? '',
+          callId,
           toolMessage.status === 'error' ? 'error' : 'done',
           parseContent(toolMessage.content)
         )

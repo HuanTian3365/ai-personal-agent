@@ -19,7 +19,6 @@ interface Props {
  * 一轮只占一个整体，内部按时间顺序排，不拆成一堆独立消息。
  */
 export default function TurnItem({ turn, isLast }: Props): React.JSX.Element {
-  console.log('TurnItem', turn.usage)
   return (
     <div className="flex flex-col gap-3">
       {/* 用户消息 */}
