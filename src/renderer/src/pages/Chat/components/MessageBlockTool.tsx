@@ -10,14 +10,16 @@ import {
   TraceCollapsibleContent
 } from '@renderer/components/ui/trace'
 import { TOOL_INTENT_KEY } from '@shared/types/constant'
-import type { MTool } from '@shared/types/message'
+import type { MTool, TurnMessage } from '@shared/types/message'
 
 interface Props {
   context: MTool
+  /** 所在轮的状态,轮已结束而工具还在跑,说明没等到结果 */
+  turnStatus: TurnMessage['status']
 }
 
-/** 一次工具调用：默认折叠，标题是「工具名(参数)」，点开看返回内容 */
-export default function MessageBlockTool({ context }: Props): React.JSX.Element {
+/** 一次工具调用:默认折叠,标题是:工具名(参数),点开看返回内容 */
+export default function MessageBlockTool({ context, turnStatus }: Props): React.JSX.Element {
   // 调用原因是工具参数的一部分,直接在args里取,没填就是空串
   const rawIntent = context.args?.[TOOL_INTENT_KEY]
   const intent = typeof rawIntent === 'string' ? rawIntent : ''
@@ -29,8 +31,13 @@ export default function MessageBlockTool({ context }: Props): React.JSX.Element 
   const hasArgs = Object.keys(visibleArgs).length > 0
   const argsContent = JSON.stringify(visibleArgs, null, 2)
 
+  // 轮已经结束了,工具还在转,说明没等到结果(中断或进程断了)
+  const stale = turnStatus !== 'running' && context.status === 'running'
+
   /** 获取工具运行状态 */
   function getStatus(): 'running' | 'error' | undefined {
+    // 没等到结果的按失败呈现 但不改数据 数据里它一直是 running
+    if (stale) return 'error'
     if (context.status === 'running') return 'running'
     else if (context.status === 'error') return 'error'
     else return undefined
@@ -46,6 +53,7 @@ export default function MessageBlockTool({ context }: Props): React.JSX.Element 
             <TraceTitle>
               调用工具 - {context.name}
               {intent && ' : ' + intent}
+              {stale && ' (未完成)'}
             </TraceTitle>
           </TraceLine>
         </TraceCollapsibleTrigger>

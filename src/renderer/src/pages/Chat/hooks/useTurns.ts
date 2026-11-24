@@ -211,12 +211,9 @@ function turnEventHandler(
         status: event.status,
         usage: event.usage ?? turn.usage,
         endTime: event.endTime ?? Date.now(),
-        // 这一轮结束了,还在running的工具块说明没等到结果(比如中途被中断)
-        // 思考块同理兜一层 | 思考与正文交错时end事件可能没发出 不能让界面一直转圈
+        // 思考块兜一层 | 思考与正文交错时end事件可能没发出 不能让界面一直转圈
+        // 工具块不在这里收尾:没等到结果就保持running 由工具块按轮状态显示未完成
         items: turn.items.map((block) => {
-          if (block.type === 'tool' && block.status === 'running') {
-            return { ...block, status: 'error' }
-          }
           if (block.type === 'reasoning' && block.status === 'running') {
             return { ...block, status: 'done' }
           }

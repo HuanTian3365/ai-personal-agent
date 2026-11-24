@@ -117,7 +117,8 @@ function parseLangChainMessage(messages: BaseMessage[]): TurnMessage[] {
               name: call.name,
               args: (call.args ?? null) as Record<string, unknown> | null,
               result: null,
-              // 结果还没回填,先记成正在跑;ToolMessage 到了再改成 done / error
+              // 结果还没回填 先记成正在跑 | ToolMessage 到了再改成 done / error
+              // 一直没等到就保持 running 不下结论:可能还在跑 也可能断了 这一层判不出来
               status: 'running'
             } as MTool,
             ts
@@ -154,24 +155,7 @@ function parseLangChainMessage(messages: BaseMessage[]): TurnMessage[] {
     }
   })
 
-  // 最后一轮也要收尾
-  finalizeCurrentTurn()
-
   return result
-
-  /**
-   * 结束当前轮
-   *
-   * 没等到结果的工具块说明工具没跑完就断了(比如中断),标成 error,
-   * 别让历史里显示成「已完成、结果为空」
-   */
-  function finalizeCurrentTurn(): void {
-    const turn = currentTurn()
-    if (turn === undefined) return
-    for (const item of turn.items) {
-      if (item.type === 'tool' && item.status === 'running') item.status = 'error'
-    }
-  }
 
   /**
    * 根据ID寻找工具块,用于工具结果回填
@@ -195,8 +179,6 @@ function parseLangChainMessage(messages: BaseMessage[]): TurnMessage[] {
       result.length === 0 ||
       (content.type === 'user' && content.expandInfo?.insertFlag !== true)
     ) {
-      // 开新轮之前先把上一轮收尾
-      finalizeCurrentTurn()
       result.push({
         id: content.id,
         user: null,

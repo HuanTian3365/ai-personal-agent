@@ -52,7 +52,7 @@ export default function TurnItem({ turn, isLast }: Props): React.JSX.Element {
         return <MessageBlockReasoning context={block} />
       /** 工具调用消息 */
       case 'tool':
-        return <MessageBlockTool context={block} />
+        return <MessageBlockTool context={block} turnStatus={turn.status} />
       /** 提示消息 */
       case 'tips':
         return <MessageBlockTips context={block} />
