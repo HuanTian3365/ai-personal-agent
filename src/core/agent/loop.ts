@@ -145,12 +145,11 @@ export async function sendMessage({
       orphans.push(
         new ToolMessage({
           tool_call_id: callId,
-          content: 'System: 工具调用被中断',
+          content: 'System:用户中断了会话',
           status: 'error'
         })
       )
     }
-
     try {
       // 顺序必须是 先补齐的 ToolMessage 再 aborted 标记 反过来就对不上了
       await model.updateState(
