@@ -1,5 +1,5 @@
 import type { ContentBlock, MessageUsage, TurnMessage } from '@shared/types/message'
-/** Agent事件 */
+/** Agent事件本体 | core产出的纯数据 不带任何传输层字段 */
 export type AgentEvent =
   | AETurnStart
   | AETurnEnd
@@ -15,6 +15,19 @@ export type AgentEvent =
   | AEBlockAdd
   | AEQueue
   | AETitle
+
+/**
+ * 推送信封
+ *
+ * seq 由main在转发前注入 全局单调递增 core不知道它的存在
+ * 切回会话时渲染层拿它区分「快照已包含」与「快照之后才到」的事件
+ */
+export interface AgentEventEnvelope {
+  /** 推送序号 */
+  seq: number
+  /** 事件本体 */
+  event: AgentEvent
+}
 
 /** ====================  事件实现  ==================== */
 // 公共实现

@@ -2,7 +2,7 @@ import { agentApi, conversationApi } from '@renderer/lib/ipc'
 import { useEffect, useRef, useState } from 'react'
 import type { ContentBlock, MReasoning, TurnMessage } from '@shared/types/message'
 import type { MessageEventSend } from '@shared/types/messageService'
-import type { AgentEvent } from '@shared/types/agentEvent'
+import type { AgentEvent, AgentEventEnvelope } from '@shared/types/agentEvent'
 
 export interface UseTurnsResult {
   /** 当前对话的历史轮 */
@@ -44,6 +44,13 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
   /** 当前对话ID */
   const currentIdRef = useRef(conversationId)
 
+  /** 最后一条事件的全局序号|丢弃seq小于等于它的事件(已经重放完了) */
+  const snapSeqRef = useRef(0)
+  /** 读历史期间收到的事件,快照之后才到事件的要在快照重放完后补上 */
+  const pendingRef = useRef<AgentEventEnvelope[]>([])
+  /** 历史是否已就绪,没就绪时事件只攒不应用(此时turns还是空的) */
+  const readyRef = useRef(false)
+
   /**
    * 会话窗口监听
    *
@@ -58,6 +65,10 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
       setTurns([])
       setTitle('')
       setError(null)
+      setIsReplying(false)
+      readyRef.current = false
+      pendingRef.current = []
+      snapSeqRef.current = 0
       if (conversationId === null) {
         setIsLoading(false)
         return
@@ -66,18 +77,49 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
       setIsLoading(true)
       // 加载数据
       try {
-        const [list, info] = await Promise.all([
+        const [list, info, snap] = await Promise.all([
           // 获取消息列表
           conversationApi.listMessages(conversationId),
           // 获取会话信息
-          conversationApi.getConversation(conversationId)
+          conversationApi.getConversation(conversationId),
+          // 获取进行中那一轮的快照
+          agentApi.snapshot(conversationId)
         ])
         if (cancelled) return
+
+        /** 数据库已经落地的消息id,重放时跳过这些块的增量事件,防止重复消息 */
+        const savedBlockIds = new Set<string>()
+        // 把所有消息(除用户)的id取出来
+        for (const turn of list) {
+          for (const item of turn.items) savedBlockIds.add(item.id)
+        }
+
+        let next = list
+        // 快照不为空,重放事件
+        if (snap !== null) {
+          snapSeqRef.current = snap.events.at(-1)?.seq ?? 0
+          for (const envelope of snap.events) {
+            next = turnEventHandler(next, envelope.event, savedBlockIds)
+          }
+        }
+
+        // 补上快照之后再处理期间到达,还没来得及应用的事件
+        for (const envelope of pendingRef.current) {
+          if (envelope.seq > snapSeqRef.current) {
+            next = turnEventHandler(next, envelope.event, savedBlockIds)
+          }
+        }
+        pendingRef.current = []
+        readyRef.current = true
         // 设置消息列表和会话信息
-        setTurns(list)
+        setTurns(next)
         setTitle(info?.title ?? conversationId)
+        // 最后一轮还在跑 按钮才是「停止」
+        setIsReplying(next.at(-1)?.status === 'running')
       } catch (err) {
         if (cancelled) return
+        readyRef.current = true
+        pendingRef.current = []
         setError(err instanceof Error ? err.message : String(err))
       } finally {
         if (!cancelled) setIsLoading(false)
@@ -93,9 +135,16 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
    * 订阅来着core侧发送的AgentEvent消息
    */
   useEffect(() => {
-    const off = agentApi.onEvent((event) => {
+    const off = agentApi.onEvent(({ seq, event }) => {
       // 忽略其他会话消息
       if (event.conversationId !== conversationId) return
+      // 快照已经包含的事件直接丢,否则内容会重复追加
+      if (seq <= snapSeqRef.current) return
+      // 历史还没拉回来,先攒着,等重放完再补
+      if (!readyRef.current) {
+        pendingRef.current.push({ seq, event })
+        return
+      }
       // 将当前消息列表和事件消息交给事件处理器
       setTurns((prev) => turnEventHandler(prev, event))
       if (event.type === 'turn-start') setIsReplying(true)
@@ -135,12 +184,16 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
 }
 /**
  * 事件处理器
+ *
+ * 实时与重放共用一份逻辑 | 重放时传 savedBlockIds 跳过已经落库的块的增量
  */
 function turnEventHandler(
   /** 当前消息列表 */
   turns: TurnMessage[],
   /** 接收到的事件 */
-  event: AgentEvent
+  event: AgentEvent,
+  /** 已经落库的块ID | 这些块内容已完整 增量事件不再追加 */
+  savedBlockIds?: Set<string>
 ): TurnMessage[] {
   console.log('[TurnEvent]:', event)
   switch (event.type) {
@@ -175,6 +228,8 @@ function turnEventHandler(
       }))
 
     case 'block-add':
+      // 已经落库的块重放时别再塞一个
+      if (savedBlockIds?.has(event.block.id) === true) return turns
       return patchTurn(turns, event.turnId, (turn) => ({
         ...turn,
         items: [...turn.items, event.block]
@@ -222,6 +277,8 @@ function turnEventHandler(
       })
 
     case 'reasoning-delta':
+      // 已经落库的块内容已完整 重放时不再追加
+      if (savedBlockIds?.has(event.blockId) === true) return turns
       return patchBlock(turns, event.turnId, event.blockId, (block) => {
         if (block.type === 'reasoning') return { ...block, content: block.content + event.text }
         // 已并进助手块 追加到它的reasoning上
@@ -245,9 +302,11 @@ function turnEventHandler(
 
     case 'assistant-start':
       return patchTurn(turns, event.turnId, (turn) => {
-        // 同一blockId的思考块并进助手块
+        // 本轮回复的消息里是否已经存在这个块
         const at = turn.items.findIndex((b) => b.id === event.blockId)
         const hit = at === -1 ? undefined : turn.items[at]
+        // 这条消息的正文块已经建过了
+        if (hit?.type === 'assistant') return turn
         if (hit?.type === 'reasoning') {
           const items = turn.items.filter((_, i) => i !== at)
           return {
@@ -262,30 +321,47 @@ function turnEventHandler(
       })
 
     case 'assistant-delta':
+      // 已经落库的块内容已完整 重放时不再追加
+      if (savedBlockIds?.has(event.blockId) === true) return turns
       return patchBlock(turns, event.turnId, event.blockId, (block) =>
         block.type === 'assistant' ? { ...block, content: block.content + event.text } : block
       )
 
     case 'assistant-end':
-      return patchTurn(turns, event.turnId, (turn) => ({
-        ...turn
-      }))
+      return turns
 
     case 'tool-start':
-      return patchTurn(turns, event.turnId, (turn) => ({
-        ...turn,
-        items: [
-          ...turn.items,
-          {
-            type: 'tool',
-            id: event.blockId,
-            name: event.name,
-            args: null,
-            result: null,
-            status: 'running'
+      return patchTurn(turns, event.turnId, (turn) => {
+        const at = turn.items.findIndex((b) => b.id === event.blockId)
+        const hit = at === -1 ? undefined : turn.items[at]
+        /**
+         * 这个工具块已经在列表里了(历史投影会先给出一个)
+         * 此时把状态改回运行中就行 不能再追加一个
+         * 历史侧没有等到ToolMessage会把工具兜底成error 但事件说它还在跑
+         */
+        if (hit?.type === 'tool') {
+          return {
+            ...turn,
+            items: turn.items.map((block, index) =>
+              index === at ? { ...hit, status: 'running' } : block
+            )
           }
-        ]
-      }))
+        }
+        return {
+          ...turn,
+          items: [
+            ...turn.items,
+            {
+              type: 'tool',
+              id: event.blockId,
+              name: event.name,
+              args: null,
+              result: null,
+              status: 'running'
+            }
+          ]
+        }
+      })
 
     case 'tool-args':
       return patchBlock(turns, event.turnId, event.blockId, (block) =>

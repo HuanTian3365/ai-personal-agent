@@ -8,7 +8,7 @@
  */
 
 import type { CreateGroupInput } from '@shared/types/conversationService'
-import type { AgentEvent } from '@shared/types/agentEvent'
+import type { AgentEventEnvelope } from '@shared/types/agentEvent'
 import type { MessageEventSend } from '@shared/types/messageService'
 
 export const conversationApi = {
@@ -44,7 +44,7 @@ export const agentApi = {
   /** 中断消息 */
   abort: (conversationId: string) => window.api.agent.abort(conversationId),
   /** 监听事件 */
-  onEvent: (callback: (event: AgentEvent) => void) => window.api.agent.onEvent(callback),
+  onEvent: (callback: (payload: AgentEventEnvelope) => void) => window.api.agent.onEvent(callback),
   /** 获取对话快照 */
   snapshot: (conversationId: string) => window.api.agent.snapshot(conversationId),
   /** 把排队里的一条插入当前轮 */

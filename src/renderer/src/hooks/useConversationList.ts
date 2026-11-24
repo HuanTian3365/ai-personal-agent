@@ -100,7 +100,7 @@ export function useConversationList(): UseWorkspaceListResult {
   // 标题更新：core 在第一轮聊完后把新标题推过来。
   // 只改这一条的标题，不整个重新加载——为了一个字段重拉三张表，不划算。
   useEffect(() => {
-    const off = agentApi.onEvent((event) => {
+    const off = agentApi.onEvent(({ event }) => {
       if (event.type !== 'title') return
       setConversations((prev) =>
         prev.map((c) => (c.id === event.conversationId ? { ...c, title: event.title } : c))
