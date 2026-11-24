@@ -43,21 +43,25 @@ export function formatClock(time: number | Date, now: number | Date = Date.now()
   return `${date.getFullYear()}年${monthDay} ${clock}`
 }
 
-// 用量格式化 -> isK为true以K为单位 否则原数加千分位 | 不足1000一律用原数
-// 例: (1496,true) -> 1.5K tok | (1496,false) -> 1,496 tok | (999,true) -> 999 tok
-export function formatTokenCount(count: number, isK = false): string {
+// 用量格式化 -> convert为true时自动进位到K/M 否则原样千分位输出 | 不足1000一律用原数
+// 例: (1496,true) -> 1.5K tok | (1234567,true) -> 1.2M tok | (1496,false) -> 1,496 tok
+export function formatTokenCount(count: number, convert = false): string {
   const safe = Number.isFinite(count) && count > 0 ? Math.round(count) : 0
-  // 不转K或者不足1000 直接用原数
-  if (!isK || safe < 1000) return ` ${withThousands(safe)} tok`
+  // 不自动进位或者不足1000 直接用原数
+  if (!convert || safe < 1000) return ` ${withThousands(safe)} tok`
+  // 千位取整后会顶到1000K的 直接升到M 免得出现1,000K
+  if (Math.round(safe / 1000) >= 1000) return ` ${scale(safe, 1000000, 'M')} tok`
+  return ` ${scale(safe, 1000, 'K')} tok`
 
-  const k = safe / 1000
-  // 100K以下保留一位小数 再大取整 免得数字太长
-  const text = k < 100 ? k.toFixed(1).replace(/\.0$/, '') : withThousands(Math.round(k))
+  // 按单位换算 | 100以下保留一位小数 再大取整
+  function scale(value: number, unit: number, suffix: string): string {
+    const n = value / unit
+    const text = n < 100 ? n.toFixed(1).replace(/\.0$/, '') : withThousands(Math.round(n))
+    return text + suffix
+  }
 
   // 整数加千分位 | 1235 -> 1,235
   function withThousands(n: number): string {
     return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
   }
-
-  return ` ${text}K tok`
 }
