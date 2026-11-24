@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto'
 import type { ToolMessage } from '@langchain/core/messages'
 import { tool, type ToolRuntime } from '@langchain/core/tools'
 import { z } from 'zod'
-import { toolError } from './error'
+import { toolError } from '../error'
 
 /**
  * 执行 PowerShell 命令。
