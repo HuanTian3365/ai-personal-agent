@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { AIMessage } from '@langchain/core/messages'
+import { ChatMessage } from '@langchain/core/messages'
 import { ToolMessage } from '@langchain/core/messages'
 import type { BaseMessage } from '@langchain/core/messages'
 import { parseContent, parseReasoning } from '@core/message/parseStream'
@@ -150,11 +151,20 @@ export async function sendMessage({
         })
       )
     }
+    // 中断说明走 tips | ChatMessage(role:user) 不占 system 层级 不会覆盖人格
+    // 落库后跟 aborted 标记一起进 checkpoint 下一轮模型能看到 界面也投影成 tips 块
+    const tips = new ChatMessage({
+      id: randomUUID(),
+      role: 'user',
+      content: '（用户中断了上一轮对话，该条回复的内容不是完整内容）'
+    })
+    tips.hyCustom = { tipsIsHide: true }
+
     try {
-      // 顺序必须是 先补齐的 ToolMessage 再 aborted 标记 反过来就对不上了
+      // 顺序必须是 先补齐的 ToolMessage 再 aborted 标记 最后 tips 反过来就对不上了
       await model.updateState(
         { configurable: loopConfig.configurable },
-        { messages: [...orphans, aborted] }
+        { messages: [...orphans, aborted, tips] }
       )
     } catch (err) {
       console.error('[loop] 写入 aborted 消息失败:', err instanceof Error ? err.message : err)

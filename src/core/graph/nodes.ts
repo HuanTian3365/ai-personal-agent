@@ -9,7 +9,6 @@ import { HumanMessage } from '@langchain/core/messages'
 import type { LangGraphRunnableConfig } from '@langchain/langgraph'
 import { getModelWithTools } from '@core/llm/model'
 import { ChatState } from './state'
-import { parseContent } from '@core/message/parseStream'
 
 /** 一条等着插进当前轮的用户输入(界面上的「插入」) */
 export interface InsertInput {
@@ -66,21 +65,8 @@ export async function callModel(
     return message
   })
   const messages = inserts.length === 0 ? state.messages : [...state.messages, ...inserts]
-  // 中断过的消息发给模型前补一句说明 | 只改副本 不落库也不进界面
-  const tail = 'System:用户中断了本轮对话内容,所以该条消息的内容不是完整内容'
-  const forModel = messages.map((m) => {
-    if (m.hyCustom?.aborted !== true) return m
-    const copy = cloneMessage(m)
-    copy.content = `${parseContent(m.content)}\n${tail}`
-    return copy
-  })
-  const response = await model.invoke(forModel, config)
+  const response = await model.invoke(messages, config)
   // 插入的消息跟着响应一起返回 reducer会把它们按顺序追加进messages
   // 这样它们是真的落在checkpoint里 重开对话照样看得到
   return { messages: [...inserts, response] }
-}
-
-/** 克隆一条消息 | 保持原型与全部自有属性 引用断开 */
-function cloneMessage<T extends BaseMessage>(m: T): T {
-  return Object.assign(Object.create(Object.getPrototypeOf(m)), m)
 }

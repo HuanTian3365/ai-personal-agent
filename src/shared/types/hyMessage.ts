@@ -23,6 +23,8 @@ export interface HyCustom {
   aborted?: boolean
   /** 这条是插入的消息(生成中追加) */
   insertFlag?: boolean
+  /** tips 不参与界面渲染 只发给模型 */
+  tipsIsHide?: boolean
 }
 
 /** 数据库行级字段 | 挂在 message.hyField */

@@ -19,7 +19,7 @@ interface Props {
 export default function MessageBlockTips({ context }: Props): React.JSX.Element {
   return (
     <Trace>
-      <TraceCollapsible defaultOpen>
+      <TraceCollapsible>
         <TraceCollapsibleTrigger>
           <TraceLine>
             <TraceIcon>

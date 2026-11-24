@@ -27,6 +27,9 @@ function parseLangChainMessage(messages: BaseMessage[]): TurnMessage[] {
   const currentTurn = (): TurnMessage | undefined => result[result.length - 1]
 
   messages.forEach((msg, index) => {
+    // tipsIsHide 的提示只发给模型 不进界面 | 放在最前 免得它改轮结束时间
+    if (msg.hyCustom?.tipsIsHide === true) return
+    // 消息id
     const id = msg.id ?? `msg-${index}`
     // 当前消息产生时间
     const ts = msg.hyField?.createdAt ?? 0
