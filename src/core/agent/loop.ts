@@ -176,13 +176,13 @@ export async function sendMessage({
   function closeBlock(): void {
     const { id } = blockState
     if (id === undefined) return
-    // 如果有正文消息,触发assistant-end事件
+    // 思考与正文是两条线 各自收尾 不互斥
+    // 同一条消息可能思考->正文->思考 收尾时两个状态会同时为真
+    if (blockState.isReasoning) {
+      emitter.reasoningEnd(messageId, id)
+    }
     if (blockState.isAssistant) {
       emitter.assistantEnd(messageId, id)
-    }
-    // 如果有思考消息,触发reasoning-end事件
-    else if (blockState.isReasoning) {
-      emitter.reasoningEnd(messageId, id)
     }
     // 只清块自身的状态 | reasoning/replying要留给emitAborted补写 换调用时才整体替换
     blockState.id = undefined
@@ -232,9 +232,13 @@ export async function sendMessage({
 
     // 内容处理
     if (delta !== '') {
-      // 如果存在思考状态,则关闭思考状态,然后开启内容状态
+      // 正文出现即关闭思考段 | 同一条消息后面可能再思考 置回false让下一段能重新start
+      if (blockState.isReasoning) {
+        emitter.reasoningEnd(messageId, blockId)
+        blockState.isReasoning = false
+      }
+      // 如果当前为非内容状态,改成内容状态,并发起事件
       if (!blockState.isAssistant) {
-        if (blockState.isReasoning) emitter.reasoningEnd(messageId, blockId)
         emitter.assistantStart(messageId, blockId)
         blockState.isAssistant = true
       }

@@ -1,6 +1,6 @@
 import { agentApi, conversationApi } from '@renderer/lib/ipc'
 import { useEffect, useRef, useState } from 'react'
-import type { ContentBlock, TurnMessage } from '@shared/types/message'
+import type { ContentBlock, MReasoning, TurnMessage } from '@shared/types/message'
 import type { MessageEventSend } from '@shared/types/messageService'
 import type { AgentEvent } from '@shared/types/agentEvent'
 
@@ -159,11 +159,19 @@ function turnEventHandler(
         usage: event.usage ?? turn.usage,
         endTime: event.endTime ?? Date.now(),
         // 这一轮结束了,还在running的工具块说明没等到结果(比如中途被中断)
-        items: turn.items.map((block) =>
-          block.type === 'tool' && block.status === 'running'
-            ? { ...block, status: 'error' }
-            : block
-        )
+        // 思考块同理兜一层 | 思考与正文交错时end事件可能没发出 不能让界面一直转圈
+        items: turn.items.map((block) => {
+          if (block.type === 'tool' && block.status === 'running') {
+            return { ...block, status: 'error' }
+          }
+          if (block.type === 'reasoning' && block.status === 'running') {
+            return { ...block, status: 'done' }
+          }
+          if (block.type === 'assistant' && block.reasoning?.status === 'running') {
+            return { ...block, reasoning: { ...block.reasoning, status: 'done' } }
+          }
+          return block
+        })
       }))
 
     case 'block-add':
@@ -173,23 +181,67 @@ function turnEventHandler(
       }))
 
     case 'reasoning-start':
-      return patchTurn(turns, event.turnId, (turn) => ({
-        ...turn,
-        items: [
-          ...turn.items,
-          { type: 'reasoning', id: event.blockId, content: '', status: 'running' }
-        ]
-      }))
+      return patchTurn(turns, event.turnId, (turn) => {
+        const at = turn.items.findIndex((block) => block.id === event.blockId)
+        const hit = at === -1 ? undefined : turn.items[at]
+        // 这条消息还没有任何块 正常开一个独立思考块
+        if (hit === undefined) {
+          return {
+            ...turn,
+            items: [
+              ...turn.items,
+              { type: 'reasoning', id: event.blockId, content: '', status: 'running' }
+            ]
+          }
+        }
+        // 思考已经并进助手块 重新打开它的reasoning 内容留着继续往后写
+        if (hit.type === 'assistant') {
+          const reasoning: MReasoning = hit.reasoning ?? {
+            type: 'reasoning',
+            id: event.blockId,
+            content: '',
+            status: 'running'
+          }
+          return {
+            ...turn,
+            items: turn.items.map((block, index) =>
+              index === at ? { ...hit, reasoning: { ...reasoning, status: 'running' } } : block
+            )
+          }
+        }
+        // 还是独立思考块 重新打开
+        if (hit.type === 'reasoning') {
+          return {
+            ...turn,
+            items: turn.items.map((block, index) =>
+              index === at ? { ...hit, status: 'running' } : block
+            )
+          }
+        }
+        return turn
+      })
 
     case 'reasoning-delta':
-      return patchBlock(turns, event.turnId, event.blockId, (block) =>
-        block.type === 'reasoning' ? { ...block, content: block.content + event.text } : block
-      )
+      return patchBlock(turns, event.turnId, event.blockId, (block) => {
+        if (block.type === 'reasoning') return { ...block, content: block.content + event.text }
+        // 已并进助手块 追加到它的reasoning上
+        if (block.type === 'assistant' && block.reasoning !== undefined) {
+          return {
+            ...block,
+            reasoning: { ...block.reasoning, content: block.reasoning.content + event.text }
+          }
+        }
+        return block
+      })
 
     case 'reasoning-end':
-      return patchBlock(turns, event.turnId, event.blockId, (block) =>
-        block.type === 'reasoning' ? { ...block, status: 'done' } : block
-      )
+      return patchBlock(turns, event.turnId, event.blockId, (block) => {
+        if (block.type === 'reasoning') return { ...block, status: 'done' }
+        if (block.type === 'assistant' && block.reasoning !== undefined) {
+          return { ...block, reasoning: { ...block.reasoning, status: 'done' } }
+        }
+        return block
+      })
 
     case 'assistant-start':
       return patchTurn(turns, event.turnId, (turn) => {
