@@ -129,7 +129,3 @@ export interface MSystem {
   /** 系统消息内容 */
   content: string
 }
-
-/**
- * TODO:后期可以新增一些时间字段,用于记录工具|思考|整轮消息使用的时间
- */
