@@ -26,8 +26,8 @@ export default function ChatIndex(): React.JSX.Element {
           <div>
             {/* 排队框 */}
             <InputQueue />
-            {/* 输入框 */}
-            <InputBox isSending={isReplying} onSend={send} onAbort={abort} />
+            {/* 输入框 | onQueue 先占位 队列接上后改接真入队 */}
+            <InputBox isSending={isReplying} onSend={send} onQueue={() => {}} onAbort={abort} />
           </div>
         </TurnList>
       </div>

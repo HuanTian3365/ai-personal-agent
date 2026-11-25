@@ -21,21 +21,39 @@ interface Props {
   /** 生成状态 true:她正在回复 false:等待输入 */
   isSending: boolean
   onSend: (message: MessageEventSend) => Promise<boolean>
+  /** 生成中且有内容时交给排队 | TODO(优化): main队列接上后改为真入队 见 docs/待实现/03.发起-TODO-消息排队.md */
+  onQueue: (text: string) => void
   onAbort: () => void
 }
 
-export default function InputBox({ isSending, onSend, onAbort }: Props): React.JSX.Element {
+export default function InputBox({
+  isSending,
+  onSend,
+  onQueue,
+  onAbort
+}: Props): React.JSX.Element {
   /** 用户输入内容 */
   const [text, setText] = useState('')
   /** 是否有输入 */
   const hasInput = text.trim().length > 0
-  /** 点击行为：等待输入时是发送，生成中一律是停止 */
+  /**
+   * 点击行为
+   *
+   * 输入状态: 无内容禁用 | 有内容发送
+   * 生成状态: 无内容中断 | 有内容排队
+   */
   async function handleAction(): Promise<void> {
-    // 生成中：按钮就是停止，输入框里的内容原样留着（排队还没做）
+    // 生成中 -> 有内容排队 | 无内容中断
     if (isSending) {
-      onAbort()
+      if (!hasInput) {
+        onAbort()
+        return
+      }
+      onQueue(text)
+      setText('')
       return
     }
+    // 等待输入 -> 发送
     const pending = text
     if (pending.trim() === '') return
     setText('')
@@ -46,7 +64,6 @@ export default function InputBox({ isSending, onSend, onAbort }: Props): React.J
 
   /**
    * 排队:默认未展开,只有一条消息就显示,多条就显示x条排队中
-   *
    */
 
   return (
@@ -59,11 +76,10 @@ export default function InputBox({ isSending, onSend, onAbort }: Props): React.J
             setText(e.target.value)
           }}
           onKeyDown={(e) => {
-            // 回车发送、Shift+Enter 换行。isComposing 是输入法组字中的回车（选词），不能当发送；
-            // 生成中不接回车：那时按钮是「停止」，敲个回车就中断太容易误触
+            // 回车发送 | Shift+Enter 换行 | isComposing 是输入法组字中的回车(选词) 不能当发送
             if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-              // 生成中不接回车：那时回车等于中断，太容易误触
-              if (isSending) return
+              // 生成中空输入不接回车: 那时回车等于中断 太容易误触 | 有内容才放行去排队
+              if (isSending && !hasInput) return
               e.preventDefault()
               void handleAction()
             }
@@ -124,7 +140,8 @@ export default function InputBox({ isSending, onSend, onAbort }: Props): React.J
             variant="default"
             className="ml-auto rounded-full"
           >
-            {isSending ? <Square /> : <ArrowUpIcon />}
+            {/* 生成中且有内容仍是发送箭头(按下去排队) | 生成中无内容才是停止 */}
+            {!isSending || hasInput ? <ArrowUpIcon /> : <Square />}
           </Button>
         </InputGroupAddon>
       </InputGroup>
