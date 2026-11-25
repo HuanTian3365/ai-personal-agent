@@ -10,34 +10,52 @@ import type { LangGraphRunnableConfig } from '@langchain/langgraph'
 import { getModelWithTools } from '@core/llm/model'
 import { ChatState } from './state'
 
-/** 一条等着插进当前轮的用户输入(界面上的「插入」) */
+/** 一条等着插进当前轮的用户输入(界面上的「插队」) */
 export interface InsertInput {
-  /** 消息id: main生成 界面那张气泡和落库后的那条用同一个 */
+  /** 消息id: 界面那张气泡和落库后的那条用同一个 */
   id: string
   text: string
 }
 
 /**
- * 会话 > 取插入消息的函数
+ * 一轮的插入来源 | main每轮开始注册 结束注销
+ *
+ * 三个回调都不碰队列本体: core只知道「取」「放回」「还有没有」 不知道队列长什么样
+ */
+export interface InsertSource {
+  /** 取走这一刻待插入的消息 | 取走后不再参与续轮判断 */
+  take: () => InsertInput[]
+  /** 本轮失败或中断 把刚取走的放回待领取 */
+  release: () => void
+  /** 还有没有未领取的 | 条件边用它决定本轮要不要继续 */
+  hasUnclaimed: () => boolean
+}
+
+/**
+ * 会话 > 插入来源
  *
  * 不塞进config.configurable: 那一层会跟着checkpoint一起写库 函数不是能序列化的东西
  * main每轮开始注册 结束注销 节点按thread_id反查
  */
-const insertSources = new Map<string, () => InsertInput[]>()
+const insertSources = new Map<string, InsertSource>()
 
-/** 注册一轮的插入消息来源 返回注销函数 */
-export function setInsertSource(threadId: string, take: () => InsertInput[]): () => void {
-  insertSources.set(threadId, take)
+/** 注册一轮的插入来源 返回注销函数 */
+export function setInsertSource(threadId: string, source: InsertSource): () => void {
+  insertSources.set(threadId, source)
   return (): void => {
-    if (insertSources.get(threadId) === take) insertSources.delete(threadId)
+    if (insertSources.get(threadId) === source) insertSources.delete(threadId)
   }
 }
 
-/** 节点里把这一刻待插入的消息取走(取走即从队里删掉) */
-function takeInserts(config: LangGraphRunnableConfig): InsertInput[] {
+/** 按thread_id取插入来源 | 节点与条件边共用 */
+export function getInsertSource(threadId: string): InsertSource | undefined {
+  return insertSources.get(threadId)
+}
+
+/** 从运行时配置里取会话id | 没有返回null */
+export function threadIdOf(config: LangGraphRunnableConfig): string | null {
   const threadId = config.configurable?.thread_id
-  if (typeof threadId !== 'string') return []
-  return insertSources.get(threadId)?.() ?? []
+  return typeof threadId === 'string' ? threadId : null
 }
 
 /**
@@ -54,19 +72,28 @@ export async function callModel(
   config: LangGraphRunnableConfig
 ): Promise<{ messages: BaseMessage[] }> {
   const model = await getModelWithTools()
-  // 每一步开头先看有没有「插入」的消息 它们要成为这一步的输入
-  // 已经生成到一半的那段文字不会被改写 插入只能等这个边界(和DSH的step边界是同一种语义)
+  // 每一步开头先看有没有「插队」的消息 它们要成为这一步的输入
+  // 已经生成到一半的那段文字不会被改写 插队只能等这个边界(和DSH的step边界是同一种语义)
   // 只有在这里(真的被本轮领取)才打insertFlag: 它跟消息一起落进hy_custom
-  // 重开对话时投影还认得出「这是插入的」
-  const inserts = takeInserts(config).map((item) => {
+  // 重开对话时投影还认得出「这是插进来的」
+  const threadId = threadIdOf(config)
+  const source = threadId === null ? undefined : getInsertSource(threadId)
+  const inserts = (source?.take() ?? []).map((item) => {
     const message = new HumanMessage({ content: item.text, id: item.id })
     // 插入标记是业务字段 走hy_custom 不塞additional_kwargs
     message.hyCustom = { insertFlag: true }
     return message
   })
   const messages = inserts.length === 0 ? state.messages : [...state.messages, ...inserts]
-  const response = await model.invoke(messages, config)
-  // 插入的消息跟着响应一起返回 reducer会把它们按顺序追加进messages
+  let response: BaseMessage
+  try {
+    response = await model.invoke(messages, config)
+  } catch (error: unknown) {
+    // 这一步没跑成 把刚领走的插队消息放回 否则它们既不在队列里也没落库
+    if (inserts.length > 0) source?.release()
+    throw error
+  }
+  // 插队消息跟着响应一起返回 reducer会把它们按顺序追加进messages
   // 这样它们是真的落在checkpoint里 重开对话照样看得到
   return { messages: [...inserts, response] }
 }

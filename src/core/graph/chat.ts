@@ -14,7 +14,24 @@ import { ToolNode, toolsCondition } from '@langchain/langgraph/prebuilt'
 import { tools } from '../tools'
 import { ChatState } from './state'
 import { getCheckpointStore } from './checkpoint'
-import { callModel } from './nodes'
+import { callModel, getInsertSource, threadIdOf } from './nodes'
+
+/**
+ * model之后往哪走
+ *
+ * 有tool_calls -> 跑工具
+ * 没有 但还有没被领走的插队消息 -> 回model再跑一步 本轮不结束
+ * 都没有 -> 收尾
+ *
+ * 终止性靠「插队消息一被取走就打上已领取标记」保证: 取完 hasUnclaimed 就是 false
+ * 不靠轮次上限 见 docs/开发计划/04.未实现-排队与插队/V1/01.开发.md §3.8
+ */
+function routeAfterModel(state: typeof ChatState.State, config: LangGraphRunnableConfig): string {
+  if (toolsCondition(state) === 'tools') return 'tools'
+  const threadId = threadIdOf(config)
+  if (threadId !== null && getInsertSource(threadId)?.hasUnclaimed() === true) return 'model'
+  return END
+}
 
 // 返回类型由StateGraph的泛型递归推导(节点名会进类型参数) 手写一遍不现实
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -24,8 +41,8 @@ function createChatGraph() {
       .addNode('model', callModel)
       .addNode('tools', new ToolNode(tools))
       .addEdge(START, 'model')
-      // toolsCondition看最后一条消息里有没有tool_calls: 有就去跑工具 没有就收尾
-      .addConditionalEdges('model', toolsCondition, ['tools', END])
+      // 工具/续轮/收尾三选一: 见 routeAfterModel
+      .addConditionalEdges('model', routeAfterModel, ['tools', 'model', END])
       .addEdge('tools', 'model')
       .compile({ checkpointer: getCheckpointStore() })
   )

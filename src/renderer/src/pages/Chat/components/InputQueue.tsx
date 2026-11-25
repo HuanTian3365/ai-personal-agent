@@ -6,6 +6,7 @@ import {
   CollapsibleTrigger
 } from '@renderer/components/ui/collapsible'
 import { Input } from '@renderer/components/ui/input'
+import type { QueueItem } from '@shared/types/agentEvent'
 import {
   CheckIcon,
   ChevronDownIcon,
@@ -17,29 +18,48 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 
-interface QueueItem {
-  id: string
-  text: string
+interface Props {
+  /** 排队内容 | 真相在 main 这里只负责画 */
+  queue: QueueItem[]
+  /** 把一条改成插队 */
+  onInsert: (itemId: string) => void
+  /** 改一条的文案 */
+  onEdit: (itemId: string, text: string) => void
+  /** 删一条 */
+  onRemove: (itemId: string) => void
 }
 
-export default function InputQueue(): React.JSX.Element {
-  const [queue, setQueue] = useState<QueueItem[]>([])
-
-  /** 保存某条排队消息改过的内容 */
-  function updateText(id: string, text: string): void {
-    setQueue((prev) => prev.map((item) => (item.id === id ? { ...item, text } : item)))
-  }
+/**
+ * 排队区：一条直接显示 多条默认收起成「x 条消息排队」
+ *
+ * 只画 next-turn。next-step(已经点了插队的)不在这里显示 它们已经作为用户消息
+ * 出现在当前轮里了 再画一遍就是同一条消息两个地方
+ * 条目全部由外面传进来 这里不持有队列 也不做乐观更新
+ */
+export default function InputQueue({
+  queue,
+  onInsert,
+  onEdit,
+  onRemove
+}: Props): React.JSX.Element {
+  /** 只显示还在排队的 */
+  const rows = queue.filter((item) => item.target === 'next-turn')
 
   function getRender(): React.JSX.Element {
-    if (queue.length === 0) {
+    if (rows.length === 0) {
       return <></>
     }
 
-    const first = queue[0]
-    if (queue.length === 1 && first !== undefined) {
+    const first = rows[0]
+    if (rows.length === 1 && first !== undefined) {
       return (
         <Card className="mx-2 px-4 py-1 rounded-b-none">
-          <QueueItem item={first} onSave={(text) => updateText(first.id, text)} />
+          <QueueRow
+            item={first}
+            onSave={(text) => onEdit(first.id, text)}
+            onInsert={() => onInsert(first.id)}
+            onRemove={() => onRemove(first.id)}
+          />
         </Card>
       )
     }
@@ -50,16 +70,21 @@ export default function InputQueue(): React.JSX.Element {
           <CollapsibleTrigger className="group/collapsible w-full px-4 py-1">
             <div className="flex flex-row items-center gap-2">
               <MessageSquareShare size={16} />
-              {queue.length} 条消息排队
+              {rows.length} 条消息排队
               <Button size="icon-sm" variant="link" className="ml-auto">
                 <ChevronDownIcon className="group-data-panel-open/collapsible:rotate-180" />
               </Button>
             </div>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            {queue.map((item) => (
+            {rows.map((item) => (
               <Card key={item.id} className="m-0 py-0 px-2">
-                <QueueItem item={item} onSave={(text) => updateText(item.id, text)} />
+                <QueueRow
+                  item={item}
+                  onSave={(text) => onEdit(item.id, text)}
+                  onInsert={() => onInsert(item.id)}
+                  onRemove={() => onRemove(item.id)}
+                />
               </Card>
             ))}
           </CollapsibleContent>
@@ -70,12 +95,16 @@ export default function InputQueue(): React.JSX.Element {
   return getRender()
 }
 
-function QueueItem({
+function QueueRow({
   item,
-  onSave
+  onSave,
+  onInsert,
+  onRemove
 }: {
   item: QueueItem
   onSave: (text: string) => void
+  onInsert: () => void
+  onRemove: () => void
 }): React.JSX.Element {
   /** 是否正在编辑这一条 */
   const [editing, setEditing] = useState(false)
@@ -137,13 +166,13 @@ function QueueItem({
           </>
         ) : (
           <>
-            <Button size="icon-sm" variant="link" onClick={startEdit}>
+            <Button size="icon-sm" variant="link" onClick={startEdit} aria-label="改文案">
               <SquarePen />
             </Button>
-            <Button size="icon-sm" variant="link">
+            <Button size="icon-sm" variant="link" onClick={onRemove} aria-label="删除">
               <Trash />
             </Button>
-            <Button size="icon-sm" variant="link">
+            <Button size="icon-sm" variant="link" onClick={onInsert} aria-label="插队">
               <Send />
             </Button>
           </>

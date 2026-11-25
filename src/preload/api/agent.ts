@@ -1,12 +1,18 @@
 import { ipcRenderer } from 'electron'
 import { IPC } from '@shared/ipc'
 import type { AgentEventEnvelope, QueueItem } from '@shared/types/agentEvent'
-import type { MessageEventSend, SendResult, StreamSnapshot } from '@shared/types/messageService'
+import type {
+  MessageEventSend,
+  QueueEditAction,
+  SendMode,
+  SendResult,
+  StreamSnapshot
+} from '@shared/types/messageService'
 
 const agentApi = {
-  // to main -> 发送对话
-  send: (conversationId: string, message: MessageEventSend): Promise<SendResult> =>
-    ipcRenderer.invoke(IPC.agent.send, conversationId, message),
+  // to main -> 发送对话 | mode 决定排队还是插队
+  send: (conversationId: string, message: MessageEventSend, mode: SendMode): Promise<SendResult> =>
+    ipcRenderer.invoke(IPC.agent.send, conversationId, message, mode),
   // to main -> 中断对话
   abort: (conversationId: string): Promise<void> =>
     ipcRenderer.invoke(IPC.agent.abort, conversationId),
@@ -28,7 +34,10 @@ const agentApi = {
     ipcRenderer.invoke(IPC.agent.insert, conversationId, itemId),
   // to main -> 取该对话的排队内容
   queue: (conversationId: string): Promise<QueueItem[]> =>
-    ipcRenderer.invoke(IPC.agent.queue, conversationId)
+    ipcRenderer.invoke(IPC.agent.queue, conversationId),
+  // to main -> 改排队里的一条
+  updateQueue: (conversationId: string, itemId: string, action: QueueEditAction): Promise<void> =>
+    ipcRenderer.invoke(IPC.agent.queueUpdate, conversationId, itemId, action)
 }
 
 export default agentApi

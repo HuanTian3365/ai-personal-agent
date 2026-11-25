@@ -204,6 +204,9 @@ export async function sendMessage({
     if (messageChunk === undefined) return
     // 排除工具消息,工具链路由updates驱动,这里放进来会误判成新消息而换块
     if (messageChunk.type === 'tool') return
+    // 排除插队进来的用户消息: 它在点插队时已经推过一块了
+    // 放进来会被当成模型正文 界面上就会把用户的话重复渲染一遍
+    if (messageChunk.type === 'human') return
 
     // 这条块的消息ID与当前不一致时 视为上条消息结束了 整体换新状态
     if (messageChunk.id !== undefined && messageChunk.id !== blockState.id) {

@@ -13,6 +13,7 @@ export type AgentEvent =
   | AEToolArgs
   | AEToolEnd
   | AEBlockAdd
+  | AEBlockRemove
   | AEQueue
   | AETitle
 
@@ -115,13 +116,31 @@ export interface AEBlockAdd {
 }
 
 /**
+ * 撤掉一个块。
+ *
+ * 只给插队用: 点插队时先把消息画进当前轮 本轮没领走(这一轮没有下一个step)
+ * 就撤掉并退回排队区 否则界面会留一条刷新就消失的假消息
+ */
+export interface AEBlockRemove {
+  type: 'block-remove'
+  conversationId: string
+  turnId: string
+  blockId: string
+}
+
+/**
  * 排队项。
  *
- * 生成期间用户又发的一条先躺在这里，等本轮结束才发。
+ * 生成期间用户又发的一条先躺在这里：next-turn 等本轮结束作为新一轮发出
+ * next-step 在下一个 step 边界推进当前轮(界面上的插队)
  */
 export interface QueueItem {
   id: string
   text: string
+  /** 投递方式 | next-turn: 等本轮结束 next-step: 推进当前轮 */
+  target: 'next-turn' | 'next-step'
+  /** 是否已被当前轮领取 | 领取后不再参与「本轮要不要继续」的判断 见 core/graph/nodes.ts */
+  claimed?: boolean
 }
 
 /** 队列消息 */

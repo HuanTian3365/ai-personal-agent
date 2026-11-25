@@ -21,7 +21,9 @@ export const IPC = {
     /** 把排队里的一条立即插入当前轮 */
     insert: 'agent:insert',
     /** 取该对话的排队内容 */
-    queue: 'agent:queue'
+    queue: 'agent:queue',
+    /** 改排队里的一条：改文案 / 删除 */
+    queueUpdate: 'agent:queue:update'
   },
   /** 工作区：列表第一层 */
   workspace: {

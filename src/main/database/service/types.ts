@@ -20,6 +20,10 @@ export interface DatabaseRepository {
   updateConversationTitle(id: string, title: string): Promise<void>
   /** 获取对话信息 */
   getConversation(id: string): Promise<Conversation | null>
+  /** 读会话级业务扩展 JSON | 解析失败或不存在返回空对象 */
+  readExpand(id: string): Promise<Record<string, unknown>>
+  /** 按职责合并写会话级业务扩展 | 只覆盖 scope 这一层 不动别的职责 */
+  updateExpand(id: string, scope: string, patch: Record<string, unknown>): Promise<void>
 
   /** ====================  新的实现  ==================== */
   /**

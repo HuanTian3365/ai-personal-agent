@@ -7,7 +7,13 @@ import type { MUser } from '@shared/types/message'
 
 export type MessageEventSend = Omit<MUser, 'type' | 'id'>
 
-/** `agent:send` 的结果：sent 表示整轮跑完了，queued 表示正在生成、这条已进排队 */
+/** `agent:send` 的投递方式 | queue: 排队等本轮结束 insert: 推进当前轮 */
+export type SendMode = 'queue' | 'insert'
+
+/** 排队项的可变操作 | 插队走 agent:insert 这里只管文案与删除 */
+export type QueueEditAction = { kind: 'edit'; text: string } | { kind: 'remove' }
+
+/** `agent:send` 的结果：sent 表示已受理，queued 表示正在生成、这条已进排队 */
 export type SendResult = { status: 'sent' } | { status: 'queued'; queue: QueueItem[] }
 
 /**

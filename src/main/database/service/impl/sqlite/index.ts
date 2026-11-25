@@ -6,7 +6,7 @@ import { DEFAULT_WORKSPACE_ID } from '../../../init/data'
 import type { Database } from '../../../types'
 import { toConversation, toGroup, toWorkspace } from './converter'
 import type { Row } from './converter'
-import { nextConversationSortIndex } from './utils'
+import { nextConversationSortIndex, parseJsonObject } from './utils'
 
 /**
  * 基于 better-sqlite3 的存储实现。
@@ -133,6 +133,35 @@ export function createSqliteRepository(database: Database): DatabaseRepository {
       const row = database.prepare('SELECT * FROM hy_conversation WHERE id = ?').get(id) as
         Row | undefined
       return row === undefined ? null : toConversation(row)
+    },
+
+    /** ====================  会话级扩展  ==================== */
+    /** 读会话级业务扩展 JSON */
+    async readExpand(id) {
+      const row = database.prepare('SELECT expand FROM hy_conversation WHERE id = ?').get(id) as
+        | {
+            expand: string
+          }
+        | undefined
+      return row === undefined ? {} : parseJsonObject(row.expand)
+    },
+    /** 按职责合并写会话级业务扩展 | 只覆盖 scope 这一层 */
+    async updateExpand(id, scope, patch) {
+      const row = database.prepare('SELECT expand FROM hy_conversation WHERE id = ?').get(id) as
+        | {
+            expand: string
+          }
+        | undefined
+      if (row === undefined) return
+      const current = parseJsonObject(row.expand)
+      const layer = current[scope]
+      const merged =
+        layer !== null && typeof layer === 'object' && !Array.isArray(layer)
+          ? { ...(layer as Record<string, unknown>), ...patch }
+          : patch
+      database
+        .prepare('UPDATE hy_conversation SET expand = ? WHERE id = ?')
+        .run(JSON.stringify({ ...current, [scope]: merged }), id)
     }
   }
 }

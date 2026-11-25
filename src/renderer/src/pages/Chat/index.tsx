@@ -6,13 +6,15 @@ import InputBox from './components/InputBox'
 import InputQueue from './components/InputQueue'
 
 /**
- * 对话页：读历史 + 发送 + 流式。
+ * 对话页：读历史 + 发送 + 流式 + 排队。
  *
- * 排队、插入还没做（见 docs/待实现/03.TODO-发起-消息排队.md）。
+ * 设计见 docs/开发计划/04.未实现-排队与插队/V1/01.开发.md
  */
 export default function ChatIndex(): React.JSX.Element {
   const { conversationId } = useParams<{ conversationId: string }>()
-  const { turns, title, send, abort, isReplying } = useTurns(conversationId ?? null)
+  const { turns, title, send, abort, isReplying, queue, insert, editQueue, removeQueue } = useTurns(
+    conversationId ?? null
+  )
 
   return (
     <div className="w-full h-screen flex flex-col overflow-hidden">
@@ -25,9 +27,19 @@ export default function ChatIndex(): React.JSX.Element {
         <TurnList turns={turns} follow={isReplying}>
           <div>
             {/* 排队框 */}
-            <InputQueue />
-            {/* 输入框 | onQueue 先占位 队列接上后改接真入队 */}
-            <InputBox isSending={isReplying} onSend={send} onQueue={() => {}} onAbort={abort} />
+            <InputQueue
+              queue={queue}
+              onInsert={(itemId) => void insert(itemId)}
+              onEdit={(itemId, text) => void editQueue(itemId, text)}
+              onRemove={(itemId) => void removeQueue(itemId)}
+            />
+            {/* 输入框 | 生成中再发一条默认进排队 */}
+            <InputBox
+              isSending={isReplying}
+              onSend={send}
+              onQueue={(text) => void send({ content: text }, 'queue')}
+              onAbort={abort}
+            />
           </div>
         </TurnList>
       </div>

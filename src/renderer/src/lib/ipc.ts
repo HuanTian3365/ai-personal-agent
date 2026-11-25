@@ -9,7 +9,7 @@
 
 import type { CreateGroupInput } from '@shared/types/conversationService'
 import type { AgentEventEnvelope } from '@shared/types/agentEvent'
-import type { MessageEventSend } from '@shared/types/messageService'
+import type { MessageEventSend, QueueEditAction, SendMode } from '@shared/types/messageService'
 
 export const conversationApi = {
   /** ====================  工作区  ==================== */
@@ -38,9 +38,9 @@ export const dialogApi = {
   pickDirectory: () => window.api.dialog.pickDirectory()
 }
 export const agentApi = {
-  /** 发送消息 */
-  send: (conversationId: string, message: MessageEventSend) =>
-    window.api.agent.send(conversationId, message),
+  /** 发送消息 | mode 决定排队还是插队 */
+  send: (conversationId: string, message: MessageEventSend, mode: SendMode) =>
+    window.api.agent.send(conversationId, message, mode),
   /** 中断消息 */
   abort: (conversationId: string) => window.api.agent.abort(conversationId),
   /** 监听事件 */
@@ -51,5 +51,8 @@ export const agentApi = {
   insert: (conversationId: string, itemId: string) =>
     window.api.agent.insert(conversationId, itemId),
   /** 取该对话的排队内容 */
-  queue: (conversationId: string) => window.api.agent.queue(conversationId)
+  queue: (conversationId: string) => window.api.agent.queue(conversationId),
+  /** 改排队里的一条：改文案 / 删除 */
+  updateQueue: (conversationId: string, itemId: string, action: QueueEditAction) =>
+    window.api.agent.updateQueue(conversationId, itemId, action)
 }

@@ -1,8 +1,8 @@
 import { agentApi, conversationApi } from '@renderer/lib/ipc'
 import { useEffect, useRef, useState } from 'react'
 import type { ContentBlock, MReasoning, TurnMessage } from '@shared/types/message'
-import type { MessageEventSend } from '@shared/types/messageService'
-import type { AgentEvent, AgentEventEnvelope } from '@shared/types/agentEvent'
+import type { MessageEventSend, SendMode } from '@shared/types/messageService'
+import type { AgentEvent, AgentEventEnvelope, QueueItem } from '@shared/types/agentEvent'
 
 export interface UseTurnsResult {
   /** 当前对话的历史轮 */
@@ -17,10 +17,18 @@ export interface UseTurnsResult {
   isReplying: boolean
   /** 读历史失败时的错误 */
   error: string | null
-  /** 发送消息 */
-  send: (message: MessageEventSend) => Promise<boolean>
+  /** 排队区内容 | 生成期间发出去还没发的那些 */
+  queue: QueueItem[]
+  /** 发送消息 | mode=queue 排队 mode=insert 插队 */
+  send: (message: MessageEventSend, mode?: SendMode) => Promise<boolean>
   /** 中断消息 */
   abort: () => Promise<void>
+  /** 把排队里的一条改成插队 */
+  insert: (itemId: string) => Promise<void>
+  /** 改排队项的文案 */
+  editQueue: (itemId: string, text: string) => Promise<void>
+  /** 删掉排队项 */
+  removeQueue: (itemId: string) => Promise<void>
 }
 
 /**
@@ -41,8 +49,27 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
   const [isReplying, setIsReplying] = useState(false)
   /** 错误信息 */
   const [error, setError] = useState<string | null>(null)
+  /** 排队区内容 */
+  const [queue, setQueue] = useState<QueueItem[]>([])
+  /** 队列的即时镜像 | 事件处理器要用最新值 React的state会滞后一帧 */
+  const queueRef = useRef<QueueItem[]>([])
   /** 当前对话ID */
   const currentIdRef = useRef(conversationId)
+
+  /** 同时更新状态与镜像 */
+  function applyQueue(next: QueueItem[]): void {
+    queueRef.current = next
+    setQueue(next)
+  }
+
+  /** 还在等下一个 step 边界的插队项 | 这些块要跟着输出往后挪 */
+  function pendingInserts(): Set<string> {
+    return new Set(
+      queueRef.current
+        .filter((item) => item.target === 'next-step' && item.claimed !== true)
+        .map((item) => item.id)
+    )
+  }
 
   /** 最后一条事件的全局序号|丢弃seq小于等于它的事件(已经重放完了) */
   const snapSeqRef = useRef(0)
@@ -66,6 +93,7 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
       setTitle('')
       setError(null)
       setIsReplying(false)
+      applyQueue([])
       readyRef.current = false
       pendingRef.current = []
       snapSeqRef.current = 0
@@ -77,13 +105,15 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
       setIsLoading(true)
       // 加载数据
       try {
-        const [list, info, snap] = await Promise.all([
+        const [list, info, snap, queued] = await Promise.all([
           // 获取消息列表
           conversationApi.listMessages(conversationId),
           // 获取会话信息
           conversationApi.getConversation(conversationId),
           // 获取进行中那一轮的快照
-          agentApi.snapshot(conversationId)
+          agentApi.snapshot(conversationId),
+          // 获取排队区内容
+          agentApi.queue(conversationId)
         ])
         if (cancelled) return
 
@@ -107,6 +137,8 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
         for (const envelope of pendingRef.current) {
           if (envelope.seq > snapSeqRef.current) {
             next = turnEventHandler(next, envelope.event, savedBlockIds)
+            // 队列事件不属于任何一轮 单独走 state
+            if (envelope.event.type === 'queue') applyQueue(envelope.event.queue)
           }
         }
         pendingRef.current = []
@@ -114,6 +146,7 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
         // 设置消息列表和会话信息
         setTurns(next)
         setTitle(info?.title ?? conversationId)
+        applyQueue(queued)
         // 最后一轮还在跑 按钮才是「停止」
         setIsReplying(next.at(-1)?.status === 'running')
       } catch (err) {
@@ -146,16 +179,18 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
         return
       }
       // 将当前消息列表和事件消息交给事件处理器
-      setTurns((prev) => turnEventHandler(prev, event))
+      setTurns((prev) => turnEventHandler(prev, event, undefined, pendingInserts()))
       if (event.type === 'turn-start') setIsReplying(true)
       if (event.type === 'turn-end') setIsReplying(false)
       if (event.type === 'title') setTitle(event.title)
+      // 队列不属于任何一轮 单独一份 state
+      if (event.type === 'queue') applyQueue(event.queue)
     })
     return off
   }, [conversationId])
 
-  /** 发送消息 */
-  async function send(message: MessageEventSend): Promise<boolean> {
+  /** 发送消息 | 受理即返回 整轮跑完靠事件推 */
+  async function send(message: MessageEventSend, mode: SendMode = 'queue'): Promise<boolean> {
     // 初始化
     if (conversationId === null) return false
     setIsSending(true)
@@ -164,8 +199,7 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
     const targetId = conversationId
 
     try {
-      // 等模型全部说完才返回
-      await agentApi.send(targetId, message)
+      await agentApi.send(targetId, message, mode)
       return true
     } catch {
       // 发送失败,模型会自动落一条错误消息,这里不用管
@@ -179,8 +213,48 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
     if (conversationId === null) return
     await agentApi.abort(conversationId)
   }
+  /** 把排队里的一条改成插队 */
+  async function insert(itemId: string): Promise<void> {
+    if (conversationId === null) return
+    try {
+      await agentApi.insert(conversationId, itemId)
+    } catch {
+      // 这条可能刚被本轮领走 队列事件会把界面纠正回来
+    }
+  }
+  /** 改排队项的文案 */
+  async function editQueue(itemId: string, text: string): Promise<void> {
+    if (conversationId === null) return
+    try {
+      await agentApi.updateQueue(conversationId, itemId, { kind: 'edit', text })
+    } catch {
+      // 同上
+    }
+  }
+  /** 删掉排队项 */
+  async function removeQueue(itemId: string): Promise<void> {
+    if (conversationId === null) return
+    try {
+      await agentApi.updateQueue(conversationId, itemId, { kind: 'remove' })
+    } catch {
+      // 同上
+    }
+  }
 
-  return { turns, title, isLoading, isSending, isReplying, error, send, abort }
+  return {
+    turns,
+    title,
+    isLoading,
+    isSending,
+    isReplying,
+    error,
+    queue,
+    send,
+    abort,
+    insert,
+    editQueue,
+    removeQueue
+  }
 }
 /**
  * 事件处理器
@@ -193,7 +267,9 @@ function turnEventHandler(
   /** 接收到的事件 */
   event: AgentEvent,
   /** 已经落库的块ID | 这些块内容已完整 增量事件不再追加 */
-  savedBlockIds?: Set<string>
+  savedBlockIds?: Set<string>,
+  /** 还在等下一个step边界的插队块ID | 输出结束时要把它们挪到这次输出之后 */
+  pendingInserts?: Set<string>
 ): TurnMessage[] {
   console.log('[TurnEvent]:', event)
   switch (event.type) {
@@ -227,9 +303,17 @@ function turnEventHandler(
     case 'block-add':
       // 已经落库的块重放时别再塞一个
       if (savedBlockIds?.has(event.block.id) === true) return turns
+      return patchTurn(turns, event.turnId, (turn) =>
+        // 同id的块已经在列表里了就不再加一个
+        turn.items.some((block) => block.id === event.block.id)
+          ? turn
+          : { ...turn, items: [...turn.items, event.block] }
+      )
+
+    case 'block-remove':
       return patchTurn(turns, event.turnId, (turn) => ({
         ...turn,
-        items: [...turn.items, event.block]
+        items: turn.items.filter((block) => block.id !== event.blockId)
       }))
 
     case 'reasoning-start':
@@ -324,8 +408,25 @@ function turnEventHandler(
         block.type === 'assistant' ? { ...block, content: block.content + event.text } : block
       )
 
-    case 'assistant-end':
-      return turns
+    case 'assistant-end': {
+      /**
+       * 这次输出结束: 还没被领走的插队块挪到它后面。
+       *
+       * 插队块是「下一次模型调用的输入」 点的那一刻它被塞在当时的末尾
+       * 但那次调用还没开始 所以它会先排在这段输出前面。这里把它挪到最后 位置就对了
+       * 已经被领走(claimed)的不动: 它正是这段输出的输入 就该在前面
+       */
+      const pending = pendingInserts
+      if (pending === undefined || pending.size === 0) return turns
+      return patchTurn(turns, event.turnId, (turn) => {
+        const moving = turn.items.filter((block) => pending.has(block.id))
+        if (moving.length === 0) return turn
+        return {
+          ...turn,
+          items: [...turn.items.filter((block) => !pending.has(block.id)), ...moving]
+        }
+      })
+    }
 
     case 'tool-start':
       return patchTurn(turns, event.turnId, (turn) => {

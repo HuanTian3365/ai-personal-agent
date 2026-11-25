@@ -21,7 +21,7 @@ interface Props {
   /** 生成状态 true:她正在回复 false:等待输入 */
   isSending: boolean
   onSend: (message: MessageEventSend) => Promise<boolean>
-  /** 生成中且有内容时交给排队 | TODO(优化): main队列接上后改为真入队 见 docs/待实现/03.发起-TODO-消息排队.md */
+  /** 生成中且有内容时交给排队 */
   onQueue: (text: string) => void
   onAbort: () => void
 }

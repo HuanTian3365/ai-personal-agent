@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS hy_conversation
     created_at     BIGINT  NOT NULL,                                                -- 创建时间，Unix 毫秒
     updated_at     BIGINT  NOT NULL,                                                -- 最后修改时间，Unix 毫秒；「最近更新」视图排序依据
     langgraph_state TEXT   NOT NULL DEFAULT '{}',                                   -- LangGraph 执行账本 JSON：{ checkpoint_id, channel_versions, versions_seen, 其余 channel }
+    expand         TEXT    NOT NULL DEFAULT '{}',                                   -- 会话级业务扩展 JSON：第一层 key 声明职责，如 sendMessage.queue / chatView
     FOREIGN KEY (group_id) REFERENCES hy_group (id) ON DELETE SET NULL
 );
 CREATE INDEX IF NOT EXISTS ix_conversation_manual ON hy_conversation (group_id, sort_index); -- 手动排序视图

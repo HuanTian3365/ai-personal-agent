@@ -58,6 +58,7 @@ export default function migrate(database: Database): void {
     'langgraph_state',
     "langgraph_state TEXT NOT NULL DEFAULT '{}'"
   )
+  ensureColumn(database, 'hy_conversation', 'expand', "expand TEXT NOT NULL DEFAULT '{}'")
 
   // 版本号：全新库没有记录，或刚被重建（表被清空），都要写入当前版本；
   // 注意重建后不能走 UPDATE——那张表已经被 DROP 重建过，里面是空的。
