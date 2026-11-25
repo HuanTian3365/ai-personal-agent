@@ -4,10 +4,12 @@ import { ChatMessage } from '@langchain/core/messages'
 import { ToolMessage } from '@langchain/core/messages'
 import type { BaseMessage } from '@langchain/core/messages'
 import { parseContent, parseReasoning } from '@core/message/parseStream'
+import { addUsage } from '@core/utils/usage'
 import { getConversationTitle } from './title'
 import type { MessageEventSend } from '@shared/types/messageService'
 import type { AgentEvent } from '@shared/types/agentEvent'
-import { init, initBlockState } from './init'
+import type { MessageUsage } from '@shared/types/message'
+import { init, initBlockState, initUsage } from './init'
 import type { BlockState, InitResult } from './init'
 import createEmitter from './emitter'
 
@@ -46,9 +48,10 @@ export async function sendMessage({
   emitter.turnStart(messageId, message)
 
   // 当前消息信息 | 换调用时整体替换成新状态
-  // id=轮中消息的ID(不是轮ID) usage=只在收尾块上出现 攒着给assistant-end
-  // reasoning/replying=已流出内容 服务于emitAborted回填 只在换调用时清
+  // id=轮中消息的ID(不是轮ID) reasoning/replying=已流出内容 服务于emitAborted回填 只在换调用时清
   let blockState: BlockState = initBlockState()
+  // 本轮用量 | 一次模型调用累加一次 不跟块状态走 否则换调用时会被清掉
+  let turnUsage: MessageUsage = initUsage()
 
   /** 当前正在调用ToolMessage的id(发起调用) */
   const toolArgsSent = new Set<string>()
@@ -91,7 +94,7 @@ export async function sendMessage({
       return
     }
     // 结束本轮
-    emitter.turnEnd(messageId, 'done', blockState.usage)
+    emitter.turnEnd(messageId, 'done', turnUsage)
   } catch (err) {
     // 存在正在输出的消息且它还没落地 | 必须在closeBlock前算 closeBlock会清掉id
     const pending = blockState.id !== undefined && !savedBlocks.has(blockState.id)
@@ -111,7 +114,7 @@ export async function sendMessage({
       source: 'model'
     })
     // 结束本轮
-    emitter.turnEnd(messageId, 'done', blockState.usage)
+    emitter.turnEnd(messageId, 'done', turnUsage)
     throw err
   }
 
@@ -169,7 +172,7 @@ export async function sendMessage({
     } catch (err) {
       console.error('[loop] 写入 aborted 消息失败:', err instanceof Error ? err.message : err)
     }
-    emitter.turnEnd(messageId, 'aborted', blockState.usage)
+    emitter.turnEnd(messageId, 'aborted', turnUsage)
   }
 
   /** 清除当前消息状态,发它对应的end事件 */
@@ -281,7 +284,9 @@ export async function sendMessage({
         // 标记这次模型调用已经写进checkpoint了,好让中断时判断要不要补写内容
         // 顺带记用量:同一条消息可能重复投递,只在首次见到时加,否则会翻倍
         if (block.type === 'ai' && block.id !== undefined) {
-          if (!savedBlocks.has(block.id)) addUsage((block as AIMessage).usage_metadata)
+          if (!savedBlocks.has(block.id)) {
+            turnUsage = addUsage(turnUsage, (block as AIMessage).usage_metadata)
+          }
           savedBlocks.add(block.id)
         }
 
@@ -290,18 +295,6 @@ export async function sendMessage({
       }
     }
 
-    /** 累加一次模型调用的用量 | 只用 usage_metadata */
-    function addUsage(usage: AIMessage['usage_metadata']): void {
-      if (usage === undefined) return
-      const details = usage.input_token_details
-      blockState.usage = {
-        inputTokens: blockState.usage.inputTokens + usage.input_tokens,
-        outputTokens: blockState.usage.outputTokens + usage.output_tokens,
-        cacheReadTokens: blockState.usage.cacheReadTokens + (details?.cache_read ?? 0),
-        cacheWriteTokens: blockState.usage.cacheWriteTokens + (details?.cache_creation ?? 0),
-        totalTokens: blockState.usage.totalTokens + usage.total_tokens
-      }
-    }
     /**
      * 工具事件监听
      *

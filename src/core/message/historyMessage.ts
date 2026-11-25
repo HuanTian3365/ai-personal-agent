@@ -1,5 +1,6 @@
 import type { AIMessage, BaseMessage, ToolMessage } from '@langchain/core/messages'
 import { getChatGraph } from '@core/graph/chat'
+import { addUsage } from '@core/utils/usage'
 import type { ContentBlock, MTool, TurnMessage } from '@shared/types/message'
 import { parseContent, parseReasoning } from './parseStream'
 
@@ -58,18 +59,9 @@ function parseLangChainMessage(messages: BaseMessage[]): TurnMessage[] {
         const toolCalls = ai.tool_calls ?? []
 
         const turn = currentTurn()
-        // 统计用量信息
-        if (ai.usage_metadata !== undefined && turn !== undefined) {
-          const usage = ai.usage_metadata
-          const details = usage.input_token_details
-          const prev = turn.usage
-          turn.usage = {
-            inputTokens: prev.inputTokens + usage.input_tokens,
-            outputTokens: prev.outputTokens + usage.output_tokens,
-            cacheWriteTokens: prev.cacheWriteTokens + (details?.cache_creation ?? 0),
-            cacheReadTokens: prev.cacheReadTokens + (details?.cache_read ?? 0),
-            totalTokens: prev.totalTokens + usage.total_tokens
-          }
+        // 统计用量信息 | 一轮内多次模型调用逐次累加
+        if (turn !== undefined) {
+          turn.usage = addUsage(turn.usage, ai.usage_metadata)
         }
 
         // 会话是否被中断,中断的话视为此轮被中断

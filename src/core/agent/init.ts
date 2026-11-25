@@ -58,8 +58,6 @@ export async function init({
 export interface BlockState {
   /** 当前消息id */
   id: string | undefined
-  /** 当前消息用量 */
-  usage: MessageUsage
   /** 当前消息是否正在思考 */
   isReasoning: boolean
   /** 当前消息是否正在回复 */
@@ -72,16 +70,19 @@ export interface BlockState {
 export function initBlockState(): BlockState {
   return {
     id: undefined,
-    usage: {
-      inputTokens: 0,
-      outputTokens: 0,
-      cacheReadTokens: 0,
-      cacheWriteTokens: 0,
-      totalTokens: 0
-    },
     isReasoning: false,
     isAssistant: false,
     reasoning: '',
     replying: ''
+  }
+}
+/** 空用量 | 一轮一个 不跟块状态走 */
+export function initUsage(): MessageUsage {
+  return {
+    inputTokens: 0,
+    outputTokens: 0,
+    cacheReadTokens: 0,
+    cacheWriteTokens: 0,
+    totalTokens: 0
   }
 }
