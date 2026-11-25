@@ -9,17 +9,35 @@ import {
   TraceTitle,
   TraceCollapsibleContent
 } from '@renderer/components/ui/trace'
-import type { MTool } from '@shared/types/message'
+import { TOOL_INTENT_KEY } from '@shared/types/constant'
+import type { MTool, TurnMessage } from '@shared/types/message'
 
 interface Props {
   context: MTool
+  /** 所在轮的状态,轮已结束而工具还在跑,说明没等到结果 */
+  turnStatus: TurnMessage['status']
 }
 
-/** 一次工具调用：默认折叠，标题是「工具名(参数)」，点开看返回内容 */
-export default function MessageBlockTool({ context }: Props): React.JSX.Element {
-  const argsContent = context.args === null ? '' : JSON.stringify(context.args, null, 2)
-  /** 获取思考内容状态 */
+/** 一次工具调用:默认折叠,标题是:工具名(参数),点开看返回内容 */
+export default function MessageBlockTool({ context, turnStatus }: Props): React.JSX.Element {
+  // 调用原因是工具参数的一部分,直接在args里取,没填就是空串
+  const rawIntent = context.args?.[TOOL_INTENT_KEY]
+  const intent = typeof rawIntent === 'string' ? rawIntent : ''
+
+  // 展开参数时把调用原因剔掉,标题已经显示了
+  const visibleArgs = Object.fromEntries(
+    Object.entries(context.args ?? {}).filter(([key]) => key !== TOOL_INTENT_KEY)
+  )
+  const hasArgs = Object.keys(visibleArgs).length > 0
+  const argsContent = JSON.stringify(visibleArgs, null, 2)
+
+  // 轮已经结束了,工具还在转,说明没等到结果(中断或进程断了)
+  const stale = turnStatus !== 'running' && context.status === 'running'
+
+  /** 获取工具运行状态 */
   function getStatus(): 'running' | 'error' | undefined {
+    // 没等到结果的按失败呈现 但不改数据 数据里它一直是 running
+    if (stale) return 'error'
     if (context.status === 'running') return 'running'
     else if (context.status === 'error') return 'error'
     else return undefined
@@ -34,17 +52,18 @@ export default function MessageBlockTool({ context }: Props): React.JSX.Element 
             </TraceIcon>
             <TraceTitle>
               调用工具 - {context.name}
-              {context.description && ' : ' + context.description}
+              {intent && ' : ' + intent}
+              {stale && ' (未完成)'}
             </TraceTitle>
           </TraceLine>
         </TraceCollapsibleTrigger>
         <TraceCollapsibleContent>
-          {context.args != null && Object.keys(context.args).length > 0 && (
+          {hasArgs && (
             <div>
               输入:
               <CodeBlock size="sm">
-                <CodeBlockContent wrap className="max-h-64">
-                  <pre>{argsContent}</pre>
+                <CodeBlockContent wrap className="max-h-64 scrollbar-subtle text-wrap ">
+                  <pre className="text-wrap w-full">{argsContent}</pre>
                 </CodeBlockContent>
               </CodeBlock>
             </div>
@@ -53,8 +72,8 @@ export default function MessageBlockTool({ context }: Props): React.JSX.Element 
             <div>
               输出:
               <CodeBlock size="sm">
-                <CodeBlockContent wrap className="max-h-64">
-                  {context.result}
+                <CodeBlockContent wrap className="max-h-64 scrollbar-subtle text-wrap ">
+                  <pre className="text-wrap w-full">{context.result}</pre>
                 </CodeBlockContent>
               </CodeBlock>
             </div>

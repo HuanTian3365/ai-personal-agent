@@ -33,7 +33,7 @@ export function toConversation(row: Row): Conversation {
     id: row.id as string,
     workspaceId: row.workspace_id as Conversation['workspaceId'],
     groupId: (row.group_id ?? null) as string | null,
-    title: row.title as string,
+    title: (row.title as string) || '新的对话',
     sortIndex: row.sort_index as number,
     createdAt: row.created_at as number,
     updatedAt: row.updated_at as number

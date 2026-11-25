@@ -1,0 +1,25 @@
+/* 细圆角滚动条 | 用在overflow容器上 */
+.scrollbar-subtle {
+  scrollbar-gutter: stable;
+  scrollbar-width: auto;
+}
+
+.scrollbar-subtle::-webkit-scrollbar {
+  width: 0.625rem;
+}
+
+.scrollbar-subtle::-webkit-scrollbar-track,
+.scrollbar-subtle::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.scrollbar-subtle::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 9999px;
+  background-clip: content-box;
+  background-color: color-mix(in oklab, var(--foreground) 20%, transparent);
+}
+
+.scrollbar-subtle::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in oklab, var(--foreground) 35%, transparent);
+}

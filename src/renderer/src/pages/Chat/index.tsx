@@ -22,7 +22,7 @@ export default function ChatIndex(): React.JSX.Element {
       </div>
       {/* 消息列表 */}
       <div className="flex-1 h-full overflow-hidden">
-        <TurnList turns={turns}>
+        <TurnList turns={turns} follow={isReplying}>
           <div>
             {/* 排队框 */}
             <InputQueue />

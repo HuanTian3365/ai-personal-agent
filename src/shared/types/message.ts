@@ -1,5 +1,5 @@
 /** 消息格式 */
-export type ContentBlock = MUser | MAssistant | MReasoning | MTool | MError | MUnknown | MSystem
+export type ContentBlock = MUser | MAssistant | MReasoning | MTool | MError | MUnknown | MTips
 
 /**
  * 轮对话信息
@@ -16,7 +16,7 @@ export interface TurnMessage {
   /** 本轮轮状态 */
   status: 'running' | 'done' | 'aborted'
   /** 本轮用量 */
-  usage?: MessageUsage
+  usage: MessageUsage
   /** 开始时间:agent开始执行时间 */
   startTime?: number
   /** 结束时间:agent结束执行时间 */
@@ -26,15 +26,15 @@ export interface TurnMessage {
 /** 消息用量 */
 export interface MessageUsage {
   /** 输入Token */
-  inputTokens?: number
+  inputTokens: number
   /** 输出Token */
-  outputTokens?: number
+  outputTokens: number
   /** 缓存读Token */
-  cacheReadTokens?: number
+  cacheReadTokens: number
   /** 缓存写Token */
-  cacheWriteTokens?: number
+  cacheWriteTokens: number
   /** 总Token */
-  totalTokens?: number
+  totalTokens: number
 }
 
 /** ====================  内部类型实现  ==================== */
@@ -43,6 +43,8 @@ export interface MUser {
   type: 'user'
   /** 用户消息id->kwargs.id */
   id: string
+  /** 发送时间 */
+  time?: number
   /** 用户输入内容 */
   content?: string
   /** 扩展信息 */
@@ -91,8 +93,6 @@ export interface MTool {
   id: string
   /** 工具名 */
   name: string
-  /** agent描述,让他简短说明他要干什么 */
-  description?: string
   /** 调用参数(模型给的原始对象) */
   args: Record<string, unknown> | null
   /** 工具返回的文本,还没跑完是null */
@@ -120,14 +120,14 @@ export interface MUnknown {
   raw: unknown
 }
 
-/** 系统消息内容 */
-export interface MSystem {
-  type: 'system'
+/** 提示消息内容
+ *
+ * 不是协议层的 system 消息 | 是我们自己发出的状态提示(中断.插入等)
+ * 发给模型时走 user 通道 不占 system 层级 避免覆盖人格
+ */
+export interface MTips {
+  type: 'tips'
   id: string
-  /** 系统消息内容 */
+  /** 提示内容 */
   content: string
 }
-
-/**
- * TODO:后期可以新增一些时间字段,用于记录工具|思考|整轮消息使用的时间
- */

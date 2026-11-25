@@ -3,7 +3,7 @@ import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
 import type { ToolMessage } from '@langchain/core/messages'
 import { tool, type ToolRuntime } from '@langchain/core/tools'
 import { z } from 'zod'
-import { toolError } from './error'
+import { toolError } from '../error'
 
 /**
  * 文件系统类工具：读 / 写 / 局部替换 / 按名字找 / 按内容找。

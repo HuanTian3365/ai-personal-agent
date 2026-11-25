@@ -43,8 +43,7 @@ export async function init({
   /** ====================  用户是否中断了对话  ==================== */
   const isAborted = (): boolean => signal?.aborted === true
   /** ====================  历史消息  ==================== */
-  const historyMessage = ((await model.getState(loopConfig)).values?.messages ??
-    []) as BaseMessage[]
+  const historyMessage = (await model.getState(loopConfig)).values?.messages ?? []
   /** ====================  用户消息  ==================== */
   const userMessage = buildHumanMessage(message, messageId)
   return {
@@ -60,7 +59,7 @@ export interface BlockState {
   /** 当前消息id */
   id: string | undefined
   /** 当前消息用量 */
-  usage: MessageUsage | undefined
+  usage: MessageUsage
   /** 当前消息是否正在思考 */
   isReasoning: boolean
   /** 当前消息是否正在回复 */
@@ -73,7 +72,13 @@ export interface BlockState {
 export function initBlockState(): BlockState {
   return {
     id: undefined,
-    usage: undefined,
+    usage: {
+      inputTokens: 0,
+      outputTokens: 0,
+      cacheReadTokens: 0,
+      cacheWriteTokens: 0,
+      totalTokens: 0
+    },
     isReasoning: false,
     isAssistant: false,
     reasoning: '',

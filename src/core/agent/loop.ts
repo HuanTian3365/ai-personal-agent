@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto'
 import { AIMessage } from '@langchain/core/messages'
-import type { BaseMessage, ToolMessage } from '@langchain/core/messages'
+import { ChatMessage } from '@langchain/core/messages'
+import { ToolMessage } from '@langchain/core/messages'
+import type { BaseMessage } from '@langchain/core/messages'
 import { parseContent, parseReasoning } from '@core/message/parseStream'
-import { createDebugLog } from '@core/utils/log'
 import { getConversationTitle } from './title'
 import type { MessageEventSend } from '@shared/types/messageService'
 import type { AgentEvent } from '@shared/types/agentEvent'
@@ -40,9 +41,7 @@ export async function sendMessage({
   // 注册事件机
   const emitter = createEmitter(emit, conversationId)
   // 初始化标题
-  getConversationTitle(historyMessage.length === 0, conversationId, userMessage, emit)
-  // 初始化调试日志
-  const debugLog = createDebugLog(conversationId)
+  getConversationTitle(historyMessage.length === 0, conversationId, userMessage, emitter.title)
   // 启动轮
   emitter.turnStart(messageId, message)
 
@@ -51,8 +50,10 @@ export async function sendMessage({
   // reasoning/replying=已流出内容 服务于emitAborted回填 只在换调用时清
   let blockState: BlockState = initBlockState()
 
-  /** 当前正在调用的工具id */
+  /** 当前正在调用ToolMessage的id(发起调用) */
   const toolArgsSent = new Set<string>()
+  /** 当前已经收到ToolMessage的id(调用完成) */
+  const toolResults = new Set<string>()
   /** 已经落到checkpoint的消息id */
   const savedBlocks = new Set<string>()
 
@@ -90,9 +91,8 @@ export async function sendMessage({
       return
     }
     // 结束本轮
-    emitter.turnEnd(messageId, 'done')
+    emitter.turnEnd(messageId, 'done', blockState.usage)
   } catch (err) {
-    debugLog.debugLogError(err)
     // 存在正在输出的消息且它还没落地 | 必须在closeBlock前算 closeBlock会清掉id
     const pending = blockState.id !== undefined && !savedBlocks.has(blockState.id)
     // 清除消息状态,发收尾事件
@@ -111,10 +111,8 @@ export async function sendMessage({
       source: 'model'
     })
     // 结束本轮
-    emitter.turnEnd(messageId, 'done')
+    emitter.turnEnd(messageId, 'done', blockState.usage)
     throw err
-  } finally {
-    await debugLog.debugLogFlush()
   }
 
   /** ====================  辅助函数  ==================== */
@@ -131,36 +129,63 @@ export async function sendMessage({
     const aborted = new AIMessage({
       content: pending ? blockState.replying : '',
       additional_kwargs: {
-        status: 'aborted',
+        // reasoning_content是provider格式 原样留在这里
         ...(pending && blockState.reasoning !== ''
           ? { reasoning_content: blockState.reasoning }
           : {})
       }
     })
+    // 中断标记是业务字段 走hy_custom 跟消息一起落进hy_message
+    aborted.hyCustom = { aborted: true }
+
+    // 已经发起,但没等到结果的工具调用各补一条error的ToolMessage
+    // 否则checkpoint里会留下孤立的tool_calls下一轮请求会被严格实现的provider拒绝
+    const orphans: ToolMessage[] = []
+    for (const callId of toolArgsSent) {
+      if (toolResults.has(callId)) continue
+      orphans.push(
+        new ToolMessage({
+          tool_call_id: callId,
+          content: 'System:用户中断了会话',
+          status: 'error'
+        })
+      )
+    }
+    // 中断说明走 tips | ChatMessage(role:user) 不占 system 层级 不会覆盖人格
+    // 落库后跟 aborted 标记一起进 checkpoint 下一轮模型能看到 界面也投影成 tips 块
+    const tips = new ChatMessage({
+      id: randomUUID(),
+      role: 'user',
+      content: '（用户中断了上一轮对话，该条回复的内容不是完整内容）'
+    })
+    tips.hyCustom = { tipsIsHide: true }
+
     try {
-      // 把中断信息写入到checkpoint
-      await model.updateState({ configurable: loopConfig.configurable }, { messages: [aborted] })
+      // 顺序必须是 先补齐的 ToolMessage 再 aborted 标记 最后 tips 反过来就对不上了
+      await model.updateState(
+        { configurable: loopConfig.configurable },
+        { messages: [...orphans, aborted, tips] }
+      )
     } catch (err) {
       console.error('[loop] 写入 aborted 消息失败:', err instanceof Error ? err.message : err)
     }
-    emitter.turnEnd(messageId, 'aborted')
+    emitter.turnEnd(messageId, 'aborted', blockState.usage)
   }
 
   /** 清除当前消息状态,发它对应的end事件 */
   function closeBlock(): void {
     const { id } = blockState
     if (id === undefined) return
-    // 如果有正文消息,触发assistant-end事件
-    if (blockState.isAssistant) {
-      emitter.assistantEnd(messageId, id, blockState.usage)
-    }
-    // 如果有思考消息,触发reasoning-end事件
-    else if (blockState.isReasoning) {
+    // 思考与正文是两条线 各自收尾 不互斥
+    // 同一条消息可能思考->正文->思考 收尾时两个状态会同时为真
+    if (blockState.isReasoning) {
       emitter.reasoningEnd(messageId, id)
+    }
+    if (blockState.isAssistant) {
+      emitter.assistantEnd(messageId, id)
     }
     // 只清块自身的状态 | reasoning/replying要留给emitAborted补写 换调用时才整体替换
     blockState.id = undefined
-    blockState.usage = undefined
     blockState.isReasoning = false
     blockState.isAssistant = false
   }
@@ -194,18 +219,6 @@ export async function sendMessage({
     const delta = parseContent(messageChunk.content)
     blockState.replying += delta
 
-    // 用量只在收尾块上出现,先攒着,等这条消息收尾时带给assistant-end
-    const usage = (messageChunk as AIMessage).usage_metadata
-    if (usage !== undefined) {
-      blockState.usage = {
-        inputTokens: usage.input_tokens,
-        outputTokens: usage.output_tokens,
-        cacheReadTokens: usage.input_token_details?.cache_read ?? 0,
-        cacheWriteTokens: usage.input_token_details?.cache_creation ?? 0,
-        totalTokens: usage.total_tokens
-      }
-    }
-
     // 思考处理
     if (think !== '') {
       // 如果当前为非思考状态,改成思考状态,并发起事件
@@ -219,9 +232,13 @@ export async function sendMessage({
 
     // 内容处理
     if (delta !== '') {
-      // 如果存在思考状态,则关闭思考状态,然后开启内容状态
+      // 正文出现即关闭思考段 | 同一条消息后面可能再思考 置回false让下一段能重新start
+      if (blockState.isReasoning) {
+        emitter.reasoningEnd(messageId, blockId)
+        blockState.isReasoning = false
+      }
+      // 如果当前为非内容状态,改成内容状态,并发起事件
       if (!blockState.isAssistant) {
-        if (blockState.isReasoning) emitter.reasoningEnd(messageId, blockId)
         emitter.assistantStart(messageId, blockId)
         blockState.isAssistant = true
       }
@@ -262,13 +279,29 @@ export async function sendMessage({
          */
 
         // 标记这次模型调用已经写进checkpoint了,好让中断时判断要不要补写内容
-        if (block.type === 'ai' && block.id !== undefined) savedBlocks.add(block.id)
+        // 顺带记用量:同一条消息可能重复投递,只在首次见到时加,否则会翻倍
+        if (block.type === 'ai' && block.id !== undefined) {
+          if (!savedBlocks.has(block.id)) addUsage((block as AIMessage).usage_metadata)
+          savedBlocks.add(block.id)
+        }
 
         // 判断是否跟工具相关并作出行动
         emeToolAction(block)
       }
     }
 
+    /** 累加一次模型调用的用量 | 只用 usage_metadata */
+    function addUsage(usage: AIMessage['usage_metadata']): void {
+      if (usage === undefined) return
+      const details = usage.input_token_details
+      blockState.usage = {
+        inputTokens: blockState.usage.inputTokens + usage.input_tokens,
+        outputTokens: blockState.usage.outputTokens + usage.output_tokens,
+        cacheReadTokens: blockState.usage.cacheReadTokens + (details?.cache_read ?? 0),
+        cacheWriteTokens: blockState.usage.cacheWriteTokens + (details?.cache_creation ?? 0),
+        totalTokens: blockState.usage.totalTokens + usage.total_tokens
+      }
+    }
     /**
      * 工具事件监听
      *
@@ -299,9 +332,12 @@ export async function sendMessage({
       // 工具跑完发送结束事件
       if (block.type === 'tool') {
         const toolMessage = block as ToolMessage
+        const callId = toolMessage.tool_call_id ?? ''
+        // 记录这个工具已经运行完成
+        if (callId !== '') toolResults.add(callId)
         emitter.toolEnd(
           messageId,
-          toolMessage.tool_call_id ?? '',
+          callId,
           toolMessage.status === 'error' ? 'error' : 'done',
           parseContent(toolMessage.content)
         )

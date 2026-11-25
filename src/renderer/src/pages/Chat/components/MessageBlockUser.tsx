@@ -1,18 +1,42 @@
-import { Message, MessageContent } from '@renderer/components/ui/message'
+import { Message, MessageContent, MessageFooter } from '@renderer/components/ui/message'
 import type { MUser } from '@shared/types/message'
 import { Bubble, BubbleContent } from '@renderer/components/ui/bubble'
+import { Button } from '@renderer/components/ui/button'
+import { CopyIcon } from 'lucide-react'
+import { formatClock } from '@renderer/lib/format'
+import { copyText } from '@renderer/lib/copy'
+import { cn } from '@renderer/lib/utils'
 
 interface Props {
   context: MUser
+  isLast?: boolean
 }
 
-export default function MessageBlockUser({ context }: Props): React.JSX.Element {
+export default function MessageBlockUser({ context, isLast }: Props): React.JSX.Element {
   return (
     <Message align="end">
-      <MessageContent>
+      <MessageContent className="gap-0 group">
         <Bubble align="end" variant="muted">
           <BubbleContent className="whitespace-pre-wrap">{context.content}</BubbleContent>
         </Bubble>
+        <MessageFooter
+          className={cn(
+            'p-0 flex gap-2',
+            !isLast && 'opacity-0 transition-opacity duration-200 group-hover:opacity-100'
+          )}
+        >
+          <div>{context.time ? formatClock(context.time) : null}</div>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Copy"
+            onClick={() => {
+              copyText(context.content || '')
+            }}
+          >
+            <CopyIcon className="-scale-x-100" />
+          </Button>
+        </MessageFooter>
       </MessageContent>
     </Message>
   )
