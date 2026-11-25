@@ -51,15 +51,6 @@ export default function migrate(database: Database): void {
   // 建表语句都是 IF NOT EXISTS，重建后照常执行
   database.exec(DDL)
 
-  // 加列：DDL 管新库，这里管老库（CREATE TABLE IF NOT EXISTS 不会给已存在的表加列）
-  ensureColumn(
-    database,
-    'hy_conversation',
-    'langgraph_state',
-    "langgraph_state TEXT NOT NULL DEFAULT '{}'"
-  )
-  ensureColumn(database, 'hy_conversation', 'expand', "expand TEXT NOT NULL DEFAULT '{}'")
-
   // 版本号：全新库没有记录，或刚被重建（表被清空），都要写入当前版本；
   // 注意重建后不能走 UPDATE——那张表已经被 DROP 重建过，里面是空的。
   if (storedVersion !== SCHEMA_VERSION) {
@@ -73,18 +64,6 @@ export default function migrate(database: Database): void {
 
   // 初始化数据
   initData(database)
-}
-
-/**
- * 老库补列
- *
- * DDL 里的建表语句都是 IF NOT EXISTS，对已经存在的表什么都不做，
- * 所以给老表加列必须单独 ALTER。列已存在就跳过，可以反复跑。
- */
-function ensureColumn(database: Database, table: string, column: string, ddl: string): void {
-  const columns = database.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]
-  if (columns.some((item) => item.name === column)) return
-  database.exec(`ALTER TABLE ${table} ADD COLUMN ${ddl}`)
 }
 
 /** 获取数据库版本 */

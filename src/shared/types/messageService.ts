@@ -5,6 +5,7 @@
 import type { AgentEventEnvelope, QueueItem } from '@shared/types/agentEvent'
 import type { MUser } from '@shared/types/message'
 
+/** 用户发送的消息:渲染测到loop的参数类型 */
 export type MessageEventSend = Omit<MUser, 'type' | 'id'>
 
 /** `agent:send` 的投递方式 | queue: 排队等本轮结束 insert: 推进当前轮 */

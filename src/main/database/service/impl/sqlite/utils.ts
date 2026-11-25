@@ -13,18 +13,3 @@ export function nextConversationSortIndex(database: Database, groupId: string | 
   const row = (groupId === null ? stmt.get() : stmt.get(groupId)) as { n: number }
   return row.n
 }
-
-/**
- * 解析一个 JSON 对象文本
- *
- * 库里的 expand 是自由 JSON 解析失败或不是对象一律当空对象 不让脏数据把整条链路带崩
- */
-export function parseJsonObject(text: string): Record<string, unknown> {
-  try {
-    const parsed: unknown = JSON.parse(text)
-    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
-    return parsed as Record<string, unknown>
-  } catch {
-    return {}
-  }
-}

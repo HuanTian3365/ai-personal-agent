@@ -10,7 +10,7 @@ import type {
 } from '@shared/types/messageService'
 
 const agentApi = {
-  // to main -> 发送对话 | mode 决定排队还是插队
+  // to main -> 发送对话,mode决定排队还是插队
   send: (conversationId: string, message: MessageEventSend, mode: SendMode): Promise<SendResult> =>
     ipcRenderer.invoke(IPC.agent.send, conversationId, message, mode),
   // to main -> 中断对话

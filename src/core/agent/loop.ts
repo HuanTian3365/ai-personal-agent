@@ -139,7 +139,7 @@ export async function sendMessage({
       }
     })
     // 中断标记是业务字段 走hy_custom 跟消息一起落进hy_message
-    aborted.hyCustom = { aborted: true }
+    aborted.HyMessageCustom = { aborted: true }
 
     // 已经发起,但没等到结果的工具调用各补一条error的ToolMessage
     // 否则checkpoint里会留下孤立的tool_calls下一轮请求会被严格实现的provider拒绝
@@ -161,7 +161,7 @@ export async function sendMessage({
       role: 'user',
       content: '（用户中断了上一轮对话，该条回复的内容不是完整内容）'
     })
-    tips.hyCustom = { tipsIsHide: true }
+    tips.HyMessageCustom = { tipsIsHide: true }
 
     try {
       // 顺序必须是 先补齐的 ToolMessage 再 aborted 标记 最后 tips 反过来就对不上了
@@ -204,7 +204,7 @@ export async function sendMessage({
     if (messageChunk === undefined) return
     // 排除工具消息,工具链路由updates驱动,这里放进来会误判成新消息而换块
     if (messageChunk.type === 'tool') return
-    // 排除插队进来的用户消息: 它在点插队时已经推过一块了
+    // 排除插队进来的用户消息(插队消息也会走流): 它在点插队时已经推过一块了
     // 放进来会被当成模型正文 界面上就会把用户的话重复渲染一遍
     if (messageChunk.type === 'human') return
 

@@ -268,5 +268,17 @@
     },
     "src/renderer/src/pages/Chat/components/InputQueue.tsx": {
         "description": "排队列表"
+    },
+    "src/main/runtime/drive.ts": {
+        "description": "消息驱动"
+    },
+    "src/main/runtime/queue.ts": {
+        "description": "排队插入"
+    },
+    "src/main/runtime/run.ts": {
+        "description": "消息队列"
+    },
+    "src/shared/types/hyDefinition.ts": {
+        "description": "底层扩展数据"
     }
 }

@@ -128,19 +128,11 @@ export interface AEBlockRemove {
   blockId: string
 }
 
-/**
- * 排队项。
- *
- * 生成期间用户又发的一条先躺在这里：next-turn 等本轮结束作为新一轮发出
- * next-step 在下一个 step 边界推进当前轮(界面上的插队)
- */
-export interface QueueItem {
-  id: string
-  text: string
-  /** 投递方式 | next-turn: 等本轮结束 next-step: 推进当前轮 */
-  target: 'next-turn' | 'next-step'
-  /** 是否已被当前轮领取 | 领取后不再参与「本轮要不要继续」的判断 见 core/graph/nodes.ts */
-  claimed?: boolean
+/** 更新标题 */
+export interface AETitle {
+  type: 'title'
+  conversationId: string
+  title: string
 }
 
 /** 队列消息 */
@@ -150,9 +142,19 @@ export interface AEQueue {
   queue: QueueItem[]
 }
 
-/** 更新标题 */
-export interface AETitle {
-  type: 'title'
-  conversationId: string
-  title: string
+/**
+ * 排队项
+ *
+ * 生成期间用户又发的一条先躺在这里:next-turn等本轮结束作为新一轮发出
+ * next-step在下一个step边界推进当前轮(界面上的插队)
+ */
+export interface QueueItem {
+  /** 消息id */
+  id: string
+  /** 消息内容 */
+  text: string
+  /** 投递方式 | next-turn: 等本轮结束(排队) next-step: 推进当前轮(插队) */
+  target: 'next-turn' | 'next-step'
+  /** 是否已被当前轮领取|领取后不再参与[本轮要不要继续]的判断,见core/graph/nodes.ts */
+  claimed?: boolean
 }

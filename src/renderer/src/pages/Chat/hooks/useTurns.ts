@@ -51,10 +51,17 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
   const [error, setError] = useState<string | null>(null)
   /** 排队区内容 */
   const [queue, setQueue] = useState<QueueItem[]>([])
-  /** 队列的即时镜像 | 事件处理器要用最新值 React的state会滞后一帧 */
-  const queueRef = useRef<QueueItem[]>([])
+
   /** 当前对话ID */
   const currentIdRef = useRef(conversationId)
+  /** 队列的即时镜像,事件处理器要用最新值 React的state会滞后一帧 */
+  const queueRef = useRef<QueueItem[]>([])
+  /** 最后一条事件的全局序号|丢弃seq小于等于它的事件(已经重放完了) */
+  const snapSeqRef = useRef(0)
+  /** 读历史期间收到的事件,快照之后才到事件的要在快照重放完后补上 */
+  const pendingRef = useRef<AgentEventEnvelope[]>([])
+  /** 历史是否已就绪,没就绪时事件只攒不应用(此时turns还是空的) */
+  const readyRef = useRef(false)
 
   /** 同时更新状态与镜像 */
   function applyQueue(next: QueueItem[]): void {
@@ -70,13 +77,6 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
         .map((item) => item.id)
     )
   }
-
-  /** 最后一条事件的全局序号|丢弃seq小于等于它的事件(已经重放完了) */
-  const snapSeqRef = useRef(0)
-  /** 读历史期间收到的事件,快照之后才到事件的要在快照重放完后补上 */
-  const pendingRef = useRef<AgentEventEnvelope[]>([])
-  /** 历史是否已就绪,没就绪时事件只攒不应用(此时turns还是空的) */
-  const readyRef = useRef(false)
 
   /**
    * 会话窗口监听
@@ -183,7 +183,7 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
       if (event.type === 'turn-start') setIsReplying(true)
       if (event.type === 'turn-end') setIsReplying(false)
       if (event.type === 'title') setTitle(event.title)
-      // 队列不属于任何一轮 单独一份 state
+      // 队列不属于任何一轮,单独一份 state
       if (event.type === 'queue') applyQueue(event.queue)
     })
     return off

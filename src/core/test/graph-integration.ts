@@ -161,13 +161,13 @@ async function main(): Promise<void> {
   const messages = (state.values.messages ?? []) as BaseMessage[]
   check('getState 拿到 4 条', messages.length === 4, `实际 ${messages.length}`)
   check(
-    '每条都有 hyField',
-    messages.every((item) => item.hyField !== undefined)
+    '每条都有 HyMessageField',
+    messages.every((item) => item.HyMessageField !== undefined)
   )
   check(
-    'hyField.seq 与库里一致',
-    messages.map((item) => item.hyField?.seq).join(',') === '1,2,3,4',
-    messages.map((item) => item.hyField?.seq).join(',')
+    'HyMessageField.seq 与库里一致',
+    messages.map((item) => item.HyMessageField?.seq).join(',') === '1,2,3,4',
+    messages.map((item) => item.HyMessageField?.seq).join(',')
   )
   check(
     '最后一条是最终回复',
@@ -201,7 +201,7 @@ async function main(): Promise<void> {
     id: 'ai-aborted',
     additional_kwargs: { status: 'aborted' }
   })
-  aborted.hyCustom = { aborted: true }
+  aborted.HyMessageCustom = { aborted: true }
   await graph2.updateState(config, { messages: [aborted] })
 
   const rows3 = database
@@ -231,7 +231,7 @@ async function main(): Promise<void> {
   const stateAfter = await graph2.getState(config)
   const messagesAfter = (stateAfter.values.messages ?? []) as BaseMessage[]
   check('getState 7 条', messagesAfter.length === 7, `实际 ${messagesAfter.length}`)
-  check('最后一条 hyCustom.aborted 可读', messagesAfter[6].hyCustom?.aborted === true)
+  check('最后一条 HyMessageCustom.aborted 可读', messagesAfter[6].HyMessageCustom?.aborted === true)
 
   console.log('\n[6] 体积对比')
   const bytes = database

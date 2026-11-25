@@ -29,15 +29,15 @@ function parseLangChainMessage(messages: BaseMessage[]): TurnMessage[] {
 
   messages.forEach((msg, index) => {
     // tipsIsHide 的提示只发给模型 不进界面 | 放在最前 免得它改轮结束时间
-    if (msg.hyCustom?.tipsIsHide === true) return
+    if (msg.HyMessageCustom?.tipsIsHide === true) return
     // 消息id
     const id = msg.id ?? `msg-${index}`
     // 当前消息产生时间
-    const ts = msg.hyField?.createdAt ?? 0
+    const ts = msg.HyMessageField?.createdAt ?? 0
     try {
       /** ====================  用户消息|插入消息  ==================== */
       if (msg.type === 'human') {
-        const insertFlag = msg.hyCustom?.insertFlag === true
+        const insertFlag = msg.HyMessageCustom?.insertFlag === true
         insertTurn(
           {
             id,
@@ -65,7 +65,7 @@ function parseLangChainMessage(messages: BaseMessage[]): TurnMessage[] {
         }
 
         // 会话是否被中断,中断的话视为此轮被中断
-        const aborted = msg.hyCustom?.aborted === true
+        const aborted = msg.HyMessageCustom?.aborted === true
         if (aborted) {
           if (turn !== undefined) turn.status = 'aborted'
         }

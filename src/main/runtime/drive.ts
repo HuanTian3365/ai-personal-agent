@@ -33,13 +33,16 @@ import {
 /**
  * 提交一条消息。
  *
- * 会话空闲 -> 入队并起驱动(队列里若有上次中断留下的 会先发它们 先进先出)
- * 会话在跑 + insert -> 入队 next-step 并立即画进当前轮
- * 会话在跑 + queue -> 入队 next-turn 等本轮结束
+ * 会话空闲->入队并起驱动(队列里若有上次中断留下的,会先发它们,先进先出)
+ * 会话在跑+insert->入队next-step 并立即画进当前轮
+ * 会话在跑+queue->入队next-turn 等本轮结束
  */
 export async function submitMessage(props: {
+  /** 会话id */
   conversationId: string
+  /** 用户发送内容 */
   message: MessageEventSend
+  /** 发送模式:排队/插队 */
   mode: SendMode
 }): Promise<SendResult> {
   const { conversationId, message, mode } = props
@@ -47,6 +50,7 @@ export async function submitMessage(props: {
 
   // 生成中
   if (isRunning(conversationId)) {
+    // 插入
     if (mode === 'insert') {
       const queue = await pushQueue(conversationId, text, 'next-step')
       const item = queue.at(-1)
@@ -72,9 +76,9 @@ export async function submitMessage(props: {
 }
 
 /**
- * 驱动循环。
+ * 驱动循环
  *
- * 每轮领一条 next-turn 跑一轮 跑完再领 领不到就退出
+ * 每轮领一条next-turn(排队)消息,跑一轮,跑完再领,领不到就退出
  */
 async function drive(conversationId: string, controller: AbortController): Promise<void> {
   const emit = (event: AgentEvent): void => {
@@ -82,11 +86,14 @@ async function drive(conversationId: string, controller: AbortController): Promi
   }
   try {
     while (true) {
+      // 取出一条排队消息
       const next = claimNextTurn(conversationId)
       if (next === null) break
+      // 通知界面:排队列表更新(被取走一条)
       emitQueue(conversationId, listQueue(conversationId))
       beginTurn(conversationId, next.id)
-      // 把待插入的来源交给core 每个step开头来取
+
+      // 把"去哪取插队消息"的三个回调注册给 core，core 在每次调模型前自己去取
       const unregister = setInsertSource(conversationId, {
         take: () => claimInserts(conversationId).map((item) => ({ id: item.id, text: item.text })),
         release: () => {
@@ -96,7 +103,9 @@ async function drive(conversationId: string, controller: AbortController): Promi
         },
         hasUnclaimed: () => hasUnclaimedInserts(conversationId)
       })
+
       try {
+        // 发送消息
         await sendMessage({
           conversationId,
           message: { content: next.text },
@@ -105,31 +114,33 @@ async function drive(conversationId: string, controller: AbortController): Promi
           signal: controller.signal
         })
         if (controller.signal.aborted) {
-          // 中断: 这一轮没用完的插队项还回去
+          // 中断:这一轮没用完的插队项还回去,界面取消占位显示
           for (const item of releaseInserts(conversationId)) {
             revokeInsertBlock(conversationId, item.id)
           }
         } else {
-          // 正常跑完: 领过的删掉 没领走的退回排队并撤回界面上那块
+          // 正常跑完:领过的删掉,没领走的退回排队并撤回界面上那块
           dropClaimed(conversationId)
           for (const item of revertInserts(conversationId)) {
             revokeInsertBlock(conversationId, item.id)
           }
         }
       } catch {
-        // 这一轮失败: 把领走的插队项放回 消息不丢
+        // 运行出错:这一轮没用完的插队项还回去,界面取消占位显示
         for (const item of releaseInserts(conversationId)) {
           revokeInsertBlock(conversationId, item.id)
         }
       } finally {
         unregister()
       }
+      // 界面:排队列表更新
       emitQueue(conversationId, listQueue(conversationId))
       // 用户中断就不接着发下一条
       if (controller.signal.aborted) break
     }
   } finally {
     finishRun(conversationId)
+    /** 更新界面的排队列表(一般情况下是空的,被消费完了) */
     emitQueue(conversationId, listQueue(conversationId))
   }
 }

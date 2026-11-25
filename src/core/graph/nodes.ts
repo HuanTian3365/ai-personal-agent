@@ -81,7 +81,7 @@ export async function callModel(
   const inserts = (source?.take() ?? []).map((item) => {
     const message = new HumanMessage({ content: item.text, id: item.id })
     // 插入标记是业务字段 走hy_custom 不塞additional_kwargs
-    message.hyCustom = { insertFlag: true }
+    message.HyMessageCustom = { insertFlag: true }
     return message
   })
   const messages = inserts.length === 0 ? state.messages : [...state.messages, ...inserts]

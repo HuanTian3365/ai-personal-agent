@@ -54,7 +54,7 @@ export default function registerAgentIpc(ipcMain: Electron.IpcMain): void {
     abortRun(conversationId)
   })
 
-  /** 取进行中那一轮的快照 | 没在跑返回 null */
+  /** 获得进行中那一轮的快照,没在跑返回 null */
   ipcMain.handle(IPC.agent.snapshot, (_event, conversationId: unknown): StreamSnapshot | null => {
     if (typeof conversationId !== 'string' || conversationId.trim() === '') {
       throw new Error('agent.snapshot: conversationId 必须是非空字符串')

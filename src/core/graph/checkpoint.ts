@@ -8,7 +8,7 @@ import type {
   CheckpointTuple
 } from '@langchain/langgraph-checkpoint'
 import type BetterSqlite3 from 'better-sqlite3'
-import type { HyCustom, HyExpand, HyField } from '@shared/types/hyMessage'
+import type { HyMessageCustom, HyMessageExpand, HyMessageField } from '@shared/types/hyDefinition'
 
 /**
  * LangChain 消息 ⇄ 消息表的转换层 | 取代原来的 checkpoint saver
@@ -280,7 +280,7 @@ CREATE TABLE IF NOT EXISTS ${MESSAGES} (
    * 消息 -> 行
    *
    * 砍掉序列化外壳里能无条件重建的部分（lc / type / id），其余原样保留。
-   * hy_custom 塞进 kwargs 跟着正文走；hyField 是行级信息 不序列化。
+   * hy_custom 塞进 kwargs 跟着正文走；HyMessageField 是行级信息 不序列化。
    */
   private async toRow(
     message: BaseMessage,
@@ -299,10 +299,10 @@ CREATE TABLE IF NOT EXISTS ${MESSAGES} (
     const sourceData = { lc: outer.lc, type: outer.type, id: outer.id }
     const kwargs = { ...(outer.kwargs ?? {}) }
     // 只挂我们自己写进去的字段 provider 写的一律原样不动
-    const custom = message.hyCustom
+    const custom = message.HyMessageCustom
     if (custom !== undefined && Object.keys(custom).length > 0) kwargs.hy_custom = custom
 
-    const expand: HyExpand = { status: 'message' }
+    const expand: HyMessageExpand = { status: 'message' }
 
     return {
       id: randomUUID(),
@@ -334,18 +334,18 @@ CREATE TABLE IF NOT EXISTS ${MESSAGES} (
    * 所以必须在这里手动挂回。反过来 dumpsTyped 也不会把它带进 payload | 发给模型天然不泄漏。
    */
   private attach(message: BaseMessage, row: MessageRow): void {
-    const kwargs = JSON.parse(row.message) as { hy_custom?: HyCustom }
-    const field: HyField = {
+    const kwargs = JSON.parse(row.message) as { hy_custom?: HyMessageCustom }
+    const field: HyMessageField = {
       id: row.id,
       conversationId: row.conversation_id,
       seq: row.seq,
       sourceData: JSON.parse(row.source_data) as Record<string, unknown>,
       metadata: JSON.parse(row.metadata) as CheckpointMetadata,
-      expand: JSON.parse(row.expand) as HyExpand,
+      expand: JSON.parse(row.expand) as HyMessageExpand,
       createdAt: row.created_at
     }
-    message.hyField = field
-    message.hyCustom = kwargs.hy_custom ?? {}
+    message.HyMessageField = field
+    message.HyMessageCustom = kwargs.hy_custom ?? {}
   }
 }
 

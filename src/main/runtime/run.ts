@@ -1,10 +1,10 @@
 /**
- * agent 域的进程内运行台账。
+ * agent 域的进程内运行台账
  *
- * 每会话一条记录：中断信号 + 本轮已发出的事件。事件是切回会话时的重放源
+ * 每会话一条记录:中断信号+本轮已发出的事件,事件是切回会话时的重放源
  * (见 docs/规范与定义/04.流式快照与事件重放.md)。
  *
- * 只管台账与推送：队列在 queue.ts 驱动循环在 drive.ts core 不知道这里存在。
+ * 只管台账与推送:队列在queue.ts驱动循环在drive.ts,core不知道这里存在。
  */
 
 import type { AgentEvent, AgentEventEnvelope, QueueItem } from '@shared/types/agentEvent'
@@ -77,16 +77,16 @@ export function recordEvent(event: AgentEvent): AgentEventEnvelope {
 }
 
 /**
- * 推一次队列全量。
+ * 把排队列表推出去
  *
- * 不进本轮事件缓冲: 队列不属于某一轮 切回会话时单独拉 agent:queue
+ * 不进本轮事件缓冲:队列不属于某一轮,切回会话时单独拉agent:queue
  */
 export function emitQueue(conversationId: string, queue: QueueItem[]): void {
   broadcast({ seq: ++nextSeq, event: { type: 'queue', conversationId, queue } })
 }
 
 /**
- * 插队消息立即画进当前轮。
+ * 插队消息立即画进当前轮(先显示)
  *
  * 这是整个流程里唯一推插入块的地方: 落库时不再推(会重复) 刷新后靠历史投影认 insertFlag
  * 本轮没领走就由 revokeInsertBlock 撤回 见 drive.ts 的收尾
@@ -110,7 +110,9 @@ export function emitInsertBlock(conversationId: string, item: { id: string; text
   )
 }
 
-/** 撤掉乐观显示的插队块 | 本轮没领走时用 */
+/**
+ * 把界面上那条提前画出来,但最终没发出去的消息块删掉(撤掉乐观显示的插队块,本轮没领走时用)
+ */
 export function revokeInsertBlock(conversationId: string, blockId: string): void {
   const run = running.get(conversationId)
   if (run === undefined || run.turnId === null) return
@@ -124,7 +126,7 @@ export function revokeInsertBlock(conversationId: string, blockId: string): void
   )
 }
 
-/** 取某会话进行中那一轮的快照 | 没在跑返回null */
+/** 取某会话进行中那一轮的快照,没在跑返回null */
 export function getSnapshot(conversationId: string): StreamSnapshot | null {
   const run = running.get(conversationId)
   if (run === undefined) return null
