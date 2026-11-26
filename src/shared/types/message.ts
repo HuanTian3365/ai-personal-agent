@@ -1,3 +1,10 @@
+/**
+ * 一轮对话与轮内消息块 (TM)
+ *
+ * 放: core和渲染层都要读的轮形状.块形状 以及由它们直接派生的输入形状
+ * 不放: 存库形状(-> hyEntity.ts) | 事件(-> agentEvent.ts) | 通道出入参(-> ipcContract.ts)
+ */
+
 /** 一轮里的一条消息 (TM=轮消息结构) */
 export type TurnMessageBlock =
   TMUser | TMAssistant | TMReasoning | TMTool | TMError | TMUnknown | TMTips

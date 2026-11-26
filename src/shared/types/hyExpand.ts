@@ -1,7 +1,9 @@
 /**
  * hy_ 表的扩展字段 (HYE)
  *
- * 库里是json文本 读出来就是这些形状 不做字段转换
+ * 放: 库里 expand / metadata 这类json列解析出来的形状 读到即用 不做字段转换
+ * 不放: 需要转换的列(-> hyEntity.ts) | 一次请求或响应的形状(-> ipcContract.ts)
+ * 例外: HYEQueueItem.claimed 是运行态 但它跟排队项同生共死 留在一处 不另开文件
  */
 
 import type { HYMessageField } from './hyEntity'

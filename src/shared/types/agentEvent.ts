@@ -1,6 +1,13 @@
 import type { TurnMessageBlock, MessageUsage, TurnMessage } from '@shared/types/message'
 import type { HYEQueueItem } from './hyExpand'
-/** 推给渲染层的事件 | 纯数据 不含seq之类的传输字段 */
+
+/**
+ * 推给渲染层的事件流 (AE)
+ *
+ * 放: 事件本体 + 推送信封 事件里嵌的领域形状只引用 不在这里定义
+ * 不放: 为了绕开依赖环从别处搬进来的形状 | 一次请求或响应的形状(-> ipcContract.ts)
+ */
+/** 全部事件 | 纯数据 不含seq之类的传输字段 */
 export type AgentEvent =
   | AETurnStart
   | AETurnEnd

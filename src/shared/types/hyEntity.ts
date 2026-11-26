@@ -1,8 +1,9 @@
 /**
  * hy_ 表的行 -> 业务形状 (HY)
  *
- * 每张表的列在这里变成代码里直接能用的字段
- * snake_case -> camelCase | 0/1 -> boolean | json列解析成对应形状
+ * 放: 某张表的一行 转换后代码里直接能用的样子 snake_case -> camelCase | 0/1 -> boolean
+ * 不放: json列里包着的形状(-> hyExpand.ts) | 一次请求或响应的形状(-> ipcContract.ts)
+ *       只在进程内活的运行态
  */
 
 import type { HYEConversationExpand, HYEMessageExpand } from './hyExpand'

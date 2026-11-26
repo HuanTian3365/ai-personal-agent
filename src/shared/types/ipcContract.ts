@@ -1,8 +1,9 @@
 /**
  * IPC 契约 | 每个通道的入参和出参
  *
- * 通道名在ipc.ts 形状在这里 按那边的域分组
- * 每个IPC.xxx.yyy的出入参都能在这一份里查到
+ * 放: 描述[一次请求或响应长什么样]的类型 按ipc.ts的域分组
+ * 不放: 描述[某个东西是什么]的实体 轮-> message.ts | 表行-> hyEntity.ts | 排队项-> hyExpand.ts
+ * 响应里带的实体从各实体文件引用 不在这里重定义
  */
 
 import type { AgentEventEnvelope } from './agentEvent'
