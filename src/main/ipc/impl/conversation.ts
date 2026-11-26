@@ -113,7 +113,9 @@ export default function registerConversationIpc(ipcMain: Electron.IpcMain): void
   })
   /** ====================  消息  ==================== */
   // 消息列表
-  ipcMain.handle(IPC.message.list, (_event, request: unknown) => {
+  // getHistoryMessage读的是checkpoint快照 天生异步 | 必须await再装进data
+  // 直接塞Promise过不了IPC结构化克隆 而且异常发生在handler返回之后 catch也接不住
+  ipcMain.handle(IPC.message.list, async (_event, request: unknown) => {
     const fields = objectInput(request)
     if (fields === null) return { success: false, error: '入参必须是对象' }
     const { conversationId } = fields
@@ -122,7 +124,8 @@ export default function registerConversationIpc(ipcMain: Electron.IpcMain): void
     }
     // 不经过数据层 自己兜
     try {
-      return { success: true, data: getHistoryMessage(conversationId) }
+      const data = await getHistoryMessage(conversationId)
+      return { success: true, data }
     } catch (err) {
       return { success: false, error: errorText('读取消息', err) }
     }
