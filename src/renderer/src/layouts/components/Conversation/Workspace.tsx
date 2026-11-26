@@ -6,7 +6,7 @@ import {
   SidebarMenu,
   SidebarMenuItem
 } from '@renderer/components/ui/sidebar'
-import Group from './Group'
+import WorkspaceGroupList from './WorkspaceGroupList'
 import WorkspaceHeader from './WorkspaceHeader'
 import { CircleX, Loader } from 'lucide-react'
 import type { WorkspaceSection } from '@renderer/hooks/useConversationList'
@@ -27,6 +27,7 @@ interface Props {
   onToggleOpen: (id: string, open: boolean) => Promise<void>
   onGroupRename: ToAsync<GroupRenameFun>
   onGroupDelete: ToAsync<GroupDeleteFun>
+  onGroupReorder: (workspaceId: string, ids: string[]) => Promise<void>
 }
 
 export default function Workspace({
@@ -37,7 +38,8 @@ export default function Workspace({
   onAddGroup,
   onToggleOpen,
   onGroupRename,
-  onGroupDelete
+  onGroupDelete,
+  onGroupReorder
 }: Props): React.JSX.Element {
   return (
     <SidebarContent>
@@ -75,16 +77,15 @@ export default function Workspace({
                   <span className="block px-2 py-1 text-xs text-muted-foreground">暂无分组</span>
                 </SidebarMenuItem>
               )}
-              {section.groups.map((group) => (
-                <Group
-                  key={group.key}
-                  group={group}
-                  onAddConversation={onAddConversation}
-                  onToggleOpen={onToggleOpen}
-                  onGroupRename={onGroupRename}
-                  onGroupDelete={onGroupDelete}
-                />
-              ))}
+              <WorkspaceGroupList
+                workspaceId={section.workspace.id}
+                groups={section.groups}
+                onAddConversation={onAddConversation}
+                onToggleOpen={onToggleOpen}
+                onGroupRename={onGroupRename}
+                onGroupDelete={onGroupDelete}
+                onGroupReorder={onGroupReorder}
+              />
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

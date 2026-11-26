@@ -34,6 +34,8 @@ import { toast } from 'sonner'
 import GroupRename from './GroupRename'
 import GroupDelete from './GroupDelete'
 import { useState } from 'react'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import type { GroupDeleteFun, GroupRenameFun, ToAsync } from '@shared/types/ipcContract'
 
 /** 第二层分组的行: 可折叠 展开后列出该分组下的对话(第三层) */
@@ -57,6 +59,11 @@ export default function Group({
 }: Props): React.JSX.Element {
   const [renameFlag, setRenameFlag] = useState(false)
   const [deleteFlag, setDeleteFlag] = useState(false)
+  /** 拖动排序 | 整块(标题行 + 展开的子对话)一起动 默认分组恒末尾不注册 */
+  const { listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: group.key,
+    disabled: group.isDefault
+  })
   /** 显示图标 */
   function showIcon(): React.JSX.Element {
     if (group.isDefault) {
@@ -81,7 +88,17 @@ export default function Group({
   }
 
   return (
-    <SidebarMenuItem>
+    <SidebarMenuItem
+      ref={setNodeRef}
+      // 拖动中浮到上层 否则后面的分组会盖住它
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 20 : undefined,
+        opacity: isDragging ? 0.6 : undefined
+      }}
+      {...listeners}
+    >
       <Collapsible open={group.isOpen} onOpenChange={(open) => void onToggleOpen(group.key, open)}>
         {/* 右侧要放两个按钮 给标题留够空间 否则长标题钻到按钮下面 */}
         <CollapsibleTrigger

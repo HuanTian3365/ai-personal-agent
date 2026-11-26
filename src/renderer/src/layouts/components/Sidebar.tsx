@@ -17,7 +17,8 @@ export default function Sidebar(): React.JSX.Element {
     createGroup,
     toggleGroupOpen,
     groupRename,
-    groupDelete
+    groupDelete,
+    groupReorder
   } = useConversationList()
   const [createTarget, setCreateTarget] = React.useState<HYWorkspace | null>(null)
   return (
@@ -32,6 +33,7 @@ export default function Sidebar(): React.JSX.Element {
         onToggleOpen={toggleGroupOpen}
         onGroupRename={groupRename}
         onGroupDelete={groupDelete}
+        onGroupReorder={groupReorder}
       />
       <CreateGroupDialog
         open={createTarget !== null}
