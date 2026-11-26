@@ -31,7 +31,10 @@ export const IPC = {
   group: {
     list: 'group:list',
     create: 'group:create',
-    expand: 'group:expand'
+    expand: 'group:expand',
+    delete: 'group:delete',
+    rename: 'group:rename',
+    folder: 'group:folder'
   },
   /** 侧栏第三层 */
   conversation: {

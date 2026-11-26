@@ -2,6 +2,8 @@ import { IPC } from '../../../shared/ipc'
 import { getHistoryMessage } from '../../../core/export'
 import { getRepository } from '../../database'
 import type { CreateGroupInput } from '@shared/types/ipcContract'
+import { validPath } from '@main/lib/file'
+import { shell } from 'electron'
 
 /**
  * 归一新建分组入参
@@ -52,6 +54,30 @@ export default function registerConversationIpc(ipcMain: Electron.IpcMain): void
       throw new Error('group.expand: open 必须是布尔值')
     }
     return getRepository().setGroupOpen(id, open)
+  })
+  // 打开分组目录
+  ipcMain.handle(IPC.group.folder, async (_event, path: unknown) => {
+    if (typeof path !== 'string' || path.trim() === '') {
+      throw new Error('group.folder: path 必须是非空字符串')
+    }
+    const err = await shell.openPath(path)
+    if (err) throw new Error(err)
+  })
+  // 删除分组
+  ipcMain.handle(IPC.group.delete, (_event, id: unknown) => {
+    if (typeof id !== 'string' || id.trim() === '') {
+      throw new Error('group.delete: id 必须是非空字符串')
+    }
+    return
+  })
+  // 重命名分组
+  ipcMain.handle(IPC.group.rename, (_event, id: unknown, title: unknown) => {
+    if (typeof id !== 'string' || id.trim() === '') {
+      throw new Error('group.rename: id 必须是非空字符串')
+    }
+    if (typeof title !== 'string' || title.trim() === '') {
+      throw new Error('group.rename: title 必须是非空字符串')
+    }
   })
 
   /** ====================  会话  ==================== */

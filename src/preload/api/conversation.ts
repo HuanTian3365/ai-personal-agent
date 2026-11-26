@@ -20,7 +20,11 @@ const conversationApi = {
     create: (input: CreateGroupInput): Promise<HYGroup> =>
       ipcRenderer.invoke(IPC.group.create, input),
     expand: (id: string, open: boolean): Promise<void> =>
-      ipcRenderer.invoke(IPC.group.expand, id, open)
+      ipcRenderer.invoke(IPC.group.expand, id, open),
+    folder: (path: string): Promise<void> => ipcRenderer.invoke(IPC.group.folder, path),
+    delete: (id: string): Promise<void> => ipcRenderer.invoke(IPC.group.delete, id),
+    rename: (id: string, title: string): Promise<void> =>
+      ipcRenderer.invoke(IPC.group.rename, id, title)
   },
   /** ====================  会话  ==================== */
   conversation: {
