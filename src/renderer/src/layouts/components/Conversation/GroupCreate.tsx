@@ -9,7 +9,11 @@ import {
 } from '@renderer/components/ui/dialog'
 import { expandApi } from '@renderer/lib/ipc'
 import { FieldSet, FieldGroup, Field, FieldLabel, FieldError } from '@renderer/components/ui/field'
-import type { CreateGroupInput, CreateGroupOutput } from '@shared/types/ipcContract'
+import type {
+  CreateGroupInput,
+  CreateGroupOutput,
+  GroupCreateError
+} from '@shared/types/ipcContract'
 import { useState } from 'react'
 
 /** 新建分组：文件夹可选、名称可选，但两者不能同时为空 */
@@ -30,7 +34,7 @@ export default function CreateGroupDialog({
 }: Props): React.JSX.Element {
   const [path, setPath] = useState('')
   const [title, setTitle] = useState('')
-  const [error, setError] = useState<CreateGroupOutput['error']>()
+  const [error, setError] = useState<GroupCreateError>()
   const [submitting, setSubmitting] = useState(false)
 
   // 能否提交
@@ -63,7 +67,10 @@ export default function CreateGroupDialog({
     setSubmitting(true)
     const ok = await onSubmit({ path: path.trim() || null, title: title })
     setSubmitting(false)
-    if (ok.success) handleOpenChange(false)
+    if (ok.success) {
+      handleOpenChange(false)
+      return
+    }
     setError(ok.error)
   }
 

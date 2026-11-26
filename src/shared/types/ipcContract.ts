@@ -7,6 +7,7 @@
  */
 
 import type { AgentEventEnvelope } from './agentEvent'
+import type { HYGroup } from './hyEntity'
 import type { HYEQueueItem } from './hyExpand'
 import type { Result } from './result'
 
@@ -43,14 +44,16 @@ export interface CreateGroupInput {
   title: string
 }
 
-/** group:create 新建分组返回值*/
-export interface CreateGroupOutput {
-  success: boolean
-  error?: {
-    path?: string
-    another?: string
-  }
+/** group:create 的失败原因 | 每个字段贴到对应输入框下面 只服务渲染层的弹窗 */
+export interface GroupCreateError {
+  /** 路径输入框下面 */
+  path?: string
+  /** 名称输入框下面 */
+  another?: string
 }
+
+/** group:create 的返回 | 错误按输入框分开 由渲染层组装 main只给一句话 */
+export type CreateGroupOutput = Result<HYGroup, GroupCreateError>
 
 /** group:rename 的入参 */
 export interface GroupRenameI {

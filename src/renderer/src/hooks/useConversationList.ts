@@ -89,21 +89,20 @@ export function useConversationList(): UseWorkspaceListResult {
 
   /** 拉取侧边栏数据 */
   const refresh = useCallback(async (): Promise<void> => {
-    try {
-      const [nextWorkspaces, nextGroups, nextConversations] = await Promise.all([
-        conversationApi.listWorkspaces(),
-        conversationApi.listGroups(),
-        conversationApi.listConversations()
-      ])
-      setWorkspaces(nextWorkspaces)
-      setGroups(nextGroups)
-      setConversations(nextConversations.map((c) => ({ ...c, title: c.title })))
-      setError(null)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
-    } finally {
-      setIsLoading(false)
-    }
+    const [ws, groupRes, conversationRes] = await Promise.all([
+      conversationApi.listWorkspaces(),
+      conversationApi.listGroups(),
+      conversationApi.listConversations()
+    ])
+    setIsLoading(false)
+    // 三个都要 | 任一个失败就整体报错 不拼半棵树
+    if (!ws.success) return setError(ws.error)
+    if (!groupRes.success) return setError(groupRes.error)
+    if (!conversationRes.success) return setError(conversationRes.error)
+    setWorkspaces(ws.data)
+    setGroups(groupRes.data)
+    setConversations(conversationRes.data)
+    setError(null)
   }, [])
 
   // 第一次打开时拉取侧边栏数据
@@ -130,24 +129,21 @@ export function useConversationList(): UseWorkspaceListResult {
   /** 新增分组 */
   const createGroup = useCallback(
     async (input: CreateGroupInput): Promise<CreateGroupOutput> => {
-      try {
-        // 不绑目录就不用校验路径
-        if (input.path) {
-          const valid = await expandApi.validPath(input.path)
-          if (!valid) {
-            return { success: false, error: { path: '目录不存在' } }
-          }
-        }
-        await conversationApi.createGroup(input)
-        await refresh()
-        setError(null)
-        return { success: true }
-      } catch (err) {
-        return {
-          success: false,
-          error: { another: err instanceof Error ? err.message : String(err) }
+      // 不绑目录就不用校验路径
+      if (input.path) {
+        const valid = await expandApi.validPath(input.path)
+        if (!valid) {
+          return { success: false, error: { path: '目录不存在' } }
         }
       }
+      const res = await conversationApi.createGroup(input)
+      // main只给一句话 这里按输入框分开贴 | 名称类的错统一落到另一个框下面
+      if (!res.success) {
+        return { success: false, error: { another: res.error } }
+      }
+      await refresh()
+      setError(null)
+      return { success: true, data: res.data }
     },
     [refresh]
   )
@@ -157,23 +153,24 @@ export function useConversationList(): UseWorkspaceListResult {
     async (groupId: string | null): Promise<void> => {
       // 新建对话
       const res = await conversationApi.createConversation(groupId)
+      if (!res.success) {
+        setError(res.error)
+        return
+      }
+      const created = res.data
       // 对话落在哪条分组上 | groupId为null时落该工作区的默认分组 按defaultFlag找不拼id
       const target =
         groupId === null
-          ? groups.find((g) => g.defaultFlag && g.workspaceId === res.workspaceId)
+          ? groups.find((g) => g.defaultFlag && g.workspaceId === created.workspaceId)
           : groups.find((g) => g.id === groupId)
       // 收起就先展开 否则新对话建好了侧栏看不见
       // 展开失败不阻断 对话已经落地 最多是侧栏要手动点开
       if (target !== undefined && target.openStatus === false) {
-        try {
-          await conversationApi.setGroupExpand(target.id, true)
-        } catch {
-          // 忽略: 新对话已建好 展开只是显示优化
-        }
+        await conversationApi.setGroupExpand(target.id, true)
       }
       // 刷新
       await refresh()
-      navigate(`/chat/${res.id}`)
+      navigate(`/chat/${created.id}`)
     },
     [groups, navigate, refresh]
   )
@@ -184,13 +181,14 @@ export function useConversationList(): UseWorkspaceListResult {
       setGroups((prev) => prev.map((g) => (g.id === id ? { ...g, openStatus: target } : g)))
     }
     flip(open)
-    try {
-      await conversationApi.setGroupExpand(id, open)
-      setError(null)
-    } catch (err) {
+    const res = await conversationApi.setGroupExpand(id, open)
+    // 失败就翻回去 免得界面和库里对不上
+    if (!res.success) {
       flip(!open)
-      setError(err instanceof Error ? err.message : String(err))
+      setError(res.error)
+      return
     }
+    setError(null)
   }, [])
 
   /** 重命名分组 */

@@ -72,12 +72,12 @@ export default function Group({
   /** 删除分组 */
 
   /** 显示分组目录 */
-  function openGroupFolder(): void {
-    const path = group.path // 先取到局部 见下面第③点
+  async function openGroupFolder(): Promise<void> {
+    const path = group.path
     if (path == null) return
-    toast.promise(conversationApi.groupOpenFolder(path), {
-      error: (e: unknown) => `打开失败: ${e instanceof Error ? e.message : String(e)}`
-    })
+    // 走Result不抛 | 失败自己弹一句
+    const res = await conversationApi.groupOpenFolder(path)
+    if (!res.success) toast.error(`打开失败: ${res.error}`)
   }
 
   return (
@@ -117,7 +117,9 @@ export default function Group({
             <DropdownMenuContent align="end" className="w-auto min-w-40">
               <DropdownMenuItem onClick={() => setRenameFlag(true)}>重命名</DropdownMenuItem>
               {group.path != null && (
-                <DropdownMenuItem onClick={openGroupFolder}>显示在文件夹</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => void openGroupFolder()}>
+                  显示在文件夹
+                </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setDeleteFlag(true)}>删除分组</DropdownMenuItem>

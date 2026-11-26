@@ -107,7 +107,7 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
       setIsLoading(true)
       // 加载数据
       try {
-        const [list, info, snap, queued] = await Promise.all([
+        const [listRes, infoRes, snap, queued] = await Promise.all([
           // 获取消息列表
           conversationApi.listMessages(conversationId),
           // 获取会话信息
@@ -118,6 +118,17 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
           agentApi.queue(conversationId)
         ])
         if (cancelled) return
+        // 两个会话域的通道走Result | agent域还是直接返回值或抛错
+        if (!listRes.success) {
+          setError(listRes.error)
+          return
+        }
+        if (!infoRes.success) {
+          setError(infoRes.error)
+          return
+        }
+        const list = listRes.data
+        const info = infoRes.data
 
         /** 数据库已经落地的消息id,重放时跳过这些块的增量事件,防止重复消息 */
         const savedBlockIds = new Set<string>()

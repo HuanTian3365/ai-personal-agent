@@ -6,7 +6,7 @@ import { DEFAULT_WORKSPACE_ID } from '../../init/data'
 import type { Database } from '../../types'
 import { toGroup } from './converter'
 import type { Row } from './converter'
-import { nextGroupSortIndex } from './utils'
+import { nextGroupSortIndex, unexpected } from './utils'
 
 /**
  * 分组层 | hy_group 的读写方法
@@ -17,6 +17,8 @@ import { nextGroupSortIndex } from './utils'
  * - 默认分组:   default_flag=1 且 path 恒为 null
  *
  * 所以 path 可以为空 判形态只看 default_flag 不要拿 path IS NULL 反推
+ *
+ * 失败一律走Result不throw | 业务失败给用户能读的文案 意外异常走unexpected
  */
 export function createGroupMethods(
   database: Database
@@ -27,82 +29,113 @@ export function createGroupMethods(
   return {
     /** 分组列表 */
     async listGroups() {
-      // 给出的数据按sort_index从大到小排列,大的(新创建的)在前
-      const rows = database
-        .prepare('SELECT * FROM hy_group ORDER BY workspace_id ASC, sort_index DESC')
-        .all()
-      return rows.map((r) => toGroup(r as Row))
+      try {
+        // 给出的数据按sort_index从大到小排列,大的(新创建的)在前
+        const rows = database
+          .prepare('SELECT * FROM hy_group ORDER BY workspace_id ASC, sort_index DESC')
+          .all()
+        return { success: true, data: rows.map((r) => toGroup(r as Row)) }
+      } catch (err) {
+        return { success: false, error: unexpected('读取分组', err) }
+      }
     },
     /** 新建分组 */
     async createGroup(input) {
-      const workspaceId = input.workspaceId ?? DEFAULT_WORKSPACE_ID
+      try {
+        const workspaceId = input.workspaceId ?? DEFAULT_WORKSPACE_ID
 
-      // 工作区是否存在
-      const workspace = database
-        .prepare('SELECT id FROM hy_workspace WHERE id = ?')
-        .get(workspaceId)
-      if (workspace === undefined) throw new Error(`工作区不存在：${workspaceId}`)
+        // 工作区是否存在
+        const workspace = database
+          .prepare('SELECT id FROM hy_workspace WHERE id = ?')
+          .get(workspaceId)
+        if (workspace === undefined)
+          return { success: false, error: `工作区不存在：${workspaceId}` }
 
-      // 判断路径是否有效
-      const rawPath = input.path
-      let real: string | null = null
-      if (rawPath !== null) {
-        try {
-          real = await realpath(rawPath)
-        } catch {
-          throw new Error(`文件夹不存在或无法访问：${rawPath}`)
+        // 判断路径是否有效
+        const rawPath = input.path
+        let real: string | null = null
+        if (rawPath !== null) {
+          try {
+            real = await realpath(rawPath)
+          } catch {
+            return { success: false, error: `文件夹不存在或无法访问：${rawPath}` }
+          }
+          if (!(await stat(real)).isDirectory())
+            return { success: false, error: `不是目录：${real}` }
+          // 如果路径已经注册
+          const existing = database.prepare('SELECT * FROM hy_group WHERE path = ?').get(real) as
+            Row | undefined
+          if (existing !== undefined) {
+            return { success: false, error: `路径已存在,名称: ${toGroup(existing).title}` }
+          }
         }
-        if (!(await stat(real)).isDirectory()) throw new Error(`不是目录：${real}`)
-        // 如果路径已经注册
-        const existing = database.prepare('SELECT * FROM hy_group WHERE path = ?').get(real) as
-          Row | undefined
-        if (existing !== undefined) throw new Error(`路径已存在,名称: ${toGroup(existing).title}`)
-      }
 
-      // 判断标题是否有效
-      const title = real === null ? input.title : input.title || basename(real) || real
-      if (title === '') throw new Error('不选择文件夹时，分组名称必填')
+        // 判断标题是否有效
+        const title = real === null ? input.title : input.title || basename(real) || real
+        if (title === '') return { success: false, error: '不选择文件夹时，分组名称必填' }
 
-      // 获取序号
-      const sortIndex = nextGroupSortIndex(database, workspaceId)
+        // 获取序号
+        const sortIndex = nextGroupSortIndex(database, workspaceId)
 
-      const now = Date.now()
-      const id = randomUUID()
+        const now = Date.now()
+        const id = randomUUID()
 
-      database
-        .prepare(
-          `INSERT INTO hy_group(id, workspace_id, title, path, default_flag, open_status, sort_index, created_at, updated_at)
+        database
+          .prepare(
+            `INSERT INTO hy_group(id, workspace_id, title, path, default_flag, open_status, sort_index, created_at, updated_at)
      VALUES (?, ?, ?, ?, 0, 1, ?, ?, ?)`
-        )
-        .run(id, workspaceId, title, real, sortIndex, now, now)
+          )
+          .run(id, workspaceId, title, real, sortIndex, now, now)
 
-      return toGroup(database.prepare('SELECT * FROM hy_group WHERE id = ?').get(id) as Row)
+        const row = database.prepare('SELECT * FROM hy_group WHERE id = ?').get(id) as Row
+        return { success: true, data: toGroup(row) }
+      } catch (err) {
+        return { success: false, error: unexpected('新建分组', err) }
+      }
     },
     /** 分组展开|收起 */
     async setGroupOpen(id, open) {
-      database.prepare('UPDATE hy_group SET open_status = ? WHERE id = ?').run(open ? 1 : 0, id)
+      try {
+        const info = database
+          .prepare('UPDATE hy_group SET open_status = ? WHERE id = ?')
+          .run(open ? 1 : 0, id)
+        // 影响0行说明id不存在 不报成功免得界面以为改下去了
+        if (info.changes === 0) return { success: false, error: '分组不存在' }
+        return { success: true, data: undefined }
+      } catch (err) {
+        return { success: false, error: unexpected('改分组展开状态', err) }
+      }
     },
     /** 删除分组 */
     async groupDelete(id) {
-      const row = database.prepare('SELECT default_flag FROM hy_group WHERE id = ?').get(id) as
-        | {
-            default_flag: number
-          }
-        | undefined
-      // id不存在与已删两次都落到这里 不报成功免得界面以为删掉了
-      if (row === undefined) return { success: false, error: '分组不存在' }
-      // 界面已对默认分组隐藏入口 后端仍拦一道 渲染层递过来的参数一律当不可信
-      if (row.default_flag === 1) return { success: false, error: '默认分组不可删除' }
-      // 组内会话的group_id由外键ON DELETE SET NULL自动落到未分组 文件夹与消息一律不动
-      database.prepare('DELETE FROM hy_group WHERE id = ?').run(id)
-      return { success: true, data: undefined }
+      try {
+        const row = database.prepare('SELECT default_flag FROM hy_group WHERE id = ?').get(id) as
+          | {
+              default_flag: number
+            }
+          | undefined
+        // id不存在与已删两次都落到这里 不报成功免得界面以为删掉了
+        if (row === undefined) return { success: false, error: '分组不存在' }
+        // 界面已对默认分组隐藏入口 后端仍拦一道 渲染层递过来的参数一律当不可信
+        if (row.default_flag === 1) return { success: false, error: '默认分组不可删除' }
+        // 组内会话的group_id由外键ON DELETE SET NULL自动落到未分组 文件夹与消息一律不动
+        database.prepare('DELETE FROM hy_group WHERE id = ?').run(id)
+        return { success: true, data: undefined }
+      } catch (err) {
+        return { success: false, error: unexpected('删除分组', err) }
+      }
     },
     /** 重命名分组 */
     async groupRename(input) {
-      database.prepare('UPDATE hy_group SET title = ? WHERE id = ?').run(input.title, input.id)
-      return {
-        success: true,
-        data: undefined
+      try {
+        const info = database
+          .prepare('UPDATE hy_group SET title = ? WHERE id = ?')
+          .run(input.title, input.id)
+        // 影响0行说明id不存在
+        if (info.changes === 0) return { success: false, error: '分组不存在' }
+        return { success: true, data: undefined }
+      } catch (err) {
+        return { success: false, error: unexpected('重命名分组', err) }
       }
     }
   }
