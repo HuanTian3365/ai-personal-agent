@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 一轮接一轮的驱动循环。
  *
  * 每轮从队头领一条 next-turn 当发起消息 队列空就退出 用户中断也退出(队列留着等手动发)。
@@ -38,14 +38,14 @@ import {
  * 会话在跑+insert->入队next-step 并立即画进当前轮
  * 会话在跑+queue->入队next-turn 等本轮结束
  */
-export async function submitMessage(props: {
+export function submitMessage(props: {
   /** 会话id */
   conversationId: string
   /** 用户发送内容 */
   message: MessageEventSend
   /** 发送模式:排队/插队 */
   mode: SendMode
-}): Promise<SendResult> {
+}): SendResult {
   const { conversationId, message, mode } = props
   const text = message.content ?? ''
 
@@ -53,20 +53,20 @@ export async function submitMessage(props: {
   if (isRunning(conversationId)) {
     // 插入
     if (mode === 'insert') {
-      const queue = await pushQueue(conversationId, text, 'next-step')
+      const queue = pushQueue(conversationId, text, 'next-step')
       const item = queue.at(-1)
       if (item !== undefined) emitInsertBlock(conversationId, item)
       emitQueue(conversationId, queue)
       return { status: 'sent' }
     }
-    const queue = await pushQueue(conversationId, text, 'next-turn')
+    const queue = pushQueue(conversationId, text, 'next-turn')
     emitQueue(conversationId, queue)
     return { status: 'queued', queue }
   }
 
   // 空闲:新消息也走队列 让上次中断留下的旧消息天然排在新消息前面
   const pendingBefore = listQueue(conversationId).length
-  const queue = await pushQueue(conversationId, text, 'next-turn')
+  const queue = pushQueue(conversationId, text, 'next-turn')
   // 只有队列里本来就有东西(上次中断留下的)才推给界面
   // 否则这一条马上会被驱动领走 推出去只会在排队区闪一下
   if (pendingBefore > 0) emitQueue(conversationId, queue)

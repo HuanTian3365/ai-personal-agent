@@ -23,14 +23,14 @@ type ConversationMethods = Pick<
  * 会话层 | hy_conversation 的读写方法
  *
  * expand 是会话级业务扩展 JSON 第一层 key 声明职责
- * conversationReadExpand 单独同步返回: 调用方拿到就要立刻分支 不能等一轮事件循环
  *
  * 失败一律走Result不throw | 业务失败给用户能读的文案 意外异常走errorText
+ * 数据库本身同步 方法不包Promise
  */
 export function createConversationMethods(database: Database): ConversationMethods {
   return {
     /** 会话列表 */
-    async conversationList() {
+    conversationList() {
       try {
         const rows = database
           .prepare('SELECT * FROM hy_conversation ORDER BY group_id ASC, sort_index DESC')
@@ -41,7 +41,7 @@ export function createConversationMethods(database: Database): ConversationMetho
       }
     },
     /** 新建会话 */
-    async conversationCreate(input) {
+    conversationCreate(input) {
       try {
         const groupId = input.groupId
         // workspaceId 从所属分组继承；未分组对话落到缺省工作区
@@ -66,25 +66,14 @@ export function createConversationMethods(database: Database): ConversationMetho
           )
           .run(id, workspaceId, groupId, title, sortIndex, now, now)
 
-        return {
-          success: true,
-          data: {
-            id,
-            workspaceId,
-            groupId,
-            title,
-            sortIndex,
-            expand: {},
-            createdAt: now,
-            updatedAt: now
-          }
-        }
+        // 只回调用方用得上的两个字段 | 列表是重拉的 整行传出去没人读
+        return { success: true, data: { id, workspaceId } }
       } catch (err) {
         return { success: false, error: errorText('新建会话', err) }
       }
     },
     /** 更新会话标题 | 顺手更新 updated_at 侧栏按它排「最近更新」 */
-    async conversationUpdateTitle(input) {
+    conversationUpdateTitle(input) {
       try {
         const info = database
           .prepare('UPDATE hy_conversation SET title = ?, updated_at = ? WHERE id = ?')
@@ -96,7 +85,7 @@ export function createConversationMethods(database: Database): ConversationMetho
       }
     },
     /** 会话信息 */
-    async conversationInfo(input) {
+    conversationInfo(input) {
       try {
         const row = database.prepare('SELECT * FROM hy_conversation WHERE id = ?').get(input.id) as
           Row | undefined
@@ -122,7 +111,7 @@ export function createConversationMethods(database: Database): ConversationMetho
       }
     },
     /** 按职责合并写会话级业务扩展 | 只覆盖 scope 这一层 */
-    async conversationUpdateExpand(input) {
+    conversationUpdateExpand(input) {
       try {
         const row = database
           .prepare('SELECT expand FROM hy_conversation WHERE id = ?')

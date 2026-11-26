@@ -1,4 +1,4 @@
-﻿import {
+import {
   Folder,
   FolderOpen,
   Maximize,
@@ -34,7 +34,7 @@ import { toast } from 'sonner'
 import GroupRename from './GroupRename'
 import GroupDelete from './GroupDelete'
 import { useState } from 'react'
-import type { GroupDeleteF, GroupRenameF } from '@shared/types/ipcContract'
+import type { GroupDeleteF, GroupRenameF, ToAsync } from '@shared/types/ipcContract'
 
 /** 第二层分组的行: 可折叠 展开后列出该分组下的对话(第三层) */
 interface Props {
@@ -44,8 +44,8 @@ interface Props {
   onAddConversation: (groupId: string | null) => Promise<void>
   /** 切换展开状态 */
   onToggleOpen: (id: string, open: boolean) => Promise<void>
-  onGroupRename: GroupRenameF
-  onGroupDelete: GroupDeleteF
+  onGroupRename: ToAsync<GroupRenameF>
+  onGroupDelete: ToAsync<GroupDeleteF>
 }
 
 export default function Group({
@@ -76,7 +76,7 @@ export default function Group({
     const path = group.path
     if (path == null) return
     // 走Result不抛 | 失败自己弹一句
-    const res = await conversationApi.groupOpenFolder(path)
+    const res = await conversationApi.groupOpenFolder({ path })
     if (!res.success) toast.error(`打开失败: ${res.error}`)
   }
 

@@ -3,10 +3,11 @@ import type { HYConversation, HYGroup, HYWorkspace } from '@shared/types/hyEntit
 import { agentApi, conversationApi, expandApi } from '@renderer/lib/ipc'
 import { useNavigate } from 'react-router'
 import type {
-  GroupCreateOutput,
   GroupCreateI,
+  GroupCreateOutput,
   GroupDeleteF,
-  GroupRenameF
+  GroupRenameF,
+  ToAsync
 } from '@shared/types/ipcContract'
 
 /**
@@ -29,9 +30,9 @@ export interface UseWorkspaceListResult {
   /** 新建一个对话并跳转 */
   addConversation: (groupId: string | null) => Promise<void>
   /** 重命名分组 */
-  groupRename: GroupRenameF
+  groupRename: ToAsync<GroupRenameF>
   /** 删除分组 */
-  groupDelete: GroupDeleteF
+  groupDelete: ToAsync<GroupDeleteF>
 }
 
 /** 一个工作区下的分组节点；默认分组（未分组）也占一个位置 */
@@ -152,7 +153,7 @@ export function useConversationList(): UseWorkspaceListResult {
   const addConversation = useCallback(
     async (groupId: string | null): Promise<void> => {
       // 新建对话
-      const res = await conversationApi.conversationCreate(groupId)
+      const res = await conversationApi.conversationCreate({ groupId })
       if (!res.success) {
         setError(res.error)
         return
@@ -166,7 +167,7 @@ export function useConversationList(): UseWorkspaceListResult {
       // 收起就先展开 否则新对话建好了侧栏看不见
       // 展开失败不阻断 对话已经落地 最多是侧栏要手动点开
       if (target !== undefined && target.openStatus === false) {
-        await conversationApi.groupExpand(target.id, true)
+        await conversationApi.groupExpand({ id: target.id, open: true })
       }
       // 刷新
       await refresh()
@@ -181,7 +182,7 @@ export function useConversationList(): UseWorkspaceListResult {
       setGroups((prev) => prev.map((g) => (g.id === id ? { ...g, openStatus: target } : g)))
     }
     flip(open)
-    const res = await conversationApi.groupExpand(id, open)
+    const res = await conversationApi.groupExpand({ id, open })
     // 失败就翻回去 免得界面和库里对不上
     if (!res.success) {
       flip(!open)
@@ -192,7 +193,7 @@ export function useConversationList(): UseWorkspaceListResult {
   }, [])
 
   /** 重命名分组 */
-  const groupRename = useCallback<GroupRenameF>(
+  const groupRename = useCallback<ToAsync<GroupRenameF>>(
     async (input) => {
       const res = await conversationApi.groupRename(input)
       if (res.success) {
@@ -206,9 +207,9 @@ export function useConversationList(): UseWorkspaceListResult {
   )
 
   /** 删除分组 */
-  const groupDelete = useCallback<GroupDeleteF>(
+  const groupDelete = useCallback<ToAsync<GroupDeleteF>>(
     async (input) => {
-      const res = await conversationApi.groupDelete(input.id)
+      const res = await conversationApi.groupDelete(input)
       // 删成功后整棵树要重拉 组内会话已落到未分组 侧栏位置会变
       if (res.success) await refresh()
       return res

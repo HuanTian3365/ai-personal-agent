@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 会话消息队列
  *
  * 生成期间用户再次发送时先落在这里
@@ -65,7 +65,7 @@ function write(conversationId: string, queue: HYEQueueItem[]): void {
 }
 
 /** 把内存里的队列写回库 */
-function persist(conversationId: string): Promise<ConversationUpdateExpandR> {
+function persist(conversationId: string): ConversationUpdateExpandR {
   const queue = queues.get(conversationId) ?? []
   // 只写库里有的三个字段 | claimed是运行态 落库后没人回滚 重启就成幽灵项
   const stored = queue.map(({ id, text, target }) => ({ id, text, target }))
@@ -77,35 +77,31 @@ function persist(conversationId: string): Promise<ConversationUpdateExpandR> {
 }
 
 /** 新增队列消息,返回写入后的整条队列 */
-export async function pushQueue(
+export function pushQueue(
   conversationId: string,
   text: string,
   target: HYEQueueItem['target']
-): Promise<HYEQueueItem[]> {
+): HYEQueueItem[] {
   const queue = [...listQueue(conversationId), { id: randomUUID(), text, target }]
   write(conversationId, queue)
-  await persist(conversationId)
+  persist(conversationId)
   return queue
 }
 
 /** 删除指定队列信息,返回是否删掉了 */
-export async function removeQueueItem(conversationId: string, itemId: string): Promise<boolean> {
+export function removeQueueItem(conversationId: string, itemId: string): boolean {
   const queue = listQueue(conversationId)
   if (!queue.some((item) => item.id === itemId)) return false
   write(
     conversationId,
     queue.filter((item) => item.id !== itemId)
   )
-  await persist(conversationId)
+  persist(conversationId)
   return true
 }
 
 /** 改一条的文案,空文案不落,返回是否改成功了 */
-export async function editQueueItem(
-  conversationId: string,
-  itemId: string,
-  text: string
-): Promise<boolean> {
+export function editQueueItem(conversationId: string, itemId: string, text: string): boolean {
   const trimmed = text.trim()
   if (trimmed === '') return false
   const queue = listQueue(conversationId)
@@ -114,12 +110,12 @@ export async function editQueueItem(
     conversationId,
     queue.map((item) => (item.id === itemId ? { ...item, text: trimmed } : item))
   )
-  await persist(conversationId)
+  persist(conversationId)
   return true
 }
 
 /** 把一条改成插队,已经是插队算成功(幂等),找不到返回 false */
-export async function markInsert(conversationId: string, itemId: string): Promise<boolean> {
+export function markInsert(conversationId: string, itemId: string): boolean {
   const queue = listQueue(conversationId)
   const hit = queue.find((item) => item.id === itemId)
   if (hit === undefined) return false
@@ -129,7 +125,7 @@ export async function markInsert(conversationId: string, itemId: string): Promis
     conversationId,
     queue.map((item) => (item.id === itemId ? { ...item, target: 'next-step' } : item))
   )
-  await persist(conversationId)
+  persist(conversationId)
   return true
 }
 
@@ -144,7 +140,7 @@ export function claimNextTurn(conversationId: string): HYEQueueItem | null {
     queue.filter((_, index) => index !== at)
   )
   // 这一条马上就要发出去 落库慢一步也有 id 去重兜底 不等它
-  void persist(conversationId)
+  persist(conversationId)
   return hit
 }
 
@@ -158,7 +154,7 @@ export function claimInserts(conversationId: string): HYEQueueItem[] {
     conversationId,
     queue.map((item) => (ids.has(item.id) ? { ...item, claimed: true } : item))
   )
-  void persist(conversationId)
+  persist(conversationId)
   return pending
 }
 
@@ -184,7 +180,7 @@ export function releaseInserts(conversationId: string): HYEQueueItem[] {
       item.claimed === true ? { ...item, claimed: false, target: 'next-turn' } : item
     )
   )
-  void persist(conversationId)
+  persist(conversationId)
   return released
 }
 
@@ -203,7 +199,7 @@ export function revertInserts(conversationId: string): HYEQueueItem[] {
       item.target === 'next-step' ? { ...item, target: 'next-turn', claimed: false } : item
     )
   )
-  void persist(conversationId)
+  persist(conversationId)
   return pending
 }
 
@@ -215,5 +211,5 @@ export function dropClaimed(conversationId: string): void {
     conversationId,
     queue.filter((item) => item.claimed !== true)
   )
-  void persist(conversationId)
+  persist(conversationId)
 }

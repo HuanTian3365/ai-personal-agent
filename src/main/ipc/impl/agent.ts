@@ -23,12 +23,7 @@ export default function registerAgentIpc(ipcMain: Electron.IpcMain): void {
    */
   ipcMain.handle(
     IPC.agent.send,
-    async (
-      _event,
-      conversationId: unknown,
-      message: MessageEventSend,
-      mode: unknown
-    ): Promise<SendResult> => {
+    (_event, conversationId: unknown, message: MessageEventSend, mode: unknown): SendResult => {
       if (typeof conversationId !== 'string' || conversationId.trim() === '') {
         throw new Error('agent.send: conversationId 必须是非空字符串')
       }
@@ -67,28 +62,25 @@ export default function registerAgentIpc(ipcMain: Electron.IpcMain): void {
   })
 
   /** 把排队里的一条改成插队 */
-  ipcMain.handle(
-    IPC.agent.insert,
-    async (_event, conversationId: unknown, itemId: unknown): Promise<void> => {
-      if (typeof conversationId !== 'string' || conversationId.trim() === '') {
-        throw new Error('agent.insert: conversationId 必须是非空字符串')
-      }
-      if (typeof itemId !== 'string' || itemId.trim() === '') {
-        throw new Error('agent.insert: itemId 必须是非空字符串')
-      }
-      const changed = await markInsert(conversationId, itemId)
-      if (!changed) throw new Error('agent.insert: 这条不在排队里')
-      // 立即画进当前轮 队列里那条不再显示
-      const item = listQueue(conversationId).find((row) => row.id === itemId)
-      if (item !== undefined) emitInsertBlock(conversationId, item)
-      emitQueue(conversationId, listQueue(conversationId))
+  ipcMain.handle(IPC.agent.insert, (_event, conversationId: unknown, itemId: unknown): void => {
+    if (typeof conversationId !== 'string' || conversationId.trim() === '') {
+      throw new Error('agent.insert: conversationId 必须是非空字符串')
     }
-  )
+    if (typeof itemId !== 'string' || itemId.trim() === '') {
+      throw new Error('agent.insert: itemId 必须是非空字符串')
+    }
+    const changed = markInsert(conversationId, itemId)
+    if (!changed) throw new Error('agent.insert: 这条不在排队里')
+    // 立即画进当前轮 队列里那条不再显示
+    const item = listQueue(conversationId).find((row) => row.id === itemId)
+    if (item !== undefined) emitInsertBlock(conversationId, item)
+    emitQueue(conversationId, listQueue(conversationId))
+  })
 
   /** 改排队里的一条：改文案 / 删除 */
   ipcMain.handle(
     IPC.agent.queueUpdate,
-    async (_event, conversationId: unknown, itemId: unknown, action: unknown): Promise<void> => {
+    (_event, conversationId: unknown, itemId: unknown, action: unknown): void => {
       if (typeof conversationId !== 'string' || conversationId.trim() === '') {
         throw new Error('agent.queueUpdate: conversationId 必须是非空字符串')
       }
@@ -104,9 +96,9 @@ export default function registerAgentIpc(ipcMain: Electron.IpcMain): void {
         if (typeof text !== 'string') {
           throw new Error('agent.queueUpdate: edit 需要 text')
         }
-        changed = await editQueueItem(conversationId, itemId, text)
+        changed = editQueueItem(conversationId, itemId, text)
       } else if (kind === 'remove') {
-        changed = await removeQueueItem(conversationId, itemId)
+        changed = removeQueueItem(conversationId, itemId)
       } else {
         throw new Error('agent.queueUpdate: kind 只能是 edit 或 remove')
       }

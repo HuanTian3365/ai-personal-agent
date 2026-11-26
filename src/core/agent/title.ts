@@ -37,7 +37,7 @@ export async function getConversationTitle(
     if (title.length === 0) return
 
     // 实现由main在initCore时注入 | core不知道背后是哪个库
-    const saved = await getStore().conversationUpdateTitle({ id: conversationId, title })
+    const saved = getStore().conversationUpdateTitle({ id: conversationId, title })
     // 没存上就不推给界面 | 否则界面会显示一个库里没有的名字
     if (!saved.success) return
     emit(title)

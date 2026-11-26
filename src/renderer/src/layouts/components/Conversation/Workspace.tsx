@@ -11,7 +11,7 @@ import WorkspaceHeader from './WorkspaceHeader'
 import { CircleX, Loader } from 'lucide-react'
 import type { WorkspaceSection } from '@renderer/hooks/useConversationList'
 import type { HYWorkspace } from '@shared/types/hyEntity'
-import type { GroupDeleteF, GroupRenameF } from '@shared/types/ipcContract'
+import type { GroupDeleteF, GroupRenameF, ToAsync } from '@shared/types/ipcContract'
 
 /**
  * 侧栏内容区 三层渲染: 工作区(SidebarGroup区块) -> 分组(Group) -> 对话(Item)
@@ -25,8 +25,8 @@ interface Props {
   onAddConversation: (groupId: string | null) => Promise<void>
   onAddGroup: (workspace: HYWorkspace) => void
   onToggleOpen: (id: string, open: boolean) => Promise<void>
-  onGroupRename: GroupRenameF
-  onGroupDelete: GroupDeleteF
+  onGroupRename: ToAsync<GroupRenameF>
+  onGroupDelete: ToAsync<GroupDeleteF>
 }
 
 export default function Workspace({

@@ -8,6 +8,9 @@
  * 每个通道三件套: xxxI入参(有参数才有) | xxxR返回 | xxxF函数签名
  * 入参一律聚成一个对象 | 跨进程传位置参数没法在main侧收窄 一个对象才好整体校验
  * R里不放调用方用不上的data | 没人读就写Result不带泛型
+ *
+ * xxxF是数据层的签名 同步返回 | 数据库本身同步 能同步就别包Promise
+ * 渲染层拿到的必然是Promise(invoke跨进程) 它不引用xxxF 自己写 (input) => Promise<xxxR>
  */
 
 import type { AgentEventEnvelope } from './agentEvent'
@@ -15,6 +18,16 @@ import type { HYConversation, HYGroup, HYWorkspace } from './hyEntity'
 import type { HYEConversationExpand, HYEQueueItem } from './hyExpand'
 import type { TurnMessage } from './message'
 import type { Result } from './result'
+
+/**
+ * 同步签名转异步
+ *
+ * 渲染层跨进程拿到的必然是Promise(invoke天生异步) | 但不该为它另写一套同名类型
+ * 用法: ToAsync<GroupRenameF> 一眼看出这是哪个契约的异步版
+ */
+export type ToAsync<F> = F extends (...args: infer A) => infer R
+  ? (...args: A) => Promise<R>
+  : never
 
 /** ====================  agent  ==================== */
 
@@ -42,14 +55,14 @@ export interface StreamSnapshot {
 /** workspace:list 的返回 */
 export type WorkspaceListR = Result<HYWorkspace[]>
 
-export type WorkspaceListF = () => Promise<WorkspaceListR>
+export type WorkspaceListF = () => WorkspaceListR
 
 /** ====================  group  ==================== */
 
 /** group:list 的返回 */
 export type GroupListR = Result<HYGroup[]>
 
-export type GroupListF = () => Promise<GroupListR>
+export type GroupListF = () => GroupListR
 
 /** group:create 的入参 | 传原始值 规范化与缺省由main决定 */
 export interface GroupCreateI {
@@ -64,7 +77,7 @@ export interface GroupCreateI {
 /** group:create 的返回 | 新建成功不返回实体 列表由调用方重拉 */
 export type GroupCreateR = Result
 
-export type GroupCreateF = (input: GroupCreateI) => Promise<GroupCreateR>
+export type GroupCreateF = (input: GroupCreateI) => GroupCreateR
 
 /** group:create 的失败原因 | 每个字段贴到对应输入框下面 只服务弹窗 */
 export interface GroupCreateError {
@@ -86,7 +99,7 @@ export interface GroupExpandI {
 /** group:expand 的返回 | 无数据 */
 export type GroupExpandR = Result
 
-export type GroupExpandF = (input: GroupExpandI) => Promise<GroupExpandR>
+export type GroupExpandF = (input: GroupExpandI) => GroupExpandR
 
 /** group:folder 的入参 */
 export interface GroupFolderI {
@@ -96,6 +109,7 @@ export interface GroupFolderI {
 /** group:folder 的返回 | 无数据 */
 export type GroupFolderR = Result
 
+/** group:folder 的签名 | shell.openPath是异步的 这个通道去不掉Promise */
 export type GroupFolderF = (input: GroupFolderI) => Promise<GroupFolderR>
 
 /** group:delete 的入参 */
@@ -106,7 +120,7 @@ export interface GroupDeleteI {
 /** group:delete 的返回 | 无数据 */
 export type GroupDeleteR = Result
 
-export type GroupDeleteF = (input: GroupDeleteI) => Promise<GroupDeleteR>
+export type GroupDeleteF = (input: GroupDeleteI) => GroupDeleteR
 
 /** group:rename 的入参 */
 export interface GroupRenameI {
@@ -117,14 +131,14 @@ export interface GroupRenameI {
 /** group:rename 的返回 | 无数据 */
 export type GroupRenameR = Result
 
-export type GroupRenameF = (input: GroupRenameI) => Promise<GroupRenameR>
+export type GroupRenameF = (input: GroupRenameI) => GroupRenameR
 
 /** ====================  conversation  ==================== */
 
 /** conversation:list 的返回 */
 export type ConversationListR = Result<HYConversation[]>
 
-export type ConversationListF = () => Promise<ConversationListR>
+export type ConversationListF = () => ConversationListR
 
 /** conversation:create 的入参 */
 export interface ConversationCreateI {
@@ -132,10 +146,12 @@ export interface ConversationCreateI {
   groupId: string | null
 }
 
-/** conversation:create 的返回 | 带新会话 调用方要 id 跳转 */
-export type ConversationCreateR = Result<HYConversation>
+/** conversation:create 的返回 | 只给调用方真用得上的字段 其余不查不传 */
+export type ConversationCreateR = Result<
+  Omit<HYConversation, 'groupId' | 'title' | 'sortIndex' | 'expand' | 'createdAt' | 'updatedAt'>
+>
 
-export type ConversationCreateF = (input: ConversationCreateI) => Promise<ConversationCreateR>
+export type ConversationCreateF = (input: ConversationCreateI) => ConversationCreateR
 
 /** conversation:info 的入参 */
 export interface ConversationInfoI {
@@ -145,7 +161,7 @@ export interface ConversationInfoI {
 /** conversation:info 的返回 | 查不到是 data: null 不是失败 */
 export type ConversationInfoR = Result<HYConversation | null>
 
-export type ConversationInfoF = (input: ConversationInfoI) => Promise<ConversationInfoR>
+export type ConversationInfoF = (input: ConversationInfoI) => ConversationInfoR
 
 /** conversationUpdateTitle 的入参 | 只在core内部用 没开IPC通道 */
 export interface ConversationUpdateTitleI {
@@ -156,16 +172,14 @@ export interface ConversationUpdateTitleI {
 /** conversationUpdateTitle 的返回 | 无数据 */
 export type ConversationUpdateTitleR = Result
 
-export type ConversationUpdateTitleF = (
-  input: ConversationUpdateTitleI
-) => Promise<ConversationUpdateTitleR>
+export type ConversationUpdateTitleF = (input: ConversationUpdateTitleI) => ConversationUpdateTitleR
 
 /** conversationReadExpand 的入参 | 只在queue内部用 没开IPC通道 */
 export interface ConversationReadExpandI {
   id: string
 }
 
-/** conversationReadExpand 的返回 | 同步返回 调用方拿到就要立刻分支 */
+/** conversationReadExpand 的返回 */
 export type ConversationReadExpandR = Result<HYEConversationExpand>
 
 export type ConversationReadExpandF = (input: ConversationReadExpandI) => ConversationReadExpandR
@@ -182,7 +196,7 @@ export type ConversationUpdateExpandR = Result
 
 export type ConversationUpdateExpandF = (
   input: ConversationUpdateExpandI
-) => Promise<ConversationUpdateExpandR>
+) => ConversationUpdateExpandR
 
 /** ====================  message  ==================== */
 
@@ -194,4 +208,4 @@ export interface MessageListI {
 /** message:list 的返回 */
 export type MessageListR = Result<TurnMessage[]>
 
-export type MessageListF = (input: MessageListI) => Promise<MessageListR>
+export type MessageListF = (input: MessageListI) => MessageListR

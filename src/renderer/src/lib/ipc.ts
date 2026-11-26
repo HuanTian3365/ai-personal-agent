@@ -7,12 +7,18 @@
  * 渲染层没有追加入口。
  *
  * 方法名一律归属前置: 域 + 动作 | 与 DatabaseRepository 和 IPC 通道一一对应
- * 入参在这里聚成对象交给 preload | 上层调用仍按平铺的参数写 不用自己拼
+ * 入参一律一个对象 | 跟 preload 同一套 xxxI 不在这层拆装
  */
 
 import type {
+  ConversationCreateI,
+  ConversationInfoI,
   GroupCreateI,
+  GroupDeleteI,
+  GroupExpandI,
+  GroupFolderI,
   GroupRenameI,
+  MessageListI,
   QueueEditAction,
   SendMode
 } from '@shared/types/ipcContract'
@@ -29,23 +35,23 @@ export const conversationApi = {
   /** 新建分组 */
   groupCreate: (input: GroupCreateI) => window.api.group.create(input),
   /** 分组展开|收起 */
-  groupExpand: (id: string, open: boolean) => window.api.group.expand({ id, open }),
+  groupExpand: (input: GroupExpandI) => window.api.group.expand(input),
   /** 打开分组目录 */
-  groupOpenFolder: (path: string) => window.api.group.folder({ path }),
+  groupOpenFolder: (input: GroupFolderI) => window.api.group.folder(input),
   /** 删除分组 */
-  groupDelete: (id: string) => window.api.group.delete({ id }),
+  groupDelete: (input: GroupDeleteI) => window.api.group.delete(input),
   /** 重命名分组 */
   groupRename: (input: GroupRenameI) => window.api.group.rename(input),
   /** ====================  会话  ==================== */
   /** 会话列表 */
   conversationList: () => window.api.conversation.list(),
   /** 新建会话 */
-  conversationCreate: (groupId: string | null) => window.api.conversation.create({ groupId }),
+  conversationCreate: (input: ConversationCreateI) => window.api.conversation.create(input),
   /** 会话信息 */
-  conversationInfo: (id: string) => window.api.conversation.info({ id }),
+  conversationInfo: (input: ConversationInfoI) => window.api.conversation.info(input),
   /** ====================  消息  ==================== */
   /** 消息列表 */
-  messageList: (conversationId: string) => window.api.message.list({ conversationId })
+  messageList: (input: MessageListI) => window.api.message.list(input)
 }
 
 export const expandApi = {

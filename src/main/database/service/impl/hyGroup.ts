@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { realpath, stat } from 'node:fs/promises'
+import { realpathSync, statSync } from 'node:fs'
 import { basename } from 'node:path'
 import type { DatabaseRepository } from '../types'
 import { DEFAULT_WORKSPACE_ID } from '../../init/data'
@@ -7,6 +7,7 @@ import type { Database } from '../../types'
 import { toGroup } from './converter'
 import type { Row } from './converter'
 import { nextGroupSortIndex } from './utils'
+import { validPath } from '@main/lib/file'
 import { errorText } from '@main/utils/error'
 
 /**
@@ -20,6 +21,7 @@ import { errorText } from '@main/utils/error'
  * 所以 path 可以为空 判形态只看 default_flag 不要拿 path IS NULL 反推
  *
  * 失败一律走Result不throw | 业务失败给用户能读的文案 意外异常走errorText
+ * 数据库本身同步 方法不包Promise | fs用的是判断类同步API 拿到结果立刻分支
  */
 export function createGroupMethods(
   database: Database
@@ -29,7 +31,7 @@ export function createGroupMethods(
 > {
   return {
     /** 分组列表 */
-    async groupList() {
+    groupList() {
       try {
         // 给出的数据按sort_index从大到小排列,大的(新创建的)在前
         const rows = database
@@ -41,7 +43,7 @@ export function createGroupMethods(
       }
     },
     /** 新建分组 */
-    async groupCreate(input) {
+    groupCreate(input) {
       try {
         const workspaceId = input.workspaceId ?? DEFAULT_WORKSPACE_ID
 
@@ -52,17 +54,21 @@ export function createGroupMethods(
         if (workspace === undefined)
           return { success: false, error: `工作区不存在：${workspaceId}` }
 
-        // 判断路径是否有效
+        // 判断路径是否有效 | 同步实现: 结果要立刻分支 不等事件循环
         const rawPath = input.path
         let real: string | null = null
         if (rawPath !== null) {
-          try {
-            real = await realpath(rawPath)
-          } catch {
+          if (!validPath(rawPath)) {
             return { success: false, error: `文件夹不存在或无法访问：${rawPath}` }
           }
-          if (!(await stat(real)).isDirectory())
-            return { success: false, error: `不是目录：${real}` }
+          try {
+            // 存库与判重都用规范化后的路径 否则同一个目录换个写法就能登记两次
+            real = realpathSync(rawPath)
+            if (!statSync(real).isDirectory()) return { success: false, error: `不是目录：${real}` }
+          } catch {
+            // validPath与realpathSync之间目录被删了
+            return { success: false, error: `文件夹无法访问：${rawPath}` }
+          }
           // 如果路径已经注册
           const existing = database.prepare('SELECT * FROM hy_group WHERE path = ?').get(real) as
             Row | undefined
@@ -95,7 +101,7 @@ export function createGroupMethods(
       }
     },
     /** 分组展开|收起 */
-    async groupExpand(input) {
+    groupExpand(input) {
       try {
         const info = database
           .prepare('UPDATE hy_group SET open_status = ? WHERE id = ?')
@@ -108,7 +114,7 @@ export function createGroupMethods(
       }
     },
     /** 删除分组 */
-    async groupDelete(input) {
+    groupDelete(input) {
       try {
         const row = database
           .prepare('SELECT default_flag FROM hy_group WHERE id = ?')
@@ -129,7 +135,7 @@ export function createGroupMethods(
       }
     },
     /** 重命名分组 */
-    async groupRename(input) {
+    groupRename(input) {
       try {
         const info = database
           .prepare('UPDATE hy_group SET title = ? WHERE id = ?')
