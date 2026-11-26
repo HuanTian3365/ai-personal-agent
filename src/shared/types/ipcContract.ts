@@ -29,6 +29,8 @@ export type ToAsync<F> = F extends (...args: infer A) => infer R
   ? (...args: A) => Promise<R>
   : never
 
+/** ====================  agent  ==================== */
+
 /** agent:send 的入参 | 形状归core定义 见message.ts */
 export type { MessageEventSend } from './message'
 
@@ -51,9 +53,13 @@ export interface StreamSnapshot {
   events: AgentEventEnvelope[]
 }
 
+/** ====================  workspace  ==================== */
+
 // ========== 工作区列表
 export type WorkspaceListRes = Result<HYWorkspace[]>
 export type WorkspaceListFun = () => WorkspaceListRes
+
+/** ====================  group  ==================== */
 
 // ========== 分组列表
 export type GroupListRes = Result<HYGroup[]>
@@ -112,6 +118,8 @@ export interface GroupRenameReq {
 export type GroupRenameRes = Result
 export type GroupRenameFun = (request: GroupRenameReq) => GroupRenameRes
 
+/** ====================  conversation  ==================== */
+
 // ========== 会话列表
 export type ConversationListRes = Result<HYConversation[]>
 export type ConversationListFun = () => ConversationListRes
@@ -164,6 +172,8 @@ export type ConversationUpdateExpandRes = Result
 export type ConversationUpdateExpandFun = (
   request: ConversationUpdateExpandReq
 ) => ConversationUpdateExpandRes
+
+/** ====================  message  ==================== */
 
 // ========== 消息列表
 export interface MessageListReq {
