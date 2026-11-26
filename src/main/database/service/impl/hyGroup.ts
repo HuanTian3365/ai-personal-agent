@@ -6,6 +6,7 @@ import { DEFAULT_WORKSPACE_ID } from '../../init/data'
 import type { Database } from '../../types'
 import { toGroup } from './converter'
 import type { Row } from './converter'
+import { nextGroupSortIndex } from './utils'
 
 /**
  * 分组层 | hy_group 的读写方法
@@ -23,9 +24,9 @@ export function createGroupMethods(
   return {
     /** 分组列表 */
     async listGroups() {
-      // 组内按 sort_index 排；跨工作区的先后由渲染层按工作区顺序重排，这里只保证同工作区内有序
+      // 给出的数据按sort_index从大到小排列,大的(新创建的)在前
       const rows = database
-        .prepare('SELECT * FROM hy_group ORDER BY workspace_id ASC, sort_index ASC')
+        .prepare('SELECT * FROM hy_group ORDER BY workspace_id ASC, sort_index DESC')
         .all()
       return rows.map((r) => toGroup(r as Row))
     },
@@ -34,13 +35,13 @@ export function createGroupMethods(
       const workspaceId = input.workspaceId ?? DEFAULT_WORKSPACE_ID
       const titleInput = (input.title ?? '').trim()
 
-      // 1) 工作区必须存在（不再默默落到缺省工作区）
+      // 工作区是否存在
       const workspace = database
         .prepare('SELECT id FROM hy_workspace WHERE id = ?')
         .get(workspaceId)
       if (workspace === undefined) throw new Error(`工作区不存在：${workspaceId}`)
 
-      // 2) 带路径就校验目录并规范化；不带路径 real 保持 null
+      // 判断路径是否有效
       const rawPath = input.path ?? null
       let real: string | null = null
       if (rawPath !== null && rawPath.trim() !== '') {
@@ -50,21 +51,18 @@ export function createGroupMethods(
           throw new Error(`文件夹不存在或无法访问：${rawPath}`)
         }
         if (!(await stat(real)).isDirectory()) throw new Error(`不是目录：${real}`)
-
+        // 如果路径已经注册就直接返回
         const existing = database.prepare('SELECT * FROM hy_group WHERE path = ?').get(real) as
           Row | undefined
         if (existing !== undefined) return toGroup(existing)
       }
 
-      // 3) 标题：带路径可留空取目录名；不带路径必填
+      // 判断标题是否有效
       const title = real === null ? titleInput : titleInput || basename(real) || real
       if (title === '') throw new Error('不选择文件夹时，分组名称必填')
 
-      const { n: sortIndex } = database
-        .prepare(
-          'SELECT COALESCE(MAX(sort_index), -1) + 1 AS n FROM hy_group WHERE workspace_id = ? AND default_flag = 0'
-        )
-        .get(workspaceId) as { n: number }
+      // 获取序号
+      const sortIndex = nextGroupSortIndex(database, workspaceId)
 
       const now = Date.now()
       const id = randomUUID()

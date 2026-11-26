@@ -29,7 +29,7 @@ export function createConversationMethods(database: Database): ConversationMetho
     /** 会话列表 */
     async listConversations() {
       const rows = database
-        .prepare('SELECT * FROM hy_conversation ORDER BY group_id ASC, sort_index ASC')
+        .prepare('SELECT * FROM hy_conversation ORDER BY group_id ASC, sort_index DESC')
         .all()
       return rows.map((r) => toConversation(r as Row))
     },
