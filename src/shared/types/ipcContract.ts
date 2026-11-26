@@ -129,7 +129,7 @@ export interface ConversationCreateReq {
   /** null = 未分组 落所属工作区的默认分组 */
   groupId: string | null
 }
-/** 只给调用方真用得上的字段 其余不查不传 */
+/** 只给调用方真用得上的字段 */
 export type ConversationCreateRes = Result<
   Omit<HYConversation, 'groupId' | 'title' | 'sortIndex' | 'expand' | 'createdAt' | 'updatedAt'>
 >
@@ -139,7 +139,6 @@ export type ConversationCreateFun = (request: ConversationCreateReq) => Conversa
 export interface ConversationInfoReq {
   id: string
 }
-/** 查不到是 data: null 不是失败 */
 export type ConversationInfoRes = Result<HYConversation | null>
 export type ConversationInfoFun = (request: ConversationInfoReq) => ConversationInfoRes
 
