@@ -1,7 +1,13 @@
 import { ipcRenderer } from 'electron'
 import { IPC } from '@shared/ipc'
 import type { HYConversation, HYGroup, HYWorkspace } from '@shared/types/hyEntity'
-import type { CreateGroupInput, GroupRenameI, GroupRenameR } from '@shared/types/ipcContract'
+import type {
+  CreateGroupInput,
+  GroupDeleteI,
+  GroupDeleteR,
+  GroupRenameI,
+  GroupRenameR
+} from '@shared/types/ipcContract'
 import type { TurnMessage } from '@shared/types/message'
 
 /**
@@ -22,7 +28,7 @@ const conversationApi = {
     expand: (id: string, open: boolean): Promise<void> =>
       ipcRenderer.invoke(IPC.group.expand, id, open),
     folder: (path: string): Promise<void> => ipcRenderer.invoke(IPC.group.folder, path),
-    delete: (id: string): Promise<void> => ipcRenderer.invoke(IPC.group.delete, id),
+    delete: (id: GroupDeleteI): Promise<GroupDeleteR> => ipcRenderer.invoke(IPC.group.delete, id),
     rename: (input: GroupRenameI): Promise<GroupRenameR> =>
       ipcRenderer.invoke(IPC.group.rename, input)
   },

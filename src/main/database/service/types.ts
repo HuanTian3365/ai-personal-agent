@@ -1,5 +1,5 @@
 import type { HYConversation, HYGroup, HYWorkspace } from '@shared/types/hyEntity'
-import type { CreateGroupInput, GroupRenameF } from '@shared/types/ipcContract'
+import type { CreateGroupInput, GroupDeleteF, GroupRenameF } from '@shared/types/ipcContract'
 import type { HYEConversationExpand } from '@shared/types/hyExpand'
 
 /**
@@ -17,6 +17,8 @@ export interface DatabaseRepository {
   createGroup(input: CreateGroupInput): Promise<HYGroup>
   /** 设置分组展开状态 */
   setGroupOpen(id: string, open: boolean): Promise<void>
+  /** 删除分组 */
+  groupDelete: GroupDeleteF
   /** 重命名分组 */
   groupRename: GroupRenameF
   /** ====================  会话  ==================== */

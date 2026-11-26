@@ -11,7 +11,7 @@ import WorkspaceHeader from './WorkspaceHeader'
 import { CircleX, Loader } from 'lucide-react'
 import type { WorkspaceSection } from '@renderer/hooks/useConversationList'
 import type { HYWorkspace } from '@shared/types/hyEntity'
-import type { GroupRenameF } from '@shared/types/ipcContract'
+import type { GroupDeleteF, GroupRenameF } from '@shared/types/ipcContract'
 
 /**
  * 侧栏内容区 三层渲染: 工作区(SidebarGroup区块) -> 分组(Group) -> 对话(Item)
@@ -26,6 +26,7 @@ interface Props {
   onAddGroup: (workspace: HYWorkspace) => void
   onToggleOpen: (id: string, open: boolean) => Promise<void>
   onGroupRename: GroupRenameF
+  onGroupDelete: GroupDeleteF
 }
 
 export default function Workspace({
@@ -35,7 +36,8 @@ export default function Workspace({
   onAddConversation,
   onAddGroup,
   onToggleOpen,
-  onGroupRename
+  onGroupRename,
+  onGroupDelete
 }: Props): React.JSX.Element {
   return (
     <SidebarContent>
@@ -80,6 +82,7 @@ export default function Workspace({
                   onAddConversation={onAddConversation}
                   onToggleOpen={onToggleOpen}
                   onGroupRename={onGroupRename}
+                  onGroupDelete={onGroupDelete}
                 />
               ))}
             </SidebarMenu>

@@ -2,7 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { HYConversation, HYGroup, HYWorkspace } from '@shared/types/hyEntity'
 import { agentApi, conversationApi, expandApi } from '@renderer/lib/ipc'
 import { useNavigate } from 'react-router'
-import type { CreateGroupInput, CreateGroupOutput, GroupRenameF } from '@shared/types/ipcContract'
+import type {
+  CreateGroupInput,
+  CreateGroupOutput,
+  GroupDeleteF,
+  GroupRenameF
+} from '@shared/types/ipcContract'
 
 /**
  * 侧栏要用的三种形状（下面两个接口 + 这个返回类型）与文件末尾的 buildWorkspaceSections 是一套，
@@ -25,6 +30,8 @@ export interface UseWorkspaceListResult {
   addConversation: (groupId: string | null) => Promise<void>
   /** 重命名分组 */
   groupRename: GroupRenameF
+  /** 删除分组 */
+  groupDelete: GroupDeleteF
 }
 
 /** 一个工作区下的分组节点；默认分组（未分组）也占一个位置 */
@@ -190,12 +197,23 @@ export function useConversationList(): UseWorkspaceListResult {
   const groupRename = useCallback<GroupRenameF>(
     async (input) => {
       const res = await conversationApi.groupRename(input)
-      if (res.status) {
+      if (res.success) {
         await refresh()
         return res
       } else {
         return res
       }
+    },
+    [refresh]
+  )
+
+  /** 删除分组 */
+  const groupDelete = useCallback<GroupDeleteF>(
+    async (id) => {
+      const res = await conversationApi.groupDelete(id)
+      // 删成功后整棵树要重拉 组内会话已落到未分组 侧栏位置会变
+      if (res.success) await refresh()
+      return res
     },
     [refresh]
   )
@@ -207,7 +225,8 @@ export function useConversationList(): UseWorkspaceListResult {
     createGroup,
     addConversation,
     toggleGroupOpen,
-    groupRename
+    groupRename,
+    groupDelete
   }
 }
 

@@ -8,6 +8,7 @@
 
 import type { AgentEventEnvelope } from './agentEvent'
 import type { HYEQueueItem } from './hyExpand'
+import type { Result } from './result'
 
 /** ====================  agent  ==================== */
 
@@ -51,9 +52,7 @@ export interface CreateGroupOutput {
   }
 }
 
-/** 成功|失败 | 判别式 收窄后 data/error 必有一个为真值 */
-type Result<T = undefined, E = string> = { success: true; data: T } | { success: false; error: E }
-
+/** group:rename 的入参 */
 export interface GroupRenameI {
   id: string
   title: string
@@ -61,3 +60,11 @@ export interface GroupRenameI {
 export type GroupRenameR = Result
 
 export type GroupRenameF = (input: GroupRenameI) => Promise<GroupRenameR>
+
+/** group:delete 的入参 | 只传分组id */
+export type GroupDeleteI = string
+
+/** group:delete 的返回 | 无数据 失败原因直接给一句可显示文案 */
+export type GroupDeleteR = Result
+
+export type GroupDeleteF = (input: GroupDeleteI) => Promise<GroupDeleteR>

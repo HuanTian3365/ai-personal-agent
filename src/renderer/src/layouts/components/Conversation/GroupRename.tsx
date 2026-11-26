@@ -30,6 +30,7 @@ export default function GroupRename({
   // draft=null 表示没编辑过 显示props里的分组名 | 关闭时置null 下次打开自动回填最新名字 不用effect同步
   const [draft, setDraft] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   // 显示名称
   const name = draft ?? groupName
   // 能否提交
@@ -47,8 +48,10 @@ export default function GroupRename({
   /** 提交 */
   const handleSubmit = async (): Promise<void> => {
     if (!canSubmit) return
+    setSubmitting(true)
     const res = await onSubmit({ id: groupId, title: name.trim() })
-    if (res.status) {
+    setSubmitting(false)
+    if (res.success) {
       handleOpenChange(false)
       return
     }
@@ -76,7 +79,7 @@ export default function GroupRename({
           <Button variant="ghost" onClick={() => handleOpenChange(false)}>
             取消
           </Button>
-          <Button disabled={!canSubmit} onClick={() => void handleSubmit()}>
+          <Button disabled={!canSubmit || submitting} onClick={() => void handleSubmit()}>
             确定
           </Button>
         </DialogFooter>

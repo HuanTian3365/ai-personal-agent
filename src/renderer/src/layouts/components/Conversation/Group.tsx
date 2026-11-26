@@ -32,8 +32,9 @@ import { Button } from '@renderer/components/ui/button'
 import { conversationApi } from '@renderer/lib/ipc'
 import { toast } from 'sonner'
 import GroupRename from './GroupRename'
+import GroupDelete from './GroupDelete'
 import { useState } from 'react'
-import { GroupRenameF } from '@shared/types/ipcContract'
+import type { GroupDeleteF, GroupRenameF } from '@shared/types/ipcContract'
 
 /** 第二层分组的行: 可折叠 展开后列出该分组下的对话(第三层) */
 interface Props {
@@ -44,16 +45,18 @@ interface Props {
   /** 切换展开状态 */
   onToggleOpen: (id: string, open: boolean) => Promise<void>
   onGroupRename: GroupRenameF
+  onGroupDelete: GroupDeleteF
 }
 
 export default function Group({
   group,
   onAddConversation,
   onToggleOpen,
-  onGroupRename
+  onGroupRename,
+  onGroupDelete
 }: Props): React.JSX.Element {
   const [renameFlag, setRenameFlag] = useState(false)
-  // const [deleteFlag, setDeleteFlag] = useState(false)
+  const [deleteFlag, setDeleteFlag] = useState(false)
   /** 显示图标 */
   function showIcon(): React.JSX.Element {
     if (group.isDefault) {
@@ -112,13 +115,12 @@ export default function Group({
               <MoreHorizontalIcon />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-auto min-w-40">
-              {/* 两项只有占位 后端还没有 group:rename / group:delete 通路 */}
               <DropdownMenuItem onClick={() => setRenameFlag(true)}>重命名</DropdownMenuItem>
               {group.path != null && (
                 <DropdownMenuItem onClick={openGroupFolder}>显示在文件夹</DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem>删除分组</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDeleteFlag(true)}>删除分组</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <Button
@@ -138,6 +140,14 @@ export default function Group({
         groupName={group.title}
         onOpenChange={setRenameFlag}
         onSubmit={onGroupRename}
+      />
+      <GroupDelete
+        open={deleteFlag}
+        /** 同上 未分组不给菜单 */
+        groupId={group.groupId as string}
+        groupName={group.title}
+        onOpenChange={setDeleteFlag}
+        onSubmit={onGroupDelete}
       />
     </SidebarMenuItem>
   )

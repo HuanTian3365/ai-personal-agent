@@ -1,7 +1,7 @@
 import { IPC } from '../../../shared/ipc'
 import { getHistoryMessage } from '../../../core/export'
 import { getRepository } from '../../database'
-import type { CreateGroupInput, GroupRenameI } from '@shared/types/ipcContract'
+import type { CreateGroupInput } from '@shared/types/ipcContract'
 import { shell } from 'electron'
 
 /**
@@ -64,14 +64,26 @@ export default function registerConversationIpc(ipcMain: Electron.IpcMain): void
   })
   // 删除分组
   ipcMain.handle(IPC.group.delete, (_event, id: unknown) => {
+    // 参数不合法也走返回 不throw | throw会被Electron包成Error invoking remote method
     if (typeof id !== 'string' || id.trim() === '') {
-      throw new Error('group.delete: id 必须是非空字符串')
+      return { success: false, error: '分组id不合法' }
     }
-    return
+    return getRepository().groupDelete(id)
   })
   // 重命名分组
-  ipcMain.handle(IPC.group.rename, (_event, input: GroupRenameI) => {
-    return getRepository().groupRename(input)
+  ipcMain.handle(IPC.group.rename, (_event, input: unknown) => {
+    // 同上 校验失败一律走返回
+    if (input === null || typeof input !== 'object') {
+      return { success: false, error: '入参必须是对象' }
+    }
+    const { id, title } = input as Record<string, unknown>
+    if (typeof id !== 'string' || id.trim() === '') {
+      return { success: false, error: '分组id不合法' }
+    }
+    if (typeof title !== 'string' || title.trim() === '') {
+      return { success: false, error: '分组名称不能为空' }
+    }
+    return getRepository().groupRename({ id, title: title.trim() })
   })
 
   /** ====================  会话  ==================== */

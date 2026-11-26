@@ -9,8 +9,16 @@ import type { HYWorkspace } from '@shared/types/hyEntity'
 import CreateGroupDialog from './Conversation/GroupCreate'
 
 export default function Sidebar(): React.JSX.Element {
-  const { sections, isLoading, error, addConversation, createGroup, toggleGroupOpen, groupRename } =
-    useConversationList()
+  const {
+    sections,
+    isLoading,
+    error,
+    addConversation,
+    createGroup,
+    toggleGroupOpen,
+    groupRename,
+    groupDelete
+  } = useConversationList()
   const [createTarget, setCreateTarget] = React.useState<HYWorkspace | null>(null)
   return (
     <SidebarShell>
@@ -23,6 +31,7 @@ export default function Sidebar(): React.JSX.Element {
         onAddGroup={setCreateTarget}
         onToggleOpen={toggleGroupOpen}
         onGroupRename={groupRename}
+        onGroupDelete={groupDelete}
       />
       <CreateGroupDialog
         open={createTarget !== null}

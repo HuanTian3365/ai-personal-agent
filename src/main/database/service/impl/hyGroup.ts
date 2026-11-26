@@ -20,7 +20,10 @@ import { nextGroupSortIndex } from './utils'
  */
 export function createGroupMethods(
   database: Database
-): Pick<DatabaseRepository, 'listGroups' | 'createGroup' | 'setGroupOpen' | 'groupRename'> {
+): Pick<
+  DatabaseRepository,
+  'listGroups' | 'createGroup' | 'setGroupOpen' | 'groupDelete' | 'groupRename'
+> {
   return {
     /** 分组列表 */
     async listGroups() {
@@ -81,7 +84,18 @@ export function createGroupMethods(
     },
     /** 删除分组 */
     async groupDelete(id) {
+      const row = database.prepare('SELECT default_flag FROM hy_group WHERE id = ?').get(id) as
+        | {
+            default_flag: number
+          }
+        | undefined
+      // id不存在与已删两次都落到这里 不报成功免得界面以为删掉了
+      if (row === undefined) return { success: false, error: '分组不存在' }
+      // 界面已对默认分组隐藏入口 后端仍拦一道 渲染层递过来的参数一律当不可信
+      if (row.default_flag === 1) return { success: false, error: '默认分组不可删除' }
+      // 组内会话的group_id由外键ON DELETE SET NULL自动落到未分组 文件夹与消息一律不动
       database.prepare('DELETE FROM hy_group WHERE id = ?').run(id)
+      return { success: true, data: undefined }
     },
     /** 重命名分组 */
     async groupRename(input) {
