@@ -15,7 +15,7 @@ export interface HYWorkspace {
   id: string
   /** 用户可改 前端先按id查i18n 查不到用这个 */
   title: string
-  /** 升序 0起 */
+  /** 升序 数字小的在前 | 种子值从1起 */
   sortIndex: number
 }
 
@@ -32,7 +32,7 @@ export interface HYGroup {
   defaultFlag: boolean
   /** 是否展开 */
   openStatus: boolean
-  /** 升序 0起 */
+  /** 同工作区内顺序 降序 数字大的在前 | 默认分组恒0 普通分组恒>=1 */
   sortIndex: number
   /** Unix毫秒 */
   createdAt: number
@@ -48,7 +48,7 @@ export interface HYConversation {
   /** null表示未分组 显示在所属工作区的默认分组里 */
   groupId: string | null
   title: string
-  /** 升序显示 | 新建的是负数 插到最前 */
+  /** 组内顺序 降序 数字大的在前 | 新建取MAX+1 恒排最前 */
   sortIndex: number
   /** 库里是json 见hyExpand.ts */
   expand: HYEConversationExpand
