@@ -1,5 +1,5 @@
 import { IPC } from '@shared/ipc'
-import type { HYEQueueItemView } from '@shared/types/hyExpand'
+import type { HYEQueueItemView } from '@shared/types/queueItem'
 import type { MessageEventSend } from '@shared/types/message'
 import type { SendMode, SendResult, StreamSnapshot } from '@shared/types/ipcContract'
 import { submitMessage } from '../../runtime/drive'

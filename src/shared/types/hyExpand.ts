@@ -20,12 +20,6 @@ export interface HYEQueueItem {
   target: 'next-turn' | 'next-step'
 }
 
-/** 推给渲染层的排队项 | 比库里多一个claimed 它不落库 */
-export interface HYEQueueItemView extends HYEQueueItem {
-  /** 已被本轮领走 | 渲染层靠它判断这条插队还等不等得到位置 */
-  claimed?: boolean
-}
-
 /** hy_conversation 的expand列 */
 export interface HYEConversationExpand {
   sendMessage?: { queue?: HYEQueueItem[] }

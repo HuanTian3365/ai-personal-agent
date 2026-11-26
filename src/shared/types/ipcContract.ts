@@ -6,7 +6,7 @@
  */
 
 import type { AgentEventEnvelope } from './agentEvent'
-import type { HYEQueueItemView } from './hyExpand'
+import type { HYEQueueItemView } from './queueItem'
 
 /** ====================  agent  ==================== */
 

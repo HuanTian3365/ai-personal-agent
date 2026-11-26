@@ -11,7 +11,7 @@
  */
 
 import { randomUUID } from 'node:crypto'
-import type { HYEQueueItemView } from '@shared/types/hyExpand'
+import type { HYEQueueItemView } from '@shared/types/queueItem'
 import { getDatabase, getRepository } from '../database'
 
 /** 每会话一条队列 | key: 会话ID */

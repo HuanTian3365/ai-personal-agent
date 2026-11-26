@@ -6,7 +6,7 @@ import {
   CollapsibleTrigger
 } from '@renderer/components/ui/collapsible'
 import { Input } from '@renderer/components/ui/input'
-import type { HYEQueueItemView } from '@shared/types/hyExpand'
+import type { HYEQueueItemView } from '@shared/types/queueItem'
 import {
   CheckIcon,
   ChevronDownIcon,

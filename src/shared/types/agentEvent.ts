@@ -1,5 +1,5 @@
 ﻿import type { TurnMessageBlock, MessageUsage, TurnMessage } from '@shared/types/message'
-import type { HYEQueueItemView } from './hyExpand'
+import type { HYEQueueItemView } from './queueItem'
 /** 推给渲染层的事件 | 纯数据 不含seq之类的传输字段 */
 export type AgentEvent =
   | AETurnStart
