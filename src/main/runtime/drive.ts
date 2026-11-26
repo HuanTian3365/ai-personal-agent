@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 一轮接一轮的驱动循环。
  *
  * 每轮从队头领一条 next-turn 当发起消息 队列空就退出 用户中断也退出(队列留着等手动发)。
@@ -8,7 +8,7 @@
 import { sendMessage, setInsertSource } from '@core/export'
 import type { AgentEvent } from '@shared/types/agentEvent'
 import type { MessageEventSend } from '@shared/types/message'
-import type { SendMode, SendResult } from '@shared/types/ipcContract'
+import type { SendMode, SendOutcome } from '@shared/types/ipcContract'
 import { broadcast } from '../ipc/broadcast'
 import {
   claimInserts,
@@ -45,7 +45,7 @@ export function submitMessage(props: {
   message: MessageEventSend
   /** 发送模式:排队/插队 */
   mode: SendMode
-}): SendResult {
+}): SendOutcome {
   const { conversationId, message, mode } = props
   const text = message.content ?? ''
 

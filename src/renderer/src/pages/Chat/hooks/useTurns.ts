@@ -107,18 +107,18 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
       setIsLoading(true)
       // 加载数据
       try {
-        const [listRes, infoRes, snap, queued] = await Promise.all([
+        const [listRes, infoRes, snapRes, queueRes] = await Promise.all([
           // 获取消息列表
           conversationApi.messageList({ conversationId }),
           // 获取会话信息
           conversationApi.conversationInfo({ id: conversationId }),
           // 获取进行中那一轮的快照
-          agentApi.snapshot(conversationId),
+          agentApi.snapshot({ conversationId }),
           // 获取排队区内容
-          agentApi.queue(conversationId)
+          agentApi.queue({ conversationId })
         ])
         if (cancelled) return
-        // 两个会话域的通道走Result | agent域还是直接返回值或抛错
+        // 四个都是Result | 任一个失败就整体报错
         if (!listRes.success) {
           setError(listRes.error)
           return
@@ -127,8 +127,18 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
           setError(infoRes.error)
           return
         }
+        if (!snapRes.success) {
+          setError(snapRes.error)
+          return
+        }
+        if (!queueRes.success) {
+          setError(queueRes.error)
+          return
+        }
         const list = listRes.data
         const info = infoRes.data
+        const snap = snapRes.data
+        const queued = queueRes.data
 
         /** 数据库已经落地的消息id,重放时跳过这些块的增量事件,防止重复消息 */
         const savedBlockIds = new Set<string>()
@@ -212,11 +222,9 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
     const targetId = conversationId
 
     try {
-      await agentApi.send(targetId, message, mode)
-      return true
-    } catch {
-      // 发送失败,模型会自动落一条错误消息,这里不用管
-      return false
+      const res = await agentApi.send({ conversationId: targetId, message, mode })
+      // 发送失败时模型会自动落一条错误消息 这里只管受没受理
+      return res.success
     } finally {
       setIsSending(false)
     }
@@ -224,34 +232,23 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
   /** 中断消息 */
   async function abort(): Promise<void> {
     if (conversationId === null) return
-    await agentApi.abort(conversationId)
+    await agentApi.abort({ conversationId })
   }
   /** 把排队里的一条改成插队 */
   async function insert(itemId: string): Promise<void> {
     if (conversationId === null) return
-    try {
-      await agentApi.insert(conversationId, itemId)
-    } catch {
-      // 这条可能刚被本轮领走 队列事件会把界面纠正回来
-    }
+    // 失败多半是这条刚被本轮领走 队列事件会把界面纠正回来
+    await agentApi.insert({ conversationId, itemId })
   }
   /** 改排队项的文案 */
   async function editQueue(itemId: string, text: string): Promise<void> {
     if (conversationId === null) return
-    try {
-      await agentApi.updateQueue(conversationId, itemId, { kind: 'edit', text })
-    } catch {
-      // 同上
-    }
+    await agentApi.updateQueue({ conversationId, itemId, action: { kind: 'edit', text } })
   }
   /** 删掉排队项 */
   async function removeQueue(itemId: string): Promise<void> {
     if (conversationId === null) return
-    try {
-      await agentApi.updateQueue(conversationId, itemId, { kind: 'remove' })
-    } catch {
-      // 同上
-    }
+    await agentApi.updateQueue({ conversationId, itemId, action: { kind: 'remove' } })
   }
 
   return {

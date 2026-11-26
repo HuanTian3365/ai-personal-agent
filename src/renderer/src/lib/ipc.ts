@@ -11,6 +11,12 @@
  */
 
 import type {
+  AgentAbortReq,
+  AgentInsertReq,
+  AgentQueueReq,
+  AgentQueueUpdateReq,
+  AgentSendReq,
+  AgentSnapshotReq,
   ConversationCreateReq,
   ConversationInfoReq,
   ExpandValidPathReq,
@@ -19,12 +25,9 @@ import type {
   GroupExpandReq,
   GroupFolderReq,
   GroupRenameReq,
-  MessageListReq,
-  QueueEditAction,
-  SendMode
+  MessageListReq
 } from '@shared/types/ipcContract'
 import type { AgentEventEnvelope } from '@shared/types/agentEvent'
-import type { MessageEventSend } from '@shared/types/message'
 
 export const conversationApi = {
   /** ====================  工作区  ==================== */
@@ -63,20 +66,17 @@ export const expandApi = {
 }
 export const agentApi = {
   /** 发送消息 | mode 决定排队还是插队 */
-  send: (conversationId: string, message: MessageEventSend, mode: SendMode) =>
-    window.api.agent.send(conversationId, message, mode),
+  send: (request: AgentSendReq) => window.api.agent.send(request),
   /** 中断消息 */
-  abort: (conversationId: string) => window.api.agent.abort(conversationId),
+  abort: (request: AgentAbortReq) => window.api.agent.abort(request),
   /** 监听事件 */
   onEvent: (callback: (payload: AgentEventEnvelope) => void) => window.api.agent.onEvent(callback),
   /** 获取对话快照 */
-  snapshot: (conversationId: string) => window.api.agent.snapshot(conversationId),
+  snapshot: (request: AgentSnapshotReq) => window.api.agent.snapshot(request),
   /** 把排队里的一条插入当前轮 */
-  insert: (conversationId: string, itemId: string) =>
-    window.api.agent.insert(conversationId, itemId),
+  insert: (request: AgentInsertReq) => window.api.agent.insert(request),
   /** 取该对话的排队内容 */
-  queue: (conversationId: string) => window.api.agent.queue(conversationId),
+  queue: (request: AgentQueueReq) => window.api.agent.queue(request),
   /** 改排队里的一条：改文案 / 删除 */
-  updateQueue: (conversationId: string, itemId: string, action: QueueEditAction) =>
-    window.api.agent.updateQueue(conversationId, itemId, action)
+  updateQueue: (request: AgentQueueUpdateReq) => window.api.agent.updateQueue(request)
 }

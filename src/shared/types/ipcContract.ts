@@ -16,7 +16,7 @@
 import type { AgentEventEnvelope } from './agentEvent'
 import type { HYConversation, HYGroup, HYWorkspace } from './hyEntity'
 import type { HYEConversationExpand, HYEQueueItem } from './hyExpand'
-import type { TurnMessage } from './message'
+import type { MessageEventSend, TurnMessage } from './message'
 import type { Result } from './result'
 
 /**
@@ -31,22 +31,70 @@ export type ToAsync<F> = F extends (...args: infer A) => infer R
 
 /** ====================  agent  ==================== */
 
-/** agent:send 的入参 | 形状归core定义 见message.ts */
+/** agent:send 的入参形状归core定义 见message.ts */
 export type { MessageEventSend } from './message'
 
-// ========== agent发送的投递方式
+// ========== 发送的投递方式
 /** queue: 排队等本轮结束 insert: 推进当前轮 */
 export type SendMode = 'queue' | 'insert'
 
-// ========== agent发送的返回
+// ========== 发送的投递结果
 /** sent: 已受理 queued: 正在生成 这条已进排队 */
-export type SendResult = { status: 'sent' } | { status: 'queued'; queue: HYEQueueItem[] }
+export type SendOutcome = { status: 'sent' } | { status: 'queued'; queue: HYEQueueItem[] }
 
-// ========== agent改排队项
+// ========== 改排队项
 /** kind: edit 改文案 | remove 删一条 插队走agent:insert */
 export type QueueEditAction = { kind: 'edit'; text: string } | { kind: 'remove' }
 
-// ========== agent取进行中那一轮的快照
+// ========== 发送消息
+export interface AgentSendReq {
+  conversationId: string
+  message: MessageEventSend
+  mode: SendMode
+}
+export type AgentSendRes = Result<SendOutcome>
+export type AgentSendFun = (request: AgentSendReq) => AgentSendRes
+
+// ========== 中断对话
+export interface AgentAbortReq {
+  conversationId: string
+}
+export type AgentAbortRes = Result
+export type AgentAbortFun = (request: AgentAbortReq) => AgentAbortRes
+
+// ========== 取进行中那一轮的快照
+export interface AgentSnapshotReq {
+  conversationId: string
+}
+/** 没在跑是 data: null 不是失败 */
+export type AgentSnapshotRes = Result<StreamSnapshot | null>
+export type AgentSnapshotFun = (request: AgentSnapshotReq) => AgentSnapshotRes
+
+// ========== 取该对话的排队内容
+export interface AgentQueueReq {
+  conversationId: string
+}
+export type AgentQueueRes = Result<HYEQueueItem[]>
+export type AgentQueueFun = (request: AgentQueueReq) => AgentQueueRes
+
+// ========== 把排队里的一条改成插队
+export interface AgentInsertReq {
+  conversationId: string
+  itemId: string
+}
+export type AgentInsertRes = Result
+export type AgentInsertFun = (request: AgentInsertReq) => AgentInsertRes
+
+// ========== 改排队里的一条：改文案或删除
+export interface AgentQueueUpdateReq {
+  conversationId: string
+  itemId: string
+  action: QueueEditAction
+}
+export type AgentQueueUpdateRes = Result
+export type AgentQueueUpdateFun = (request: AgentQueueUpdateReq) => AgentQueueUpdateRes
+
+// ========== 进行中那一轮的快照
 export interface StreamSnapshot {
   conversationId: string
   /** 按序重放一遍就能重建整轮 */

@@ -8,7 +8,7 @@ export const IPC = {
   ping: 'ping',
   /** 对话执行 */
   agent: {
-    /** 整轮结束才resolve */
+    /** 受理即返回 不等整轮跑完 进度靠事件推 */
     send: 'agent:send',
     /** 中断正在生成的一轮 */
     abort: 'agent:abort',
