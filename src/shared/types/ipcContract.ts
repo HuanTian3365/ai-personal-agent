@@ -166,6 +166,15 @@ export interface GroupRenameReq {
 export type GroupRenameRes = Result
 export type GroupRenameFun = (request: GroupRenameReq) => GroupRenameRes
 
+// ========== 分组重排
+export interface GroupReorderReq {
+  workspaceId: string
+  /** 该工作区非默认分组的完整显示顺序 | 不含默认分组 | 显示第1的在数组第0个 */
+  ids: string[]
+}
+export type GroupReorderRes = Result
+export type GroupReorderFun = (request: GroupReorderReq) => GroupReorderRes
+
 /** ====================  conversation  ==================== */
 
 // ========== 会话列表

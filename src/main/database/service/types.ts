@@ -10,6 +10,7 @@ import type {
   GroupExpandFun,
   GroupListFun,
   GroupRenameFun,
+  GroupReorderFun,
   WorkspaceListFun
 } from '@shared/types/ipcContract'
 
@@ -36,6 +37,8 @@ export interface DatabaseRepository {
   groupDelete: GroupDeleteFun
   /** 重命名分组 */
   groupRename: GroupRenameFun
+  /** 重排分组顺序 | 按显示顺序整段重写 sort_index */
+  groupReorder: GroupReorderFun
   /** ====================  会话  ==================== */
   /** 全部对话，按组内手动顺序返回 */
   conversationList: ConversationListFun

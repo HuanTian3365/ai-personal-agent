@@ -17,6 +17,8 @@ import type {
   GroupListRes,
   GroupRenameReq,
   GroupRenameRes,
+  GroupReorderReq,
+  GroupReorderRes,
   MessageListReq,
   MessageListRes,
   WorkspaceListRes
@@ -48,7 +50,9 @@ const conversationApi = {
     delete: (request: GroupDeleteReq): Promise<GroupDeleteRes> =>
       ipcRenderer.invoke(IPC.group.delete, request),
     rename: (request: GroupRenameReq): Promise<GroupRenameRes> =>
-      ipcRenderer.invoke(IPC.group.rename, request)
+      ipcRenderer.invoke(IPC.group.rename, request),
+    reorder: (request: GroupReorderReq): Promise<GroupReorderRes> =>
+      ipcRenderer.invoke(IPC.group.reorder, request)
   },
   /** ====================  会话  ==================== */
   conversation: {

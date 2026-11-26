@@ -27,7 +27,7 @@ export function createGroupMethods(
   database: Database
 ): Pick<
   DatabaseRepository,
-  'groupList' | 'groupCreate' | 'groupExpand' | 'groupDelete' | 'groupRename'
+  'groupList' | 'groupCreate' | 'groupExpand' | 'groupDelete' | 'groupRename' | 'groupReorder'
 > {
   return {
     /** 分组列表 */
@@ -145,6 +145,48 @@ export function createGroupMethods(
         return { success: true, data: undefined }
       } catch (err) {
         return { success: false, error: errorText('重命名分组', err) }
+      }
+    },
+    /** 重排分组 | 按显示顺序整段重写 sort_index */
+    groupReorder(request) {
+      try {
+        // 工作区不存在时不该静默成功 空数组也一样
+        const workspace = database
+          .prepare('SELECT id FROM hy_workspace WHERE id = ?')
+          .get(request.workspaceId)
+        if (workspace === undefined)
+          return { success: false, error: `工作区不存在：${request.workspaceId}` }
+
+        // 该工作区全部非默认分组 | 拿来比对集合 防并发漂移
+        const rows = database
+          .prepare('SELECT id FROM hy_group WHERE workspace_id = ? AND default_flag = 0')
+          .all(request.workspaceId) as { id: string }[]
+        const existing = new Set(rows.map((row) => row.id))
+        // 数量对不上 = 列表已经变过(增删分组) | 去重后变短 = 入参里有重复项
+        if (
+          existing.size !== request.ids.length ||
+          new Set(request.ids).size !== request.ids.length
+        ) {
+          return { success: false, error: '分组顺序已变化，请刷新后重试' }
+        }
+        // 混进默认分组或别的工作区的分组都在这里拦下
+        for (const id of request.ids) {
+          if (!existing.has(id)) return { success: false, error: '分组顺序已变化，请刷新后重试' }
+        }
+
+        // 显示第1的得 n 显示第n的得 1 | 从1起 默认分组的0才恒排在末尾
+        const total = request.ids.length
+        const now = Date.now()
+        const write = database.transaction((ids: string[]) => {
+          const stmt = database.prepare(
+            'UPDATE hy_group SET sort_index = ?, updated_at = ? WHERE id = ?'
+          )
+          for (const [index, id] of ids.entries()) stmt.run(total - index, now, id)
+        })
+        write(request.ids)
+        return { success: true, data: undefined }
+      } catch (err) {
+        return { success: false, error: errorText('重排分组', err) }
       }
     }
   }

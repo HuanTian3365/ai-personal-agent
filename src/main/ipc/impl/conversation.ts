@@ -87,6 +87,24 @@ export default function registerConversationIpc(ipcMain: Electron.IpcMain): void
     }
     return getRepository().groupRename({ id, title: title.trim() })
   })
+  // 分组重排
+  ipcMain.handle(IPC.group.reorder, (_event, request: unknown) => {
+    const fields = objectInput(request)
+    if (fields === null) return { success: false, error: '入参必须是对象' }
+    const { workspaceId, ids } = fields
+    if (typeof workspaceId !== 'string' || workspaceId.trim() === '') {
+      return { success: false, error: '工作区id不合法' }
+    }
+    if (!Array.isArray(ids)) return { success: false, error: '分组顺序必须是数组' }
+    if (ids.some((id) => typeof id !== 'string' || id.trim() === '')) {
+      return { success: false, error: '分组顺序里存在不合法的分组id' }
+    }
+    // 重复项会让数据层的集合比对失效 提前拦下
+    if (new Set(ids).size !== ids.length) {
+      return { success: false, error: '分组顺序里存在重复的分组id' }
+    }
+    return getRepository().groupReorder({ workspaceId, ids: ids as string[] })
+  })
 
   /** ====================  会话  ==================== */
   // 会话列表

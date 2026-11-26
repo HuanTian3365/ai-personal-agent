@@ -34,7 +34,9 @@ export const IPC = {
     expand: 'group:expand',
     delete: 'group:delete',
     rename: 'group:rename',
-    folder: 'group:folder'
+    folder: 'group:folder',
+    /** 按给定顺序整段重写该工作区的分组顺序 */
+    reorder: 'group:reorder'
   },
   /** 侧栏第三层 */
   conversation: {

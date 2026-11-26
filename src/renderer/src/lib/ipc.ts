@@ -25,6 +25,7 @@ import type {
   GroupExpandReq,
   GroupFolderReq,
   GroupRenameReq,
+  GroupReorderReq,
   MessageListReq
 } from '@shared/types/ipcContract'
 import type { AgentEventEnvelope } from '@shared/types/agentEvent'
@@ -46,6 +47,8 @@ export const conversationApi = {
   groupDelete: (request: GroupDeleteReq) => window.api.group.delete(request),
   /** 重命名分组 */
   groupRename: (request: GroupRenameReq) => window.api.group.rename(request),
+  /** 分组重排 */
+  groupReorder: (request: GroupReorderReq) => window.api.group.reorder(request),
   /** ====================  会话  ==================== */
   /** 会话列表 */
   conversationList: () => window.api.conversation.list(),

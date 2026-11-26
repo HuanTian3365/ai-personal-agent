@@ -33,6 +33,8 @@ export interface UseWorkspaceListResult {
   groupRename: ToAsync<GroupRenameFun>
   /** 删除分组 */
   groupDelete: ToAsync<GroupDeleteFun>
+  /** 分组重排 | 先改本地顺序再落库 失败翻回原顺序 */
+  groupReorder: (workspaceId: string, ids: string[]) => Promise<void>
 }
 
 /** 一个工作区下的分组节点；默认分组（未分组）也占一个位置 */
@@ -218,6 +220,38 @@ export function useConversationList(): UseWorkspaceListResult {
     [refresh]
   )
 
+  /** 分组重排 */
+  const groupReorder = useCallback(
+    async (workspaceId: string, ids: string[]): Promise<void> => {
+      // 按新顺序重算 sortIndex | 侧栏按它降序排 所以改字段就等于改顺序
+      const rank = new Map(ids.map((id, index) => [id, ids.length - index]))
+      const apply = (next: Map<string, number>): void => {
+        setGroups((prev) =>
+          prev.map((group) =>
+            next.has(group.id)
+              ? { ...group, sortIndex: next.get(group.id) ?? group.sortIndex }
+              : group
+          )
+        )
+      }
+      // 先记原值 失败要翻回去 免得界面和库里对不上
+      const backup = new Map(
+        groups
+          .filter((group) => rank.has(group.id))
+          .map((group) => [group.id, group.sortIndex] as const)
+      )
+      apply(rank)
+      const res = await conversationApi.groupReorder({ workspaceId, ids })
+      if (!res.success) {
+        apply(backup)
+        setError(res.error)
+        return
+      }
+      setError(null)
+    },
+    [groups]
+  )
+
   return {
     sections,
     isLoading,
@@ -226,7 +260,8 @@ export function useConversationList(): UseWorkspaceListResult {
     addConversation,
     toggleGroupOpen,
     groupRename,
-    groupDelete
+    groupDelete,
+    groupReorder
   }
 }
 
@@ -237,9 +272,11 @@ function buildWorkspaceSections(
   conversations: HYConversation[]
 ): WorkspaceSection[] {
   return workspaces.map((workspace) => {
-    // 普通分组：顺序由 groupList 给出，这里不再排
+    // 普通分组：按 sortIndex 降序 数字大的在前 | 与 groupList 的读序一致
+    // 这里显式排一次 重排时只改 sortIndex 字段 界面就能立刻跟着变
     const nodes: GroupNode[] = groups
       .filter((group) => group.workspaceId === workspace.id && !group.defaultFlag)
+      .sort((a, b) => b.sortIndex - a.sortIndex)
       .map((group) => ({
         key: group.id,
         title: group.title,
