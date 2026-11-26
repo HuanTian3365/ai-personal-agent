@@ -17,7 +17,7 @@ export function nextConversationSortIndex(database: Database, groupId: string | 
 
 /**
  * 工作区内新分组的 sort_index
- * 该工作区所有分组取最大序号+1 | 不过滤default_flag: 默认分组占着0
+ * 该工作区所有分组取最大序号+1 | 不过滤default_flag: 默认分组占着0,不参与普通分组排序
  * 所以普通分组从1起 天然和默认分组错开一格 不会并列
  * 列表倒序读 序号最大的显示在最前
  */

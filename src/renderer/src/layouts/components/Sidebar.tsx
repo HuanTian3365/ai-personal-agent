@@ -29,7 +29,9 @@ export default function Sidebar(): React.JSX.Element {
         onOpenChange={(open) => {
           if (!open) setCreateTarget(null)
         }}
-        onSubmit={createGroup}
+        onSubmit={(data) => {
+          return createGroup({ ...data, workspaceId: createTarget?.id })
+        }}
       />
       <SidebarFooter />
       <SidebarRail />

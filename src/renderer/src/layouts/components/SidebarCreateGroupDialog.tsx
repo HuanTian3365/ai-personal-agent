@@ -85,7 +85,7 @@ export default function SidebarCreateGroupDialog({
             </Field>
             <Field>
               <FieldLabel htmlFor="title">分组名称</FieldLabel>
-              <Input id="title" value={title} onChange={(e) => setTitle(e.target.value.trim())} />
+              <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} />
               {error?.another && <FieldError>{error?.another}</FieldError>}
             </Field>
           </FieldGroup>

@@ -51,10 +51,10 @@ export function createGroupMethods(
           throw new Error(`文件夹不存在或无法访问：${rawPath}`)
         }
         if (!(await stat(real)).isDirectory()) throw new Error(`不是目录：${real}`)
-        // 如果路径已经注册就直接返回
+        // 如果路径已经注册
         const existing = database.prepare('SELECT * FROM hy_group WHERE path = ?').get(real) as
           Row | undefined
-        if (existing !== undefined) return toGroup(existing)
+        if (existing !== undefined) throw new Error(`路径已存在,名称: ${toGroup(existing).title}`)
       }
 
       // 判断标题是否有效

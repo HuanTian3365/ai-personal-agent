@@ -120,7 +120,6 @@ export function useConversationList(): UseWorkspaceListResult {
   const createGroup = useCallback(
     async (input: CreateGroupInput): Promise<CreateGroupOutput> => {
       try {
-        console.log('createGroup', input)
         // 不绑目录就不用校验路径
         if (input.path) {
           const valid = await expandApi.validPath(input.path)
