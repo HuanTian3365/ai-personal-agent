@@ -8,7 +8,6 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { ensureDir } from '@main/lib/file'
-import { stringifySafe } from '@shared/lib/json'
 
 /** 调试目录，相对 cwd（dev 下就是项目根）。打包后 cwd 可能指向安装目录，和 log.ts 是同一个问题 */
 const LOG_DIR = 'log'
@@ -91,6 +90,15 @@ async function readRecords(): Promise<DebugRecord[]> {
     return Array.isArray(parsed) ? (parsed as DebugRecord[]) : []
   } catch {
     return []
+  }
+}
+
+/** JSON.stringify 遇到循环引用会抛，兜一层 */
+function stringifySafe(value: unknown): string {
+  try {
+    return JSON.stringify(value, null, 2) ?? String(value)
+  } catch {
+    return String(value)
   }
 }
 

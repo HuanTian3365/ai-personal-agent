@@ -1,7 +1,7 @@
 /**
  * IPC 通道名。
  *
- * 三块并列：`agent`（对话执行）、`conversation`（列表三层：工作区 / 分组 / 对话）、`dialog`。
+ * 三块并列：`agent`（对话执行）、`conversation`（列表三层：工作区 / 分组 / 对话）、`expand`（扩展功能）。
  * 以前这三层挂在 `session` 这个壳下面，而「会话」在本项目里统一叫 conversation，
  * 壳既没有额外语义又和通道名重复，就拍平成三个顶层域了。
  */
@@ -44,9 +44,9 @@ export const IPC = {
   message: {
     list: 'conversation:message:list'
   },
-  /** 系统对话框 */
-  dialog: {
+  /** 扩展功能：不属于对话本身的能力都挂这里（现在只有系统对话框） */
+  expand: {
     /** 选一个目录 */
-    pickDirectory: 'dialog:pickDirectory'
+    pickDirectory: 'expand:pickDirectory'
   }
 } as const

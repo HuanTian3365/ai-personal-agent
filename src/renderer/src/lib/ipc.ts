@@ -34,8 +34,9 @@ export const conversationApi = {
   listMessages: (conversationId: string) => window.api.message.list(conversationId)
 }
 
-export const dialogApi = {
-  pickDirectory: () => window.api.dialog.pickDirectory()
+export const expandApi = {
+  /** 选择目录 */
+  pickDirectory: () => window.api.expand.pickDirectory()
 }
 export const agentApi = {
   /** 发送消息 | mode 决定排队还是插队 */

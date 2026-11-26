@@ -1,7 +1,7 @@
 import { ipcRenderer } from 'electron'
 import { IPC } from '../shared/ipc'
 import agentApi from './api/agent'
-import dialogApi from './api/dialog'
+import expandApi from './api/expand'
 import conversationApi from './api/conversation'
 
 /**
@@ -14,7 +14,7 @@ const api = {
   agent: agentApi,
   // conversationApi 是 { workspace, group, conversation }，展开后与原有扁平结构一致
   ...conversationApi,
-  dialog: dialogApi
+  expand: expandApi
 }
 
 export default api

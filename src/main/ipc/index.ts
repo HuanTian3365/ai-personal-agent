@@ -1,6 +1,6 @@
 import { IPC } from '../../shared/ipc'
 import registerAgentIpc from './impl/agent'
-import registerDialogIpc from './impl/dialog'
+import registerExpandIpc from './impl/expand'
 import registerConversationIpc from './impl/conversation'
 
 // 渲染 → 主，不等结果：  ipcRenderer.send   ↔  ipcMain.on
@@ -17,5 +17,5 @@ export default function mount(ipcMain: Electron.IpcMain): void {
 
   registerAgentIpc(ipcMain)
   registerConversationIpc(ipcMain)
-  registerDialogIpc(ipcMain)
+  registerExpandIpc(ipcMain)
 }

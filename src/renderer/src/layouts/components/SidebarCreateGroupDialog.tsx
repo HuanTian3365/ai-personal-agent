@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@renderer/components/ui/dialog'
-import { dialogApi } from '@renderer/lib/ipc'
+import { expandApi } from '@renderer/lib/ipc'
 import { FieldSet, FieldGroup, Field, FieldLabel } from '@renderer/components/ui/field'
 
 /** 新建分组：文件夹可选、名称可选，但两者不能同时为空 */
@@ -46,7 +46,7 @@ export default function SidebarCreateGroupDialog({
 
   /** 选择文件夹 */
   const handlePick = async (): Promise<void> => {
-    const picked = await dialogApi.pickDirectory()
+    const picked = await expandApi.pickDirectory()
     if (picked === null) return // 用户取消
     // 当前标题为空或者为上一次选择的文件夹时,使用文件夹名称
     if ((title === '' || title === path.split(/[\\/]/).pop()) ?? '') {
