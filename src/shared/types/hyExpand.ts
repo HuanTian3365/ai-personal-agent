@@ -6,7 +6,7 @@
  * 例外: HYEQueueItem.claimed 是运行态 但它跟排队项同生共死 留在一处 不另开文件
  */
 
-import type { HYMessageField } from './hyEntity'
+import type { HYMessage } from './hyEntity'
 // 没有这行 tsc在web侧解析不到这个模块 declare module会报TS2664
 // type-only的副作用导入 不产生运行时代码
 import type {} from '@langchain/core/messages'
@@ -57,7 +57,7 @@ export interface HYEMessageCustom {
 // 见 docs/讨论/10.2026-11-26-类型定义与存储选型及插队残留.md §1.4
 declare module '@langchain/core/messages' {
   interface BaseMessage {
-    HYMessageField?: HYMessageField
+    HYMessage?: HYMessage
     HYEMessageCustom?: HYEMessageCustom
   }
 }

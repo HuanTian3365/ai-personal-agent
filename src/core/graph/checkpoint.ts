@@ -9,7 +9,7 @@ import type {
 } from '@langchain/langgraph-checkpoint'
 import type BetterSqlite3 from 'better-sqlite3'
 import type { HYEMessageCustom, HYEMessageExpand } from '@shared/types/hyExpand'
-import type { HYMessageField } from '@shared/types/hyEntity'
+import type { HYMessage } from '@shared/types/hyEntity'
 
 /**
  * LangChain 消息 ⇄ 消息表的转换层 | 取代原来的 checkpoint saver
@@ -282,7 +282,7 @@ CREATE TABLE IF NOT EXISTS ${MESSAGES} (
    * 消息 -> 行
    *
    * 外壳只留 lc / type / id，正文全在 kwargs。
-   * hy_custom 塞进 kwargs 跟着正文走；HYMessageField 是行级信息 不序列化。
+   * hy_custom 塞进 kwargs 跟着正文走；HYMessage 是行级信息 不序列化。
    */
   private async toRow(
     message: BaseMessage,
@@ -341,7 +341,7 @@ CREATE TABLE IF NOT EXISTS ${MESSAGES} (
    */
   private attach(message: BaseMessage, row: MessageRow): void {
     const kwargs = JSON.parse(row.message) as { hy_custom?: HYEMessageCustom }
-    const field: HYMessageField = {
+    const field: HYMessage = {
       id: row.id,
       conversationId: row.conversation_id,
       seq: row.seq,
@@ -350,7 +350,7 @@ CREATE TABLE IF NOT EXISTS ${MESSAGES} (
       expand: JSON.parse(row.expand) as HYEMessageExpand,
       createdAt: row.created_at
     }
-    message.HYMessageField = field
+    message.HYMessage = field
     message.HYEMessageCustom = kwargs.hy_custom ?? {}
   }
 }

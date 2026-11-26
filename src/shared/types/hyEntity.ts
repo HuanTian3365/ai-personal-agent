@@ -61,7 +61,7 @@ export interface HYConversation {
 /** ====================  hy_message 消息表  ==================== */
 
 /** 一条消息的行级信息 | 挂在消息对象上 不会发给模型 */
-export interface HYMessageField {
+export interface HYMessage {
   id: string
   /** 即LangGraph的thread_id */
   conversationId: string

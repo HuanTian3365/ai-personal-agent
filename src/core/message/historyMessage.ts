@@ -33,7 +33,7 @@ function parseLangChainMessage(messages: BaseMessage[]): TurnMessage[] {
     // 消息id
     const id = msg.id ?? `msg-${index}`
     // 当前消息产生时间
-    const ts = msg.HYMessageField?.createdAt ?? 0
+    const ts = msg.HYMessage?.createdAt ?? 0
     try {
       /** ====================  用户消息|插入消息  ==================== */
       if (msg.type === 'human') {

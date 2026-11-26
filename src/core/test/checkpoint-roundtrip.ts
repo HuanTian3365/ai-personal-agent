@@ -186,10 +186,10 @@ async function main(): Promise<void> {
     check(`第 ${index + 1} 条 ${message.type} 一致`, deepEqual(stripped, original))
   }
 
-  console.log('\n[3] HYMessageField 行级字段')
+  console.log('\n[3] HYMessage 行级字段')
   for (let index = 0; index < loaded.length; index += 1) {
-    const field = loaded[index].HYMessageField
-    check(`第 ${index + 1} 条有 HYMessageField`, field !== undefined)
+    const field = loaded[index].HYMessage
+    check(`第 ${index + 1} 条有 HYMessage`, field !== undefined)
     if (field === undefined) continue
     check(`  seq = ${index + 1}`, field.seq === index + 1, `实际 ${field.seq}`)
     check('  conversationId 正确', field.conversationId === THREAD, field.conversationId)
@@ -209,13 +209,13 @@ async function main(): Promise<void> {
   }
   check(
     '用户消息 metadata.source = input',
-    loaded[0].HYMessageField?.metadata.source === 'input',
-    String(loaded[0].HYMessageField?.metadata.source)
+    loaded[0].HYMessage?.metadata.source === 'input',
+    String(loaded[0].HYMessage?.metadata.source)
   )
   check(
     '后续消息 metadata.source = loop',
-    loaded[1].HYMessageField?.metadata.source === 'loop',
-    String(loaded[1].HYMessageField?.metadata.source)
+    loaded[1].HYMessage?.metadata.source === 'loop',
+    String(loaded[1].HYMessage?.metadata.source)
   )
 
   console.log('\n[4] HYEMessageCustom 业务字段')

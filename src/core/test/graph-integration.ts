@@ -161,13 +161,13 @@ async function main(): Promise<void> {
   const messages = (state.values.messages ?? []) as BaseMessage[]
   check('getState 拿到 4 条', messages.length === 4, `实际 ${messages.length}`)
   check(
-    '每条都有 HYMessageField',
-    messages.every((item) => item.HYMessageField !== undefined)
+    '每条都有 HYMessage',
+    messages.every((item) => item.HYMessage !== undefined)
   )
   check(
-    'HYMessageField.seq 与库里一致',
-    messages.map((item) => item.HYMessageField?.seq).join(',') === '1,2,3,4',
-    messages.map((item) => item.HYMessageField?.seq).join(',')
+    'HYMessage.seq 与库里一致',
+    messages.map((item) => item.HYMessage?.seq).join(',') === '1,2,3,4',
+    messages.map((item) => item.HYMessage?.seq).join(',')
   )
   check(
     '最后一条是最终回复',

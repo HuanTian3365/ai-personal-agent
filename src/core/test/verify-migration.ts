@@ -236,7 +236,7 @@ async function main(): Promise<void> {
       continue
     }
     readOk += 1
-    if (messages.every((message) => message.HYMessageField !== undefined)) fieldOk += 1
+    if (messages.every((message) => message.HYMessage !== undefined)) fieldOk += 1
 
     // 工具配对
     const callIds = new Set<string>()
@@ -253,7 +253,7 @@ async function main(): Promise<void> {
     }
   }
   check('每个会话都能 getTuple 读回且条数正确', readFail === 0, `${readOk} 成功 / ${readFail} 失败`)
-  check('读回的消息都带 HYMessageField', fieldOk === readOk, `${fieldOk}/${readOk}`)
+  check('读回的消息都带 HYMessage', fieldOk === readOk, `${fieldOk}/${readOk}`)
   check('工具调用与结果全部配对', toolBroken === 0, `${toolPairs} 配对 / ${toolBroken} 断链`)
   console.log(`  工具配对: ${toolPairs} 组`)
 
