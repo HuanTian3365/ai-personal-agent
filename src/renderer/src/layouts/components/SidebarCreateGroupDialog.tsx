@@ -1,5 +1,4 @@
 import * as React from 'react'
-import { FolderOpen, X } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
 import {
@@ -10,6 +9,7 @@ import {
   DialogTitle
 } from '@renderer/components/ui/dialog'
 import { dialogApi } from '@renderer/lib/ipc'
+import { FieldSet, FieldGroup, Field, FieldLabel } from '@renderer/components/ui/field'
 
 /** 新建分组：文件夹可选、名称可选，但两者不能同时为空 */
 interface Props {
@@ -27,36 +27,39 @@ export default function SidebarCreateGroupDialog({
   onOpenChange,
   onSubmit
 }: Props): React.JSX.Element {
-  const [path, setPath] = React.useState<string | null>(null)
+  const [path, setPath] = React.useState('')
   const [title, setTitle] = React.useState('')
   const [submitting, setSubmitting] = React.useState(false)
 
-  const trimmed = title.trim()
-  // 不选文件夹时名称必填；选了文件夹名称可留空（main 侧取目录名）
-  const missingTitle = path === null && trimmed === ''
-  const canSubmit = !submitting && !missingTitle
+  // 能否提交
+  const canSubmit = title.trim() !== ''
 
-  const reset = (): void => {
-    setPath(null)
-    setTitle('')
-    setSubmitting(false)
-  }
-
+  /** 弹窗切切换状态 */
   const handleOpenChange = (next: boolean): void => {
-    if (!next) reset()
+    if (!next) {
+      setPath('')
+      setTitle('')
+      setSubmitting(false)
+    }
     onOpenChange(next)
   }
 
+  /** 选择文件夹 */
   const handlePick = async (): Promise<void> => {
     const picked = await dialogApi.pickDirectory()
     if (picked === null) return // 用户取消
+    // 当前标题为空或者为上一次选择的文件夹时,使用文件夹名称
+    if ((title === '' || title === path.split(/[\\/]/).pop()) ?? '') {
+      setTitle(picked.split(/[\\/]/).pop() ?? '')
+    }
     setPath(picked)
   }
 
+  /** 提交 */
   const handleSubmit = async (): Promise<void> => {
     if (!canSubmit) return
     setSubmitting(true)
-    const ok = await onSubmit({ path, title: trimmed })
+    const ok = await onSubmit({ path, title: title })
     setSubmitting(false)
     if (ok) handleOpenChange(false)
   }
@@ -67,38 +70,21 @@ export default function SidebarCreateGroupDialog({
         <DialogHeader>
           <DialogTitle>{`在「${workspaceTitle}」下新建分组`}</DialogTitle>
         </DialogHeader>
-
-        {/* 文件夹（可选） */}
-        <div className="flex flex-col gap-2">
-          <span className="text-xs text-muted-foreground">文件夹（可选）</span>
-          <div className="flex items-center gap-2">
-            <span className="min-w-0 flex-1 truncate text-xs">
-              {path ?? '未选择：不绑定文件夹'}
-            </span>
-            <Button size="sm" variant="outline" onClick={() => void handlePick()}>
-              <FolderOpen /> 选择
-            </Button>
-            {path !== null && (
-              <Button size="sm" variant="ghost" onClick={() => setPath(null)}>
-                <X /> 移除
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* 名称 */}
-        <div className="flex flex-col gap-2">
-          <span className="text-xs text-muted-foreground">分组名称</span>
-          <Input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') void handleSubmit()
-            }}
-            placeholder={path === null ? '必填' : '留空则使用文件夹名称'}
-          />
-          {missingTitle && <p className="text-xs text-destructive">不选择文件夹时，分组名称必填</p>}
-        </div>
+        <FieldSet>
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="path">分组路径</FieldLabel>
+              <div className="flex flex-row gap-2">
+                <Input id="path" value={path} onChange={(e) => setPath(e.target.value)} />
+                <Button onClick={handlePick}>选择</Button>
+              </div>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="title">分组名称</FieldLabel>
+              <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} />
+            </Field>
+          </FieldGroup>
+        </FieldSet>
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => handleOpenChange(false)}>

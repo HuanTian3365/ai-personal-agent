@@ -10,6 +10,7 @@
 import { appendFile, mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { AIMessage, BaseMessage } from '@langchain/core/messages'
+import { stringifySafe } from '@shared/lib/json'
 
 /**
  * 日志目录。由 main 在 `initCore` 时注入（打包 `~/.huanyu/logs`，开发 `~/.huanyu-dev/logs`）：
@@ -95,14 +96,5 @@ async function appendAgentLog(entry: AgentLogEntry): Promise<void> {
     await appendFile(join(logDir, 'log.txt'), parts.join('\n') + '\n', 'utf8')
   } catch {
     // 静默：日志失败无所谓
-  }
-}
-
-/** JSON.stringify 遇到循环引用会抛，兜一层 */
-function stringifySafe(value: unknown): string {
-  try {
-    return JSON.stringify(value, null, 2) ?? String(value)
-  } catch {
-    return String(value)
   }
 }

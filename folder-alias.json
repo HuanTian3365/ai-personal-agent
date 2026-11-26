@@ -280,5 +280,8 @@
     },
     "src/shared/types/hyDefinition.ts": {
         "description": "底层扩展数据"
+    },
+    "src/renderer/src/layouts/components/SidebarCreateGroupDialog.tsx": {
+        "description": "新建分组"
     }
 }

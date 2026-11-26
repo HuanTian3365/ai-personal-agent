@@ -5,8 +5,10 @@
  * 两种写法输出同一种格式——JSON 数组 `[{ "index": 0, "content": ... }]`：
  * debugContent 追加到已有记录之后（保留历史）、debugContentRewrite 覆盖成全新的。
  */
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { ensureDir } from '@main/lib/file'
+import { stringifySafe } from '@shared/lib/json'
 
 /** 调试目录，相对 cwd（dev 下就是项目根）。打包后 cwd 可能指向安装目录，和 log.ts 是同一个问题 */
 const LOG_DIR = 'log'
@@ -59,7 +61,7 @@ export async function debugContent(...content: unknown[]): Promise<void> {
  */
 export async function debugContentRewrite(...content: unknown[]): Promise<void> {
   try {
-    await mkdir(LOG_DIR, { recursive: true })
+    await ensureDir(LOG_DIR)
     const records = content.map((item, index) => ({ index, content: item }))
     await writeFile(LOG_FILE, buildJson(records), 'utf8')
   } catch {
@@ -70,7 +72,7 @@ export async function debugContentRewrite(...content: unknown[]): Promise<void> 
 /** 读已有记录 -> 追加本次参数 -> 整体重写 | 一条记录就是一个 DebugRecord */
 async function appendRecords(content: unknown[]): Promise<void> {
   try {
-    await mkdir(LOG_DIR, { recursive: true })
+    await ensureDir(LOG_DIR)
     const records = await readRecords()
     const start = records.length
     content.forEach((item, offset) => {
@@ -89,15 +91,6 @@ async function readRecords(): Promise<DebugRecord[]> {
     return Array.isArray(parsed) ? (parsed as DebugRecord[]) : []
   } catch {
     return []
-  }
-}
-
-/** JSON.stringify 遇到循环引用会抛，兜一层 */
-function stringifySafe(value: unknown): string {
-  try {
-    return JSON.stringify(value, null, 2) ?? String(value)
-  } catch {
-    return String(value)
   }
 }
 
