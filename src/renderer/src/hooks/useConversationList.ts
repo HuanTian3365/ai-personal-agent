@@ -132,9 +132,10 @@ export function useConversationList(): UseWorkspaceListResult {
     async (request: GroupCreateReq): Promise<GroupCreateOutput> => {
       // 不绑目录就不用校验路径
       if (request.path) {
-        const valid = await expandApi.validPath(request.path)
-        if (!valid) {
-          return { success: false, error: { path: '目录不存在' } }
+        const checked = await expandApi.validPath({ path: request.path })
+        // 路径不存在就是失败 | 原因直接贴到路径框下面
+        if (!checked.success) {
+          return { success: false, error: { path: checked.error } }
         }
       }
       const res = await conversationApi.groupCreate(request)

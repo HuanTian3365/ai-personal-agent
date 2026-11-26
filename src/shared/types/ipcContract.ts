@@ -180,3 +180,19 @@ export interface MessageListReq {
 }
 export type MessageListRes = Result<TurnMessage[]>
 export type MessageListFun = (request: MessageListReq) => MessageListRes
+
+/** ====================  expand  ==================== */
+
+// ========== 选择目录
+/** 无参数 | 用户取消时 data 是 null 不是失败 与选了空路径区分 */
+export type ExpandPickDirectoryRes = Result<string | null>
+/** showOpenDialog 是异步的 这个通道去不掉Promise */
+export type ExpandPickDirectoryFun = () => Promise<ExpandPickDirectoryRes>
+
+// ========== 校验路径
+export interface ExpandValidPathReq {
+  path: string
+}
+/** 路径不存在算失败 原因直接给用户看 */
+export type ExpandValidPathRes = Result
+export type ExpandValidPathFun = (request: ExpandValidPathReq) => ExpandValidPathRes

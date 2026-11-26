@@ -49,12 +49,13 @@ export default function CreateGroupDialog({
   /** 选择文件夹 */
   const handlePick = async (): Promise<void> => {
     const picked = await expandApi.pickDirectory()
-    if (picked === null) return // 用户取消
+    // 取消与出错都停在这 | 出错没什么可提示的 用户再点一次就行
+    if (!picked.success || picked.data === null) return
     // 当前标题为空或者为上一次选择的文件夹时,使用文件夹名称
     if ((title === '' || title === path.split(/[\\/]/).pop()) ?? '') {
-      setTitle(picked.split(/[\\/]/).pop() ?? '')
+      setTitle(picked.data.split(/[\\/]/).pop() ?? '')
     }
-    setPath(picked)
+    setPath(picked.data)
   }
 
   /** 提交 */
