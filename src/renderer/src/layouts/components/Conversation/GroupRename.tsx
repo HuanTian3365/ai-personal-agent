@@ -41,7 +41,7 @@ export default function GroupRename({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{`在「${groupName}」下新建分组`}</DialogTitle>
+          <DialogTitle>重命名分组</DialogTitle>
         </DialogHeader>
         <FieldSet>
           <FieldGroup>

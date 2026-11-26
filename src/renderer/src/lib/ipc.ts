@@ -24,11 +24,11 @@ export const conversationApi = {
   /** 分组展开|收起 */
   setGroupExpand: (id: string, open: boolean) => window.api.group.expand(id, open),
   /** 打开分组目录 */
-  openGroupFolder: (path: string) => window.api.group.folder(path),
+  groupOpenFolder: (path: string) => window.api.group.folder(path),
   /** 删除分组 */
-  deleteGroup: (id: string) => window.api.group.delete(id),
+  groupDelete: (id: string) => window.api.group.delete(id),
   /** 重命名分组 */
-  renameGroup: (id: string, title: string) => window.api.group.rename(id, title),
+  groupRename: (id: string, title: string) => window.api.group.rename(id, title),
   /** ====================  会话  ==================== */
   /** 会话列表 */
   listConversations: () => window.api.conversation.list(),

@@ -69,7 +69,7 @@ export default function Group({
   function openGroupFolder(): void {
     const path = group.path // 先取到局部 见下面第③点
     if (path == null) return
-    toast.promise(conversationApi.openGroupFolder(path), {
+    toast.promise(conversationApi.groupOpenFolder(path), {
       error: (e: unknown) => `打开失败: ${e instanceof Error ? e.message : String(e)}`
     })
   }
