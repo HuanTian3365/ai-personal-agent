@@ -22,31 +22,28 @@ import type {
  * 初始化阶段的门卫(getRepository/getDatabase未初始化)不在此列 那是配置错误
  */
 export interface DatabaseRepository {
-  /** ====================  工作区  ==================== */
-  /** 列出所有工作区 */
+  // ========== 工作区列表
   workspaceList: WorkspaceListFun
-  /** ====================  分组  ==================== */
-  /** 列出所有分组 */
+  // ========== 分组列表
   groupList: GroupListFun
-  /** 新建分组 */
+  // ========== 新增分组
   groupCreate: GroupCreateFun
-  /** 设置分组展开状态 */
+  // ========== 分组展开收起
   groupExpand: GroupExpandFun
-  /** 删除分组 */
+  // ========== 删除分组
   groupDelete: GroupDeleteFun
-  /** 重命名分组 */
+  // ========== 重命名分组
   groupRename: GroupRenameFun
-  /** ====================  会话  ==================== */
-  /** 全部对话，按组内手动顺序返回 */
+  // ========== 会话列表
   conversationList: ConversationListFun
-  /** 新建会话 */
+  // ========== 新建对话
   conversationCreate: ConversationCreateFun
-  /** 更新对话标题 | 标题生成后由core回写 */
+  // ========== 更新对话标题 | 标题生成后由core回写
   conversationUpdateTitle: ConversationUpdateTitleFun
-  /** 获取对话信息 */
+  // ========== 获取对话信息
   conversationInfo: ConversationInfoFun
-  /** 读会话扩展信息 */
+  // ========== 读会话扩展
   conversationReadExpand: ConversationReadExpandFun
-  /** 按职责合并写会话扩展信息 | 只覆盖 scope 这一层 */
+  // ========== 写会话扩展 | 只覆盖 scope 这一层
   conversationUpdateExpand: ConversationUpdateExpandFun
 }
