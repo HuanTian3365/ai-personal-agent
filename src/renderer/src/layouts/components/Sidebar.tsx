@@ -3,10 +3,10 @@ import * as React from 'react'
 import { Sidebar as SidebarShell, SidebarRail } from '@renderer/components/ui/sidebar'
 import SidebarFooter from './SidebarFooter'
 import SidebarHeader from './SidebarHeader'
-import SidebarConversationList from './SidebarConversationList'
+import Conversation from './Conversation'
 import { useConversationList } from '@renderer/hooks/useConversationList'
 import type { HYWorkspace } from '@shared/types/hyEntity'
-import SidebarCreateGroupDialog from './SidebarCreateGroupDialog'
+import CreateGroupDialog from './Conversation/GroupCreate'
 
 export default function Sidebar(): React.JSX.Element {
   const { sections, isLoading, error, addConversation, createGroup, toggleGroupOpen } =
@@ -15,7 +15,7 @@ export default function Sidebar(): React.JSX.Element {
   return (
     <SidebarShell>
       <SidebarHeader onAddConversation={addConversation} isLoading={isLoading} />
-      <SidebarConversationList
+      <Conversation
         sections={sections}
         isLoading={isLoading}
         error={error}
@@ -23,7 +23,7 @@ export default function Sidebar(): React.JSX.Element {
         onAddGroup={setCreateTarget}
         onToggleOpen={toggleGroupOpen}
       />
-      <SidebarCreateGroupDialog
+      <CreateGroupDialog
         open={createTarget !== null}
         workspaceTitle={createTarget?.title ?? ''}
         onOpenChange={(open) => {

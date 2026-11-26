@@ -8,7 +8,7 @@ import type { CreateGroupInput, CreateGroupOutput } from '@shared/types/ipcContr
  * 侧栏要用的三种形状（下面两个接口 + 这个返回类型）与文件末尾的 buildWorkspaceSections 是一套，
  * 故意留在同一个文件里：它们只服务 useConversationList 这一个数据源，没有第二个生产者；
  * 为独享的纯函数单开 lib 文件，只会让「数据怎么变成树」多一次跳转。
- * SidebarConversationList / SidebarConversationGroup 只从这里取类型，不另外复制一份。
+ * Sidebar / Conversation/index / Conversation/Group 只从这里取类型，不另外复制一份。
  */
 export interface UseWorkspaceListResult {
   /** 侧栏要显示的树状结构：工作区 → 分组 → 对话 */

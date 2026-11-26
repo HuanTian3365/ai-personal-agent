@@ -6,14 +6,15 @@ import {
   SidebarMenu,
   SidebarMenuItem
 } from '@renderer/components/ui/sidebar'
-import SidebarConversationGroup from './SidebarConversationGroup'
-import SidebarWorkspaceHeader from './SidebarWorkspaceHeader'
+import Group from './Group'
+import WorkspaceHeader from './WorkspaceHeader'
 import { CircleX, Loader } from 'lucide-react'
 import type { WorkspaceSection } from '@renderer/hooks/useConversationList'
 import type { HYWorkspace } from '@shared/types/hyEntity'
 
 /**
- * 会话列表的三层渲染：工作区（SidebarGroup 区块）→ 分组（SidebarConversationGroup）→ 对话（SidebarConversationItem）
+ * 侧栏内容区 三层渲染: 工作区(SidebarGroup区块) -> 分组(Group) -> 对话(Item)
+ * 领域是整棵树 不是单指会话 | 所以内部成员各用本级名字 不再共享Conversation前缀
  */
 interface Props {
   /** 每个工作区一个区块 */
@@ -25,7 +26,7 @@ interface Props {
   onToggleOpen: (id: string, open: boolean) => Promise<void>
 }
 
-export default function SidebarConversationList({
+export default function Conversation({
   sections,
   isLoading,
   error,
@@ -58,7 +59,7 @@ export default function SidebarConversationList({
       {/* 会话列表：第一层工作区 */}
       {sections.map((section) => (
         <SidebarGroup className="py-0" key={section.workspace.id}>
-          <SidebarWorkspaceHeader
+          <WorkspaceHeader
             title={section.workspace.title}
             onAddGroup={() => onAddGroup(section.workspace)}
           />
@@ -70,7 +71,7 @@ export default function SidebarConversationList({
                 </SidebarMenuItem>
               )}
               {section.groups.map((group) => (
-                <SidebarConversationGroup
+                <Group
                   key={group.key}
                   group={group}
                   onAddConversation={onAddConversation}

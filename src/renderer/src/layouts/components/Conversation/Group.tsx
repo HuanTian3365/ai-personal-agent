@@ -12,10 +12,10 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem
 } from '@renderer/components/ui/sidebar'
-import SidebarConversationItem from './SidebarConversationItem'
+import Item from './Item'
 import type { GroupNode } from '@renderer/hooks/useConversationList'
 
-/** 第二层分组的行：可折叠，展开后列出该分组下的对话（第三层） */
+/** 第二层分组的行: 可折叠 展开后列出该分组下的对话(第三层) */
 interface Props {
   /** 分组节点 */
   group: GroupNode
@@ -25,7 +25,7 @@ interface Props {
   onToggleOpen: (id: string, open: boolean) => Promise<void>
 }
 
-export default function SidebarConversationGroup({
+export default function Group({
   group,
   onAddConversation,
   onToggleOpen
@@ -45,7 +45,7 @@ export default function SidebarConversationGroup({
             <SidebarMenuSub className="mr-0 pr-0">
               {group.conversations.map((conversation) => (
                 <SidebarMenuSubItem className=" pr-0" key={conversation.id}>
-                  <SidebarConversationItem conversation={conversation} />
+                  <Item conversation={conversation} />
                 </SidebarMenuSubItem>
               ))}
             </SidebarMenuSub>

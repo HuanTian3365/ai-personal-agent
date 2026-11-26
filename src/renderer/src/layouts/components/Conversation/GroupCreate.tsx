@@ -22,7 +22,7 @@ interface Props {
   onSubmit: (input: CreateGroupInput) => Promise<CreateGroupOutput>
 }
 
-export default function SidebarCreateGroupDialog({
+export default function CreateGroupDialog({
   open,
   workspaceTitle,
   onOpenChange,

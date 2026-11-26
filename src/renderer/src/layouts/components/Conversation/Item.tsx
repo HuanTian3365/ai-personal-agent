@@ -7,7 +7,7 @@ interface Props {
   conversation: HYConversation
 }
 
-export default function SidebarConversationItem({ conversation }: Props): React.JSX.Element {
+export default function Item({ conversation }: Props): React.JSX.Element {
   return (
     <SidebarMenuSubButton
       className="[&.active]:bg-sidebar-accent [&.active]:text-sidebar-accent-foreground"
