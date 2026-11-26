@@ -1,7 +1,7 @@
 import { dirname } from 'node:path'
 import { createDir } from '@main/lib/file'
 import migrate from './init/migrate'
-import { createSqliteRepository } from './service/impl/sqlite'
+import { createSqliteRepository } from './service/impl'
 import type { DatabaseRepository } from './service/types'
 import type { Database } from './types'
 

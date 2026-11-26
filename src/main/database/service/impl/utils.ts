@@ -1,4 +1,4 @@
-import type { Database } from '../../../types'
+import type { Database } from '../../types'
 
 /**
  * 组内新对话的 sort_index
