@@ -146,10 +146,19 @@ export function useConversationList(): UseWorkspaceListResult {
     async (groupId: string | null): Promise<void> => {
       // 新建对话
       const res = await conversationApi.createConversation(groupId)
-      // 如果存在分组则展开
-      const group = groups.find((g) => g.id === groupId)
-      if (group && group.openStatus === false) {
-        await conversationApi.setGroupExpand(group.id, true)
+      // 对话落在哪条分组上 | groupId为null时落该工作区的默认分组 按defaultFlag找不拼id
+      const target =
+        groupId === null
+          ? groups.find((g) => g.defaultFlag && g.workspaceId === res.workspaceId)
+          : groups.find((g) => g.id === groupId)
+      // 收起就先展开 否则新对话建好了侧栏看不见
+      // 展开失败不阻断 对话已经落地 最多是侧栏要手动点开
+      if (target !== undefined && target.openStatus === false) {
+        try {
+          await conversationApi.setGroupExpand(target.id, true)
+        } catch {
+          // 忽略: 新对话已建好 展开只是显示优化
+        }
       }
       // 刷新
       await refresh()
