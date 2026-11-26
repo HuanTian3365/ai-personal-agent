@@ -221,7 +221,7 @@ async function main(): Promise<void> {
   console.log(`模型: ${process.env.API_MODEL ?? '(未设置)'}`)
 
   const database = await openDatabase(dbPath)
-  initCore({ database, titleStore: getRepository(), logDir })
+  initCore({ database, store: getRepository(), logDir })
   const graph = getChatGraph()
 
   try {

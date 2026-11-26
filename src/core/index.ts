@@ -1,6 +1,6 @@
 import type BetterSqlite3 from 'better-sqlite3'
 import { clearStore, setStore } from './database'
-import type { StoreFunction } from './database/types'
+import type { Store } from './database/types'
 import { closeCheckpointStore, openCheckpointStore } from './graph/checkpoint'
 import { setLogDir } from './lib/log'
 
@@ -9,7 +9,7 @@ export interface CoreDeps {
   /** 数据库连接 */
   database: BetterSqlite3.Database
   /** 存储层能力 | core只管声明自己要用什么 实现由main给 */
-  store: StoreFunction
+  store: Store
   /** 调试日志目录 */
   logDir: string
 }
