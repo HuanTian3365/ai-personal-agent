@@ -33,7 +33,6 @@ export function createGroupMethods(
     /** 新建分组 */
     async createGroup(input) {
       const workspaceId = input.workspaceId ?? DEFAULT_WORKSPACE_ID
-      const titleInput = (input.title ?? '').trim()
 
       // 工作区是否存在
       const workspace = database
@@ -42,9 +41,9 @@ export function createGroupMethods(
       if (workspace === undefined) throw new Error(`工作区不存在：${workspaceId}`)
 
       // 判断路径是否有效
-      const rawPath = input.path ?? null
+      const rawPath = input.path
       let real: string | null = null
-      if (rawPath !== null && rawPath.trim() !== '') {
+      if (rawPath !== null) {
         try {
           real = await realpath(rawPath)
         } catch {
@@ -58,7 +57,7 @@ export function createGroupMethods(
       }
 
       // 判断标题是否有效
-      const title = real === null ? titleInput : titleInput || basename(real) || real
+      const title = real === null ? input.title : input.title || basename(real) || real
       if (title === '') throw new Error('不选择文件夹时，分组名称必填')
 
       // 获取序号

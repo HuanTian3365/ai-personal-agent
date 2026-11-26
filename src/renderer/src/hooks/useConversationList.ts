@@ -144,11 +144,18 @@ export function useConversationList(): UseWorkspaceListResult {
   /** 新建对话 */
   const addConversation = useCallback(
     async (groupId: string | null): Promise<void> => {
+      // 新建对话
       const res = await conversationApi.createConversation(groupId)
+      // 如果存在分组则展开
+      const group = groups.find((g) => g.id === groupId)
+      if (group && group.openStatus === false) {
+        await conversationApi.setGroupExpand(group.id, true)
+      }
+      // 刷新
       await refresh()
       navigate(`/chat/${res.id}`)
     },
-    [navigate, refresh]
+    [groups, navigate, refresh]
   )
 
   /**
