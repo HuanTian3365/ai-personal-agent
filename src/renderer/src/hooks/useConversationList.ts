@@ -39,6 +39,8 @@ export interface GroupNode {
   groupId: string | null
   /** 是否为默认分组（未分组）：不可删、不可改名、永远排在同工作区最后 */
   isDefault: boolean
+  /** 目录指向路径 */
+  path: string | null
   /** 展开状态 */
   isOpen: boolean
   /** 对话列表 */
@@ -211,6 +213,7 @@ function buildWorkspaceSections(
         title: group.title,
         groupId: group.id,
         isDefault: false,
+        path: group.path,
         isOpen: group.openStatus,
         conversations: conversations.filter((c) => c.groupId === group.id)
       }))
@@ -221,8 +224,9 @@ function buildWorkspaceSections(
       nodes.push({
         key: virtual.id,
         title: virtual.title,
-        groupId: null, // 未分组对话的 group_id 是 NULL，不指向这条记录
+        groupId: null, // 未分组对话
         isDefault: true,
+        path: null,
         isOpen: virtual.openStatus,
         conversations: conversations.filter(
           (c) => c.groupId === null && c.workspaceId === workspace.id
