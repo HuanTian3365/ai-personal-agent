@@ -1,7 +1,7 @@
 import { IPC } from '../../../shared/ipc'
 import { getHistoryMessage } from '../../../core/export'
 import { getRepository } from '../../database'
-import type { CreateGroupInput } from '@shared/types/ipcContract'
+import type { CreateGroupInput, GroupRenameI } from '@shared/types/ipcContract'
 import { shell } from 'electron'
 
 /**
@@ -70,13 +70,8 @@ export default function registerConversationIpc(ipcMain: Electron.IpcMain): void
     return
   })
   // 重命名分组
-  ipcMain.handle(IPC.group.rename, (_event, id: unknown, title: unknown) => {
-    if (typeof id !== 'string' || id.trim() === '') {
-      throw new Error('group.rename: id 必须是非空字符串')
-    }
-    if (typeof title !== 'string' || title.trim() === '') {
-      throw new Error('group.rename: title 必须是非空字符串')
-    }
+  ipcMain.handle(IPC.group.rename, (_event, input: GroupRenameI) => {
+    return getRepository().groupRename(input)
   })
 
   /** ====================  会话  ==================== */

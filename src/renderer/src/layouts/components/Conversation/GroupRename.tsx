@@ -8,34 +8,52 @@ import {
   DialogTitle
 } from '@renderer/components/ui/dialog'
 import { FieldSet, FieldGroup, Field, FieldLabel, FieldError } from '@renderer/components/ui/field'
-import type { GroupRenameR, GroupRenameI } from '@shared/types/ipcContract'
+import type { GroupRenameF } from '@shared/types/ipcContract'
 import { useState } from 'react'
 
-/** 新建分组：文件夹可选、名称可选，但两者不能同时为空 */
+/** 重命名分组：名称必填 失败原因回显在输入框下 */
 interface Props {
   open: boolean
   groupId: string
   groupName: string
-  /** 返回 true 表示建成功，弹窗自行关闭 */
-  onSubmit: (input: GroupRenameI) => Promise<GroupRenameR>
+  onOpenChange: (open: boolean) => void
+  onSubmit: GroupRenameF
 }
 
 export default function GroupRename({
   open,
   groupId,
   groupName,
+  onOpenChange,
   onSubmit
 }: Props): React.JSX.Element {
-  const [name, setName] = useState('')
+  // draft=null 表示没编辑过 显示props里的分组名 | 关闭时置null 下次打开自动回填最新名字 不用effect同步
+  const [draft, setDraft] = useState<string | null>(null)
   const [error, setError] = useState('')
+  // 显示名称
+  const name = draft ?? groupName
+  // 能否提交
+  const canSubmit = name.trim() !== ''
 
-  /** 弹窗切切换状态 */
+  /** 弹窗开关切换状态 | 关闭时清掉草稿与残留错误 */
   const handleOpenChange = (next: boolean): void => {
-    setName(next ? groupName : '')
+    setError('')
+    if (!next) {
+      setDraft(null)
+    }
+    onOpenChange(next)
   }
 
   /** 提交 */
-  const handleSubmit = async (): Promise<void> => {}
+  const handleSubmit = async (): Promise<void> => {
+    if (!canSubmit) return
+    const res = await onSubmit({ id: groupId, title: name.trim() })
+    if (res.status) {
+      handleOpenChange(false)
+      return
+    }
+    setError(res.error ?? '重命名失败')
+  }
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -48,7 +66,7 @@ export default function GroupRename({
             <Field>
               <FieldLabel htmlFor="path">分组名称</FieldLabel>
               <div className="flex flex-row gap-2">
-                <Input id="path" value={name} onChange={(e) => setName(e.target.value)} />
+                <Input id="path" value={name} onChange={(e) => setDraft(e.target.value)} />
               </div>
               {error && <FieldError>{error}</FieldError>}
             </Field>
@@ -58,7 +76,7 @@ export default function GroupRename({
           <Button variant="ghost" onClick={() => handleOpenChange(false)}>
             取消
           </Button>
-          <Button disabled onClick={() => void handleSubmit()}>
+          <Button disabled={!canSubmit} onClick={() => void handleSubmit()}>
             确定
           </Button>
         </DialogFooter>

@@ -33,6 +33,7 @@ import { conversationApi } from '@renderer/lib/ipc'
 import { toast } from 'sonner'
 import GroupRename from './GroupRename'
 import { useState } from 'react'
+import { GroupRenameF } from '@shared/types/ipcContract'
 
 /** 第二层分组的行: 可折叠 展开后列出该分组下的对话(第三层) */
 interface Props {
@@ -42,15 +43,17 @@ interface Props {
   onAddConversation: (groupId: string | null) => Promise<void>
   /** 切换展开状态 */
   onToggleOpen: (id: string, open: boolean) => Promise<void>
+  onGroupRename: GroupRenameF
 }
 
 export default function Group({
   group,
   onAddConversation,
-  onToggleOpen
+  onToggleOpen,
+  onGroupRename
 }: Props): React.JSX.Element {
   const [renameFlag, setRenameFlag] = useState(false)
-  const [deleteFlag, setDeleteFlag] = useState(false)
+  // const [deleteFlag, setDeleteFlag] = useState(false)
   /** 显示图标 */
   function showIcon(): React.JSX.Element {
     if (group.isDefault) {
@@ -110,7 +113,7 @@ export default function Group({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-auto min-w-40">
               {/* 两项只有占位 后端还没有 group:rename / group:delete 通路 */}
-              <DropdownMenuItem>重命名</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setRenameFlag(true)}>重命名</DropdownMenuItem>
               {group.path != null && (
                 <DropdownMenuItem onClick={openGroupFolder}>显示在文件夹</DropdownMenuItem>
               )}
@@ -133,7 +136,8 @@ export default function Group({
         /** 这里分组ID肯定非空--未分组打不开这个弹窗 */
         groupId={group.groupId as string}
         groupName={group.title}
-        onSubmit={}
+        onOpenChange={setRenameFlag}
+        onSubmit={onGroupRename}
       />
     </SidebarMenuItem>
   )

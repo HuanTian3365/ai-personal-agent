@@ -7,7 +7,7 @@
  * 渲染层没有追加入口。
  */
 
-import type { CreateGroupInput } from '@shared/types/ipcContract'
+import type { CreateGroupInput, GroupRenameI } from '@shared/types/ipcContract'
 import type { AgentEventEnvelope } from '@shared/types/agentEvent'
 import type { MessageEventSend } from '@shared/types/message'
 import type { QueueEditAction, SendMode } from '@shared/types/ipcContract'
@@ -28,7 +28,7 @@ export const conversationApi = {
   /** 删除分组 */
   groupDelete: (id: string) => window.api.group.delete(id),
   /** 重命名分组 */
-  groupRename: (id: string, title: string) => window.api.group.rename(id, title),
+  groupRename: (input: GroupRenameI) => window.api.group.rename(input),
   /** ====================  会话  ==================== */
   /** 会话列表 */
   listConversations: () => window.api.conversation.list(),

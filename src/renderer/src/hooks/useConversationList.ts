@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { HYConversation, HYGroup, HYWorkspace } from '@shared/types/hyEntity'
 import { agentApi, conversationApi, expandApi } from '@renderer/lib/ipc'
 import { useNavigate } from 'react-router'
-import type { CreateGroupInput, CreateGroupOutput } from '@shared/types/ipcContract'
+import type { CreateGroupInput, CreateGroupOutput, GroupRenameF } from '@shared/types/ipcContract'
 
 /**
  * 侧栏要用的三种形状（下面两个接口 + 这个返回类型）与文件末尾的 buildWorkspaceSections 是一套，
@@ -17,12 +17,14 @@ export interface UseWorkspaceListResult {
   isLoading: boolean
   /** 错误信息 */
   error: string | null
-  /** 新建分组；成功返回 true（弹窗据此关闭），失败写进 error 并返回 false */
+  /** 新建分组 */
   createGroup: (input: CreateGroupInput) => Promise<CreateGroupOutput>
   /** 分组展开|收起 */
   toggleGroupOpen: (id: string, open: boolean) => Promise<void>
-  /** 新建一个对话 */
+  /** 新建一个对话并跳转 */
   addConversation: (groupId: string | null) => Promise<void>
+  /** 重命名分组 */
+  groupRename: GroupRenameF
 }
 
 /** 一个工作区下的分组节点；默认分组（未分组）也占一个位置 */
@@ -169,11 +171,7 @@ export function useConversationList(): UseWorkspaceListResult {
     [groups, navigate, refresh]
   )
 
-  /**
-   * 分组展开状态切换。
-   * 先改界面让它立刻有反应，再后台存库；存失败就翻回来并报错。
-   * 不整个重新加载——折叠是常做的事，每次都重拉列表太浪费。
-   */
+  /** 分组展开状态切换 */
   const toggleGroupOpen = useCallback(async (id: string, open: boolean): Promise<void> => {
     const flip = (target: boolean): void => {
       setGroups((prev) => prev.map((g) => (g.id === id ? { ...g, openStatus: target } : g)))
@@ -188,13 +186,28 @@ export function useConversationList(): UseWorkspaceListResult {
     }
   }, [])
 
+  /** 重命名分组 */
+  const groupRename = useCallback<GroupRenameF>(
+    async (input) => {
+      const res = await conversationApi.groupRename(input)
+      if (res.status) {
+        await refresh()
+        return res
+      } else {
+        return res
+      }
+    },
+    [refresh]
+  )
+
   return {
     sections,
     isLoading,
     error,
     createGroup,
     addConversation,
-    toggleGroupOpen
+    toggleGroupOpen,
+    groupRename
   }
 }
 

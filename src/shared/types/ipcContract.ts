@@ -51,14 +51,13 @@ export interface CreateGroupOutput {
   }
 }
 
-interface GlobalStatus<D, E> {
-  status: boolean
-  data?: D
-  error?: E
-}
+/** 成功|失败 | 判别式 收窄后 data/error 必有一个为真值 */
+type Result<T = undefined, E = string> = { success: true; data: T } | { success: false; error: E }
 
 export interface GroupRenameI {
   id: string
   title: string
 }
-export type GroupRenameR = GlobalStatus<null, string>
+export type GroupRenameR = Result
+
+export type GroupRenameF = (input: GroupRenameI) => Promise<GroupRenameR>

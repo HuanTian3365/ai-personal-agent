@@ -20,7 +20,7 @@ import { nextGroupSortIndex } from './utils'
  */
 export function createGroupMethods(
   database: Database
-): Pick<DatabaseRepository, 'listGroups' | 'createGroup' | 'setGroupOpen'> {
+): Pick<DatabaseRepository, 'listGroups' | 'createGroup' | 'setGroupOpen' | 'groupRename'> {
   return {
     /** 分组列表 */
     async listGroups() {
@@ -78,6 +78,18 @@ export function createGroupMethods(
     /** 分组展开|收起 */
     async setGroupOpen(id, open) {
       database.prepare('UPDATE hy_group SET open_status = ? WHERE id = ?').run(open ? 1 : 0, id)
+    },
+    /** 删除分组 */
+    async groupDelete(id) {
+      database.prepare('DELETE FROM hy_group WHERE id = ?').run(id)
+    },
+    /** 重命名分组 */
+    async groupRename(input) {
+      database.prepare('UPDATE hy_group SET title = ? WHERE id = ?').run(input.title, input.id)
+      return {
+        success: true,
+        data: undefined
+      }
     }
   }
 }
