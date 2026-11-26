@@ -1,4 +1,3 @@
-import * as React from 'react'
 import {
   Folder,
   FolderOpen,
@@ -32,6 +31,8 @@ import {
 import { Button } from '@renderer/components/ui/button'
 import { conversationApi } from '@renderer/lib/ipc'
 import { toast } from 'sonner'
+import GroupRename from './GroupRename'
+import { useState } from 'react'
 
 /** 第二层分组的行: 可折叠 展开后列出该分组下的对话(第三层) */
 interface Props {
@@ -48,6 +49,9 @@ export default function Group({
   onAddConversation,
   onToggleOpen
 }: Props): React.JSX.Element {
+  const [renameFlag, setRenameFlag] = useState(false)
+  const [deleteFlag, setDeleteFlag] = useState(false)
+  /** 显示图标 */
   function showIcon(): React.JSX.Element {
     if (group.isDefault) {
       return group.isOpen ? <Maximize /> : <Minimize />
@@ -57,7 +61,11 @@ export default function Group({
       return group.isOpen ? <FolderOpen /> : <Folder />
     }
   }
+  /** 重命名分组 */
 
+  /** 删除分组 */
+
+  /** 显示分组目录 */
   function openGroupFolder(): void {
     const path = group.path // 先取到局部 见下面第③点
     if (path == null) return
@@ -120,6 +128,13 @@ export default function Group({
           </Button>
         </div>
       )}
+      <GroupRename
+        open={renameFlag}
+        /** 这里分组ID肯定非空--未分组打不开这个弹窗 */
+        groupId={group.groupId as string}
+        groupName={group.title}
+        onSubmit={}
+      />
     </SidebarMenuItem>
   )
 }

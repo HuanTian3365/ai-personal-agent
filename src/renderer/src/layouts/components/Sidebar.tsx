@@ -3,7 +3,7 @@ import * as React from 'react'
 import { Sidebar as SidebarShell, SidebarRail } from '@renderer/components/ui/sidebar'
 import SidebarFooter from './SidebarFooter'
 import SidebarHeader from './SidebarHeader'
-import Conversation from './Conversation'
+import Workspace from './Conversation/Workspace'
 import { useConversationList } from '@renderer/hooks/useConversationList'
 import type { HYWorkspace } from '@shared/types/hyEntity'
 import CreateGroupDialog from './Conversation/GroupCreate'
@@ -15,7 +15,7 @@ export default function Sidebar(): React.JSX.Element {
   return (
     <SidebarShell>
       <SidebarHeader onAddConversation={addConversation} isLoading={isLoading} />
-      <Conversation
+      <Workspace
         sections={sections}
         isLoading={isLoading}
         error={error}

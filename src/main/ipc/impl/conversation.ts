@@ -2,7 +2,6 @@ import { IPC } from '../../../shared/ipc'
 import { getHistoryMessage } from '../../../core/export'
 import { getRepository } from '../../database'
 import type { CreateGroupInput } from '@shared/types/ipcContract'
-import { validPath } from '@main/lib/file'
 import { shell } from 'electron'
 
 /**

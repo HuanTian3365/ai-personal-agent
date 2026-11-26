@@ -50,3 +50,15 @@ export interface CreateGroupOutput {
     another?: string
   }
 }
+
+interface GlobalStatus<D, E> {
+  status: boolean
+  data?: D
+  error?: E
+}
+
+export interface GroupRenameI {
+  id: string
+  title: string
+}
+export type GroupRenameR = GlobalStatus<null, string>

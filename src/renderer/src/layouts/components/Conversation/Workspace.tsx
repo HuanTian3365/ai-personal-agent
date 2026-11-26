@@ -26,7 +26,7 @@ interface Props {
   onToggleOpen: (id: string, open: boolean) => Promise<void>
 }
 
-export default function Conversation({
+export default function Workspace({
   sections,
   isLoading,
   error,

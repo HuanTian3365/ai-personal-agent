@@ -71,7 +71,7 @@ export default function CreateGroupDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{`在「${workspaceTitle}」下新建分组`}</DialogTitle>
+          <DialogTitle>{`在"${workspaceTitle}"下新建分组`}</DialogTitle>
         </DialogHeader>
         <FieldSet>
           <FieldGroup>
