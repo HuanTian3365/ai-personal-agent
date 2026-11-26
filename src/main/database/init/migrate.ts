@@ -41,6 +41,7 @@ export default function migrate(database: Database): void {
       `[database] schema 版本不一致（库内 ${storedVersion}，代码 ${SCHEMA_VERSION}）：删除全部表并重建，旧数据不再保留`
     )
     database.exec(`
+    DROP TABLE IF EXISTS hy_message;
     DROP TABLE IF EXISTS hy_conversation;
     DROP TABLE IF EXISTS hy_group;
     DROP TABLE IF EXISTS hy_workspace;

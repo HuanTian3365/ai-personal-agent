@@ -34,6 +34,7 @@ export default function SidebarConversationGroup({
     <SidebarMenuItem>
       <Collapsible open={group.isOpen} onOpenChange={(open) => void onToggleOpen(group.key, open)}>
         {/* 展开状态图标 */}
+        {/* TODO(优化): 纯命名分组(无path)与绑目录分组共用Folder图标 要区分得先给GroupNode带上path */}
         <CollapsibleTrigger title={group.title} render={<SidebarMenuButton />}>
           {group.isOpen ? <FolderOpen /> : <Folder />}
           <span className="truncate">{group.title}</span>

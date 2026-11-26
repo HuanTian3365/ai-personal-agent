@@ -7,8 +7,11 @@
  * 加表、加列这类兼容变更不要升版本号：
  * - 加表：直接写进下面的 DDL，都是 IF NOT EXISTS
  * - 加列：写进 DDL 管新库，老库靠 migrate 的补列逻辑（PRAGMA table_info + ALTER）
+ *
+ * v9 升版本的原因: 放宽 hy_group 的 CHECK | 普通分组的 path 允许为空
+ * SQLite 改不了约束 只能重建表 | migrate 的现有重建就是删表重来
  */
-export const SCHEMA_VERSION = 8
+export const SCHEMA_VERSION = 9
 /** 建表语句 */
 export const DDL = `
 -- 元信息（schema 版本、以后的杂项开关）
@@ -28,21 +31,22 @@ CREATE TABLE IF NOT EXISTS hy_workspace
     updated_at BIGINT  NOT NULL  -- 最后修改时间，Unix 毫秒
 );
 
--- 分组：对话列表第二层，工作区内部的一层（目录分组 + 每个工作区独有一条的默认分组）
+-- 分组：对话列表第二层，工作区内部的一层（绑目录分组 + 纯命名分组 + 每个工作区独有一条的默认分组）
 CREATE TABLE IF NOT EXISTS hy_group
 (
     id           TEXT PRIMARY KEY,                                                -- 普通分组 UUID v4；默认分组固定为 '<workspaceId>:ungrouped'
     workspace_id TEXT    NOT NULL REFERENCES hy_workspace (id) ON DELETE RESTRICT, -- 所属工作区；该工作区下仍有分组时禁止删除它
     title        TEXT    NOT NULL,                                                -- 显示名；默认分组由 seed 显式写「未分组」
-    path         TEXT,                                                            -- 目录绝对路径；NULL 表示默认分组（虚拟分组）
+    path         TEXT,                                                            -- 目录绝对路径；NULL = 不绑目录的命名分组，或默认分组
     default_flag INTEGER NOT NULL DEFAULT 0,                                      -- 1=默认分组(收未分组对话)，0=普通分组
     open_status  INTEGER NOT NULL DEFAULT 1,                                      -- 展开状态：0 收起 / 1 展开
     sort_index   INTEGER NOT NULL,                                                -- 同一工作区内显示顺序，升序
     created_at   BIGINT  NOT NULL,                                                -- 创建时间，Unix 毫秒
     updated_at   BIGINT  NOT NULL,                                                -- 最后修改时间，Unix 毫秒
-    CHECK ((default_flag = 1 AND path IS NULL) OR (default_flag = 0 AND path IS NOT NULL))
+    -- 默认分组必须无路径；普通分组的 path 可空(纯命名分组)，非空时由应用层保证是规范化目录
+    CHECK ((default_flag = 1 AND path IS NULL) OR default_flag = 0)
 );
-CREATE UNIQUE INDEX IF NOT EXISTS ux_group_path ON hy_group (path); -- 同一目录只登记一次；NULL 不参与，默认分组可多条
+CREATE UNIQUE INDEX IF NOT EXISTS ux_group_path ON hy_group (path); -- 同一目录只登记一次；NULL 不参与，无路径的分组可多条
 CREATE UNIQUE INDEX IF NOT EXISTS ux_group_default ON hy_group (workspace_id) WHERE default_flag = 1; -- 每个工作区最多一条默认分组
 CREATE INDEX IF NOT EXISTS ix_group_workspace ON hy_group (workspace_id, sort_index); -- 按工作区取分组并按显示顺序排
 

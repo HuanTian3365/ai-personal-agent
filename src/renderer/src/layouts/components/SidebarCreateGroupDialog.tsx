@@ -61,7 +61,7 @@ export default function SidebarCreateGroupDialog({
   const handleSubmit = async (): Promise<void> => {
     if (!canSubmit) return
     setSubmitting(true)
-    const ok = await onSubmit({ path, title: title })
+    const ok = await onSubmit({ path: path.trim() || null, title: title })
     setSubmitting(false)
     if (ok.success) handleOpenChange(false)
     setError(ok.error)

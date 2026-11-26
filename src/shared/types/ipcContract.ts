@@ -36,8 +36,8 @@ export interface StreamSnapshot {
 export interface CreateGroupInput {
   /** 不传落缺省工作区 */
   workspaceId?: string
-  /** null或不传 = 不绑目录 */
-  path: string
+  /** null = 不绑目录 | 空串由main归一成null */
+  path: string | null
   /** 绑了文件夹时留空取文件夹名 不绑时必填 */
   title: string
 }
