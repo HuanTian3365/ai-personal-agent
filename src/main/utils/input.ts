@@ -5,7 +5,7 @@
  */
 
 /** 取对象入参 | 不是对象返回null 由调用处给文案 */
-export function objectInput(input: unknown): Record<string, unknown> | null {
-  if (input === null || typeof input !== 'object') return null
-  return input as Record<string, unknown>
+export function objectInput(request: unknown): Record<string, unknown> | null {
+  if (request === null || typeof request !== 'object') return null
+  return request as Record<string, unknown>
 }

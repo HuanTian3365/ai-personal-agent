@@ -34,7 +34,7 @@ import { toast } from 'sonner'
 import GroupRename from './GroupRename'
 import GroupDelete from './GroupDelete'
 import { useState } from 'react'
-import type { GroupDeleteF, GroupRenameF, ToAsync } from '@shared/types/ipcContract'
+import type { GroupDeleteFun, GroupRenameFun, ToAsync } from '@shared/types/ipcContract'
 
 /** 第二层分组的行: 可折叠 展开后列出该分组下的对话(第三层) */
 interface Props {
@@ -44,8 +44,8 @@ interface Props {
   onAddConversation: (groupId: string | null) => Promise<void>
   /** 切换展开状态 */
   onToggleOpen: (id: string, open: boolean) => Promise<void>
-  onGroupRename: ToAsync<GroupRenameF>
-  onGroupDelete: ToAsync<GroupDeleteF>
+  onGroupRename: ToAsync<GroupRenameFun>
+  onGroupDelete: ToAsync<GroupDeleteFun>
 }
 
 export default function Group({

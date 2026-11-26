@@ -3,10 +3,10 @@ import type { HYConversation, HYGroup, HYWorkspace } from '@shared/types/hyEntit
 import { agentApi, conversationApi, expandApi } from '@renderer/lib/ipc'
 import { useNavigate } from 'react-router'
 import type {
-  GroupCreateI,
+  GroupCreateReq,
   GroupCreateOutput,
-  GroupDeleteF,
-  GroupRenameF,
+  GroupDeleteFun,
+  GroupRenameFun,
   ToAsync
 } from '@shared/types/ipcContract'
 
@@ -24,15 +24,15 @@ export interface UseWorkspaceListResult {
   /** 错误信息 */
   error: string | null
   /** 新建分组 */
-  createGroup: (input: GroupCreateI) => Promise<GroupCreateOutput>
+  createGroup: (request: GroupCreateReq) => Promise<GroupCreateOutput>
   /** 分组展开|收起 */
   toggleGroupOpen: (id: string, open: boolean) => Promise<void>
   /** 新建一个对话并跳转 */
   addConversation: (groupId: string | null) => Promise<void>
   /** 重命名分组 */
-  groupRename: ToAsync<GroupRenameF>
+  groupRename: ToAsync<GroupRenameFun>
   /** 删除分组 */
-  groupDelete: ToAsync<GroupDeleteF>
+  groupDelete: ToAsync<GroupDeleteFun>
 }
 
 /** 一个工作区下的分组节点；默认分组（未分组）也占一个位置 */
@@ -129,15 +129,15 @@ export function useConversationList(): UseWorkspaceListResult {
 
   /** 新增分组 */
   const createGroup = useCallback(
-    async (input: GroupCreateI): Promise<GroupCreateOutput> => {
+    async (request: GroupCreateReq): Promise<GroupCreateOutput> => {
       // 不绑目录就不用校验路径
-      if (input.path) {
-        const valid = await expandApi.validPath(input.path)
+      if (request.path) {
+        const valid = await expandApi.validPath(request.path)
         if (!valid) {
           return { success: false, error: { path: '目录不存在' } }
         }
       }
-      const res = await conversationApi.groupCreate(input)
+      const res = await conversationApi.groupCreate(request)
       // main只给一句话 这里按输入框分开贴 | 名称类的错统一落到另一个框下面
       if (!res.success) {
         return { success: false, error: { another: res.error } }
@@ -193,9 +193,9 @@ export function useConversationList(): UseWorkspaceListResult {
   }, [])
 
   /** 重命名分组 */
-  const groupRename = useCallback<ToAsync<GroupRenameF>>(
-    async (input) => {
-      const res = await conversationApi.groupRename(input)
+  const groupRename = useCallback<ToAsync<GroupRenameFun>>(
+    async (request) => {
+      const res = await conversationApi.groupRename(request)
       if (res.success) {
         await refresh()
         return res
@@ -207,9 +207,9 @@ export function useConversationList(): UseWorkspaceListResult {
   )
 
   /** 删除分组 */
-  const groupDelete = useCallback<ToAsync<GroupDeleteF>>(
-    async (input) => {
-      const res = await conversationApi.groupDelete(input)
+  const groupDelete = useCallback<ToAsync<GroupDeleteFun>>(
+    async (request) => {
+      const res = await conversationApi.groupDelete(request)
       // 删成功后整棵树要重拉 组内会话已落到未分组 侧栏位置会变
       if (res.success) await refresh()
       return res

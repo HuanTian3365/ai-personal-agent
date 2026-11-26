@@ -7,18 +7,18 @@
  * 渲染层没有追加入口。
  *
  * 方法名一律归属前置: 域 + 动作 | 与 DatabaseRepository 和 IPC 通道一一对应
- * 入参一律一个对象 | 跟 preload 同一套 xxxI 不在这层拆装
+ * 入参一律一个对象 参数名统一叫request | 跟preload同一套xxxReq 不在这层拆装
  */
 
 import type {
-  ConversationCreateI,
-  ConversationInfoI,
-  GroupCreateI,
-  GroupDeleteI,
-  GroupExpandI,
-  GroupFolderI,
-  GroupRenameI,
-  MessageListI,
+  ConversationCreateReq,
+  ConversationInfoReq,
+  GroupCreateReq,
+  GroupDeleteReq,
+  GroupExpandReq,
+  GroupFolderReq,
+  GroupRenameReq,
+  MessageListReq,
   QueueEditAction,
   SendMode
 } from '@shared/types/ipcContract'
@@ -33,25 +33,25 @@ export const conversationApi = {
   /** 分组列表 */
   groupList: () => window.api.group.list(),
   /** 新建分组 */
-  groupCreate: (input: GroupCreateI) => window.api.group.create(input),
+  groupCreate: (request: GroupCreateReq) => window.api.group.create(request),
   /** 分组展开|收起 */
-  groupExpand: (input: GroupExpandI) => window.api.group.expand(input),
+  groupExpand: (request: GroupExpandReq) => window.api.group.expand(request),
   /** 打开分组目录 */
-  groupOpenFolder: (input: GroupFolderI) => window.api.group.folder(input),
+  groupOpenFolder: (request: GroupFolderReq) => window.api.group.folder(request),
   /** 删除分组 */
-  groupDelete: (input: GroupDeleteI) => window.api.group.delete(input),
+  groupDelete: (request: GroupDeleteReq) => window.api.group.delete(request),
   /** 重命名分组 */
-  groupRename: (input: GroupRenameI) => window.api.group.rename(input),
+  groupRename: (request: GroupRenameReq) => window.api.group.rename(request),
   /** ====================  会话  ==================== */
   /** 会话列表 */
   conversationList: () => window.api.conversation.list(),
   /** 新建会话 */
-  conversationCreate: (input: ConversationCreateI) => window.api.conversation.create(input),
+  conversationCreate: (request: ConversationCreateReq) => window.api.conversation.create(request),
   /** 会话信息 */
-  conversationInfo: (input: ConversationInfoI) => window.api.conversation.info(input),
+  conversationInfo: (request: ConversationInfoReq) => window.api.conversation.info(request),
   /** ====================  消息  ==================== */
   /** 消息列表 */
-  messageList: (input: MessageListI) => window.api.message.list(input)
+  messageList: (request: MessageListReq) => window.api.message.list(request)
 }
 
 export const expandApi = {

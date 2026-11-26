@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 会话消息队列
  *
  * 生成期间用户再次发送时先落在这里
@@ -12,7 +12,7 @@
 
 import { randomUUID } from 'node:crypto'
 import type { HYEQueueItem } from '@shared/types/hyExpand'
-import type { ConversationUpdateExpandR } from '@shared/types/ipcContract'
+import type { ConversationUpdateExpandRes } from '@shared/types/ipcContract'
 import { getDatabase, getRepository } from '../database'
 
 /** 每会话一条队列 | key: 会话ID */
@@ -65,7 +65,7 @@ function write(conversationId: string, queue: HYEQueueItem[]): void {
 }
 
 /** 把内存里的队列写回库 */
-function persist(conversationId: string): ConversationUpdateExpandR {
+function persist(conversationId: string): ConversationUpdateExpandRes {
   const queue = queues.get(conversationId) ?? []
   // 只写库里有的三个字段 | claimed是运行态 落库后没人回滚 重启就成幽灵项
   const stored = queue.map(({ id, text, target }) => ({ id, text, target }))

@@ -14,8 +14,8 @@ export default function registerConversationIpc(ipcMain: Electron.IpcMain): void
   // 分组列表
   ipcMain.handle(IPC.group.list, () => getRepository().groupList())
   // 新增分组
-  ipcMain.handle(IPC.group.create, (_event, input: unknown) => {
-    const fields = objectInput(input)
+  ipcMain.handle(IPC.group.create, (_event, request: unknown) => {
+    const fields = objectInput(request)
     if (fields === null) return { success: false, error: '入参必须是对象' }
     const { workspaceId, path, title } = fields
     if (workspaceId !== undefined && typeof workspaceId !== 'string') {
@@ -35,8 +35,8 @@ export default function registerConversationIpc(ipcMain: Electron.IpcMain): void
     })
   })
   // 分组展开状态
-  ipcMain.handle(IPC.group.expand, (_event, input: unknown) => {
-    const fields = objectInput(input)
+  ipcMain.handle(IPC.group.expand, (_event, request: unknown) => {
+    const fields = objectInput(request)
     if (fields === null) return { success: false, error: '入参必须是对象' }
     const { id, open } = fields
     if (typeof id !== 'string' || id.trim() === '') {
@@ -48,8 +48,8 @@ export default function registerConversationIpc(ipcMain: Electron.IpcMain): void
     return getRepository().groupExpand({ id, open })
   })
   // 打开分组目录
-  ipcMain.handle(IPC.group.folder, async (_event, input: unknown) => {
-    const fields = objectInput(input)
+  ipcMain.handle(IPC.group.folder, async (_event, request: unknown) => {
+    const fields = objectInput(request)
     if (fields === null) return { success: false, error: '入参必须是对象' }
     const { path } = fields
     if (typeof path !== 'string' || path.trim() === '') {
@@ -65,8 +65,8 @@ export default function registerConversationIpc(ipcMain: Electron.IpcMain): void
     }
   })
   // 删除分组
-  ipcMain.handle(IPC.group.delete, (_event, input: unknown) => {
-    const fields = objectInput(input)
+  ipcMain.handle(IPC.group.delete, (_event, request: unknown) => {
+    const fields = objectInput(request)
     if (fields === null) return { success: false, error: '入参必须是对象' }
     const { id } = fields
     if (typeof id !== 'string' || id.trim() === '') {
@@ -75,8 +75,8 @@ export default function registerConversationIpc(ipcMain: Electron.IpcMain): void
     return getRepository().groupDelete({ id })
   })
   // 重命名分组
-  ipcMain.handle(IPC.group.rename, (_event, input: unknown) => {
-    const fields = objectInput(input)
+  ipcMain.handle(IPC.group.rename, (_event, request: unknown) => {
+    const fields = objectInput(request)
     if (fields === null) return { success: false, error: '入参必须是对象' }
     const { id, title } = fields
     if (typeof id !== 'string' || id.trim() === '') {
@@ -92,8 +92,8 @@ export default function registerConversationIpc(ipcMain: Electron.IpcMain): void
   // 会话列表
   ipcMain.handle(IPC.conversation.list, () => getRepository().conversationList())
   // 新建对话
-  ipcMain.handle(IPC.conversation.create, (_event, input: unknown) => {
-    const fields = objectInput(input)
+  ipcMain.handle(IPC.conversation.create, (_event, request: unknown) => {
+    const fields = objectInput(request)
     if (fields === null) return { success: false, error: '入参必须是对象' }
     const { groupId } = fields
     if (groupId !== null && (typeof groupId !== 'string' || groupId.trim() === '')) {
@@ -102,8 +102,8 @@ export default function registerConversationIpc(ipcMain: Electron.IpcMain): void
     return getRepository().conversationCreate({ groupId })
   })
   // 获取对话信息
-  ipcMain.handle(IPC.conversation.info, (_event, input: unknown) => {
-    const fields = objectInput(input)
+  ipcMain.handle(IPC.conversation.info, (_event, request: unknown) => {
+    const fields = objectInput(request)
     if (fields === null) return { success: false, error: '入参必须是对象' }
     const { id } = fields
     if (typeof id !== 'string' || id.trim() === '') {
@@ -113,8 +113,8 @@ export default function registerConversationIpc(ipcMain: Electron.IpcMain): void
   })
   /** ====================  消息  ==================== */
   // 消息列表
-  ipcMain.handle(IPC.message.list, (_event, input: unknown) => {
-    const fields = objectInput(input)
+  ipcMain.handle(IPC.message.list, (_event, request: unknown) => {
+    const fields = objectInput(request)
     if (fields === null) return { success: false, error: '入参必须是对象' }
     const { conversationId } = fields
     if (typeof conversationId !== 'string' || conversationId.trim() === '') {

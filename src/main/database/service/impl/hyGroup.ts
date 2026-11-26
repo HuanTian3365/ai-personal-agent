@@ -43,9 +43,9 @@ export function createGroupMethods(
       }
     },
     /** 新建分组 */
-    groupCreate(input) {
+    groupCreate(request) {
       try {
-        const workspaceId = input.workspaceId ?? DEFAULT_WORKSPACE_ID
+        const workspaceId = request.workspaceId ?? DEFAULT_WORKSPACE_ID
 
         // 工作区是否存在
         const workspace = database
@@ -55,7 +55,7 @@ export function createGroupMethods(
           return { success: false, error: `工作区不存在：${workspaceId}` }
 
         // 判断路径是否有效 | 同步实现: 结果要立刻分支 不等事件循环
-        const rawPath = input.path
+        const rawPath = request.path
         let real: string | null = null
         if (rawPath !== null) {
           if (!validPath(rawPath)) {
@@ -78,7 +78,7 @@ export function createGroupMethods(
         }
 
         // 判断标题是否有效
-        const title = real === null ? input.title : input.title || basename(real) || real
+        const title = real === null ? request.title : request.title || basename(real) || real
         if (title === '') return { success: false, error: '不选择文件夹时，分组名称必填' }
 
         // 获取序号
@@ -101,11 +101,11 @@ export function createGroupMethods(
       }
     },
     /** 分组展开|收起 */
-    groupExpand(input) {
+    groupExpand(request) {
       try {
         const info = database
           .prepare('UPDATE hy_group SET open_status = ? WHERE id = ?')
-          .run(input.open ? 1 : 0, input.id)
+          .run(request.open ? 1 : 0, request.id)
         // 影响0行说明id不存在 不报成功免得界面以为改下去了
         if (info.changes === 0) return { success: false, error: '分组不存在' }
         return { success: true, data: undefined }
@@ -114,11 +114,11 @@ export function createGroupMethods(
       }
     },
     /** 删除分组 */
-    groupDelete(input) {
+    groupDelete(request) {
       try {
         const row = database
           .prepare('SELECT default_flag FROM hy_group WHERE id = ?')
-          .get(input.id) as
+          .get(request.id) as
           | {
               default_flag: number
             }
@@ -128,18 +128,18 @@ export function createGroupMethods(
         // 界面已对默认分组隐藏入口 后端仍拦一道 渲染层递过来的参数一律当不可信
         if (row.default_flag === 1) return { success: false, error: '默认分组不可删除' }
         // 组内会话的group_id由外键ON DELETE SET NULL自动落到未分组 文件夹与消息一律不动
-        database.prepare('DELETE FROM hy_group WHERE id = ?').run(input.id)
+        database.prepare('DELETE FROM hy_group WHERE id = ?').run(request.id)
         return { success: true, data: undefined }
       } catch (err) {
         return { success: false, error: errorText('删除分组', err) }
       }
     },
     /** 重命名分组 */
-    groupRename(input) {
+    groupRename(request) {
       try {
         const info = database
           .prepare('UPDATE hy_group SET title = ? WHERE id = ?')
-          .run(input.title, input.id)
+          .run(request.title, request.id)
         // 影响0行说明id不存在
         if (info.changes === 0) return { success: false, error: '分组不存在' }
         return { success: true, data: undefined }

@@ -41,9 +41,9 @@ export function createConversationMethods(database: Database): ConversationMetho
       }
     },
     /** 新建会话 */
-    conversationCreate(input) {
+    conversationCreate(request) {
       try {
-        const groupId = input.groupId
+        const groupId = request.groupId
         // workspaceId 从所属分组继承；未分组对话落到缺省工作区
         let workspaceId: string = DEFAULT_WORKSPACE_ID
         if (groupId !== null) {
@@ -73,11 +73,11 @@ export function createConversationMethods(database: Database): ConversationMetho
       }
     },
     /** 更新会话标题 | 顺手更新 updated_at 侧栏按它排「最近更新」 */
-    conversationUpdateTitle(input) {
+    conversationUpdateTitle(request) {
       try {
         const info = database
           .prepare('UPDATE hy_conversation SET title = ?, updated_at = ? WHERE id = ?')
-          .run(input.title, Date.now(), input.id)
+          .run(request.title, Date.now(), request.id)
         if (info.changes === 0) return { success: false, error: '会话不存在' }
         return { success: true, data: undefined }
       } catch (err) {
@@ -85,10 +85,11 @@ export function createConversationMethods(database: Database): ConversationMetho
       }
     },
     /** 会话信息 */
-    conversationInfo(input) {
+    conversationInfo(request) {
       try {
-        const row = database.prepare('SELECT * FROM hy_conversation WHERE id = ?').get(input.id) as
-          Row | undefined
+        const row = database
+          .prepare('SELECT * FROM hy_conversation WHERE id = ?')
+          .get(request.id) as Row | undefined
         // 查不到不是失败 | data为null 界面自己决定显示什么
         return { success: true, data: row === undefined ? null : toConversation(row) }
       } catch (err) {
@@ -96,11 +97,11 @@ export function createConversationMethods(database: Database): ConversationMetho
       }
     },
     /** 读会话级业务扩展 JSON | 没写过或会话不存在都给空对象 调用方按缺省处理 */
-    conversationReadExpand(input) {
+    conversationReadExpand(request) {
       try {
         const row = database
           .prepare('SELECT expand FROM hy_conversation WHERE id = ?')
-          .get(input.id) as
+          .get(request.id) as
           | {
               expand: string
             }
@@ -111,11 +112,11 @@ export function createConversationMethods(database: Database): ConversationMetho
       }
     },
     /** 按职责合并写会话级业务扩展 | 只覆盖 scope 这一层 */
-    conversationUpdateExpand(input) {
+    conversationUpdateExpand(request) {
       try {
         const row = database
           .prepare('SELECT expand FROM hy_conversation WHERE id = ?')
-          .get(input.id) as
+          .get(request.id) as
           | {
               expand: string
             }
@@ -123,14 +124,14 @@ export function createConversationMethods(database: Database): ConversationMetho
         // 会话不在了就不该静默成功 队列写不进去要让人知道
         if (row === undefined) return { success: false, error: '会话不存在' }
         const current = parseJson(row.expand)
-        const layer = current[input.scope]
+        const layer = current[request.scope]
         const merged =
           layer !== null && typeof layer === 'object' && !Array.isArray(layer)
-            ? { ...(layer as Record<string, unknown>), ...input.patch }
-            : input.patch
+            ? { ...(layer as Record<string, unknown>), ...request.patch }
+            : request.patch
         database
           .prepare('UPDATE hy_conversation SET expand = ? WHERE id = ?')
-          .run(JSON.stringify({ ...current, [input.scope]: merged }), input.id)
+          .run(JSON.stringify({ ...current, [request.scope]: merged }), request.id)
         return { success: true, data: undefined }
       } catch (err) {
         return { success: false, error: errorText('更新会话扩展', err) }

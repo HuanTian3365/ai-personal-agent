@@ -6,9 +6,9 @@
  * 方法名与签名一律引用ipcContract的xxxF | 数据库本身同步 返回不包Promise
  */
 
-import type { ConversationUpdateTitleF } from '@shared/types/ipcContract'
+import type { ConversationUpdateTitleFun } from '@shared/types/ipcContract'
 
 /** 改会话标题 | 标题生成后由core回写 */
 export interface Store {
-  conversationUpdateTitle: ConversationUpdateTitleF
+  conversationUpdateTitle: ConversationUpdateTitleFun
 }

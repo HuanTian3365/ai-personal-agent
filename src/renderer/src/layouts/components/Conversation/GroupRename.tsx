@@ -8,7 +8,7 @@ import {
   DialogTitle
 } from '@renderer/components/ui/dialog'
 import { FieldSet, FieldGroup, Field, FieldLabel, FieldError } from '@renderer/components/ui/field'
-import type { GroupRenameF, ToAsync } from '@shared/types/ipcContract'
+import type { GroupRenameFun, ToAsync } from '@shared/types/ipcContract'
 import { useState } from 'react'
 
 /** 重命名分组：名称必填 失败原因回显在输入框下 */
@@ -17,7 +17,7 @@ interface Props {
   groupId: string
   groupName: string
   onOpenChange: (open: boolean) => void
-  onSubmit: ToAsync<GroupRenameF>
+  onSubmit: ToAsync<GroupRenameFun>
 }
 
 export default function GroupRename({

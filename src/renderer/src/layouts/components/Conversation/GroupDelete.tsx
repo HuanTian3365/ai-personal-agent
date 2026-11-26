@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@renderer/components/ui/dialog'
-import type { GroupDeleteF, ToAsync } from '@shared/types/ipcContract'
+import type { GroupDeleteFun, ToAsync } from '@shared/types/ipcContract'
 import { useState } from 'react'
 
 /** 删除分组：只移除分组这一层 组内会话落到未分组 文件夹与消息都不动 */
@@ -15,7 +15,7 @@ interface Props {
   groupId: string
   groupName: string
   onOpenChange: (open: boolean) => void
-  onSubmit: ToAsync<GroupDeleteF>
+  onSubmit: ToAsync<GroupDeleteFun>
 }
 
 export default function GroupDelete({
