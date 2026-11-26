@@ -20,7 +20,7 @@ import { tmpdir } from 'node:os'
 import { randomUUID } from 'node:crypto'
 import { HumanMessage } from '@langchain/core/messages'
 import type { BaseMessage } from '@langchain/core/messages'
-import { closeDatabase, getDatabase, openDatabase } from '@main/database'
+import { closeDatabase, getDatabase, getRepository, openDatabase } from '@main/database'
 import { DEFAULT_WORKSPACE_ID } from '@main/database/init/data'
 import { disposeCore, initCore } from '../index'
 import { getChatGraph } from '../graph/chat'
@@ -221,7 +221,7 @@ async function main(): Promise<void> {
   console.log(`模型: ${process.env.API_MODEL ?? '(未设置)'}`)
 
   const database = await openDatabase(dbPath)
-  initCore({ database, logDir })
+  initCore({ database, titleStore: getRepository(), logDir })
   const graph = getChatGraph()
 
   try {

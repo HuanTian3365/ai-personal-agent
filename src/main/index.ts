@@ -4,7 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import mount from './ipc'
 import { disposeCore, initCore } from '../core/export'
-import { closeDatabase, getDatabase, openDatabase } from './database'
+import { closeDatabase, getDatabase, getRepository, openDatabase } from './database'
 import { initConfig } from './config'
 import { ensureDirs, paths } from './config/paths'
 
@@ -59,8 +59,8 @@ app.whenReady().then(async () => {
   await initConfig()
   // 初始化数据库：业务表和 LangGraph 的 checkpoint 表共用同一个文件、同一个连接
   await openDatabase(paths.db)
-  // 初始化 core：日志目录由这里注入，core 自己不碰 Electron
-  initCore({ database: getDatabase(), logDir: paths.logs })
+  // 初始化 core：依赖全部由这里注入（连接、存储实现、日志目录），core 自己不碰 Electron
+  initCore({ database: getDatabase(), titleStore: getRepository(), logDir: paths.logs })
 
   // 通过注册中心给ipc添加事件
   mount(ipcMain)
