@@ -60,7 +60,7 @@ app.whenReady().then(async () => {
   // 初始化数据库：业务表和 LangGraph 的 checkpoint 表共用同一个文件、同一个连接
   await openDatabase(paths.db)
   // 初始化 core：依赖全部由这里注入（连接、存储实现、日志目录），core 自己不碰 Electron
-  initCore({ database: getDatabase(), titleStore: getRepository(), logDir: paths.logs })
+  initCore({ database: getDatabase(), store: getRepository(), logDir: paths.logs })
 
   // 通过注册中心给ipc添加事件
   mount(ipcMain)

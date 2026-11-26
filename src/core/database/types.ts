@@ -6,6 +6,6 @@
  */
 
 /** 改会话标题 | 标题生成后由core回写 */
-export interface TitleStore {
+export interface StoreFunction {
   updateConversationTitle(id: string, title: string): Promise<void>
 }

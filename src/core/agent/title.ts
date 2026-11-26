@@ -1,5 +1,5 @@
 import { HumanMessage } from '@langchain/core/messages'
-import { getTitleStore } from '@core/database'
+import { getStore } from '@core/database'
 import { getBaseModel } from '@core/llm/model'
 import { parseContent } from '@core/message/parseStream'
 
@@ -37,7 +37,7 @@ export async function getConversationTitle(
     if (title.length === 0) return
 
     // 实现由main在initCore时注入 | core不知道背后是哪个库
-    await getTitleStore().updateConversationTitle(conversationId, title)
+    await getStore().updateConversationTitle(conversationId, title)
     emit(title)
   } catch {
     // 失败静默
