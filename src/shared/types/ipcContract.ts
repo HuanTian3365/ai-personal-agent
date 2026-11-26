@@ -37,7 +37,16 @@ export interface CreateGroupInput {
   /** 不传落缺省工作区 */
   workspaceId?: string
   /** null或不传 = 不绑目录 */
-  path?: string | null
+  path: string
   /** 绑了文件夹时留空取文件夹名 不绑时必填 */
-  title?: string | null
+  title: string
+}
+
+/** group:create 新建分组返回值*/
+export interface CreateGroupOutput {
+  success: boolean
+  error?: {
+    path?: string
+    another?: string
+  }
 }

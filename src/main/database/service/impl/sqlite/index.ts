@@ -99,7 +99,7 @@ export function createSqliteRepository(database: Database): DatabaseRepository {
     async createConversation(groupId) {
       // workspaceId 从所属分组继承；未分组对话落到缺省工作区
       let workspaceId: string = DEFAULT_WORKSPACE_ID
-      if (groupId !== null) {
+      if (groupId) {
         const group = database
           .prepare('SELECT workspace_id FROM hy_group WHERE id = ?')
           .get(groupId) as { workspace_id: string } | undefined

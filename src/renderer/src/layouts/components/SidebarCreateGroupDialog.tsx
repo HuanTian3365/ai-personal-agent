@@ -1,4 +1,3 @@
-import * as React from 'react'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
 import {
@@ -9,7 +8,9 @@ import {
   DialogTitle
 } from '@renderer/components/ui/dialog'
 import { expandApi } from '@renderer/lib/ipc'
-import { FieldSet, FieldGroup, Field, FieldLabel } from '@renderer/components/ui/field'
+import { FieldSet, FieldGroup, Field, FieldLabel, FieldError } from '@renderer/components/ui/field'
+import type { CreateGroupInput, CreateGroupOutput } from '@shared/types/ipcContract'
+import { useState } from 'react'
 
 /** 新建分组：文件夹可选、名称可选，但两者不能同时为空 */
 interface Props {
@@ -18,7 +19,7 @@ interface Props {
   workspaceTitle: string
   onOpenChange: (open: boolean) => void
   /** 返回 true 表示建成功，弹窗自行关闭 */
-  onSubmit: (input: { path: string | null; title: string }) => Promise<boolean>
+  onSubmit: (input: CreateGroupInput) => Promise<CreateGroupOutput>
 }
 
 export default function SidebarCreateGroupDialog({
@@ -27,9 +28,10 @@ export default function SidebarCreateGroupDialog({
   onOpenChange,
   onSubmit
 }: Props): React.JSX.Element {
-  const [path, setPath] = React.useState('')
-  const [title, setTitle] = React.useState('')
-  const [submitting, setSubmitting] = React.useState(false)
+  const [path, setPath] = useState('')
+  const [title, setTitle] = useState('')
+  const [error, setError] = useState<CreateGroupOutput['error']>()
+  const [submitting, setSubmitting] = useState(false)
 
   // 能否提交
   const canSubmit = title.trim() !== ''
@@ -61,7 +63,8 @@ export default function SidebarCreateGroupDialog({
     setSubmitting(true)
     const ok = await onSubmit({ path, title: title })
     setSubmitting(false)
-    if (ok) handleOpenChange(false)
+    if (ok.success) handleOpenChange(false)
+    setError(ok.error)
   }
 
   return (
@@ -78,14 +81,15 @@ export default function SidebarCreateGroupDialog({
                 <Input id="path" value={path} onChange={(e) => setPath(e.target.value)} />
                 <Button onClick={handlePick}>选择</Button>
               </div>
+              {error?.path && <FieldError>{error?.path}</FieldError>}
             </Field>
             <Field>
               <FieldLabel htmlFor="title">分组名称</FieldLabel>
-              <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} />
+              <Input id="title" value={title} onChange={(e) => setTitle(e.target.value.trim())} />
+              {error?.another && <FieldError>{error?.another}</FieldError>}
             </Field>
           </FieldGroup>
         </FieldSet>
-
         <DialogFooter>
           <Button variant="ghost" onClick={() => handleOpenChange(false)}>
             取消

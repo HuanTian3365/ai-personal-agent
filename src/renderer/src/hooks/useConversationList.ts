@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { HYConversation, HYGroup, HYWorkspace } from '@shared/types/hyEntity'
 import { agentApi, conversationApi, expandApi } from '@renderer/lib/ipc'
 import { useNavigate } from 'react-router'
-import type { CreateGroupInput } from '@shared/types/ipcContract'
+import type { CreateGroupInput, CreateGroupOutput } from '@shared/types/ipcContract'
 
 /**
  * 侧栏要用的三种形状（下面两个接口 + 这个返回类型）与文件末尾的 buildWorkspaceSections 是一套，
@@ -18,10 +18,7 @@ export interface UseWorkspaceListResult {
   /** 错误信息 */
   error: string | null
   /** 新建分组；成功返回 true（弹窗据此关闭），失败写进 error 并返回 false */
-  createGroup: (input: CreateGroupInput) => Promise<{
-    success: boolean
-    error: string | null
-  }>
+  createGroup: (input: CreateGroupInput) => Promise<CreateGroupOutput>
   /** 分组展开|收起 */
   toggleGroupOpen: (id: string, open: boolean) => Promise<void>
   /** 新建一个对话 */
@@ -121,28 +118,25 @@ export function useConversationList(): UseWorkspaceListResult {
 
   /** 新增分组 */
   const createGroup = useCallback(
-    async (
-      input: CreateGroupInput
-    ): Promise<{
-      success: boolean
-      error: string | null
-    }> => {
+    async (input: CreateGroupInput): Promise<CreateGroupOutput> => {
       try {
+        console.log('createGroup', input)
         // 不绑目录就不用校验路径
-        if (input.path != null) {
+        if (input.path) {
           const valid = await expandApi.validPath(input.path)
           if (!valid) {
-            setError('无效路径')
-            return { success: false, error: '无效路径' }
+            return { success: false, error: { path: '目录不存在' } }
           }
         }
         await conversationApi.createGroup(input)
         await refresh()
         setError(null)
-        return { success: true, error: null }
+        return { success: true }
       } catch (err) {
-        setError(err instanceof Error ? err.message : String(err))
-        return { success: false, error: err instanceof Error ? err.message : String(err) }
+        return {
+          success: false,
+          error: { another: err instanceof Error ? err.message : String(err) }
+        }
       }
     },
     [refresh]

@@ -8,17 +8,19 @@ import type { HYEConversationExpand } from '@shared/types/hyExpand'
  */
 export interface DatabaseRepository {
   /** ====================  工作区  ==================== */
-  /** 列出所有工作区（第一层） */
+  /** 列出所有工作区 */
   listWorkspaces(): Promise<HYWorkspace[]>
   /** ====================  分组  ==================== */
-  /** 列出所有分组（第二层） */
+  /** 列出所有分组 */
   listGroups(): Promise<HYGroup[]>
+  /** 新建分组 */
+  createGroup(input: CreateGroupInput): Promise<HYGroup>
   /** 设置分组展开状态 */
   setGroupOpen(id: string, open: boolean): Promise<void>
   /** ====================  会话  ==================== */
-  /** 全部对话（第三层），按组内手动顺序返回 */
+  /** 全部对话，按组内手动顺序返回 */
   listConversations(): Promise<HYConversation[]>
-  /** groupId 为 null 表示未分组，落在缺省工作区的默认分组里 */
+  /** 新建会话 */
   createConversation(groupId: string | null): Promise<HYConversation>
   /** 更新对话标题 */
   updateConversationTitle(id: string, title: string): Promise<void>
@@ -28,13 +30,4 @@ export interface DatabaseRepository {
   readExpand(id: string): HYEConversationExpand
   /** 更新会话扩展信息 */
   updateExpand(id: string, scope: string, patch: Record<string, unknown>): Promise<void>
-
-  /** ====================  新的实现  ==================== */
-  /**
-   * 新建分组。规则：
-   * 1. 带 path：必须存在且是目录，落库前 realpath 规范化；同目录已登记则返回已有记录
-   * 2. 不带 path：title 必填（trim 后非空）
-   * 3. title 留空且带 path：取目录名
-   */
-  createGroup(input: CreateGroupInput): Promise<HYGroup>
 }
