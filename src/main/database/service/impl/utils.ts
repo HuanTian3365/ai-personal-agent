@@ -1,16 +1,6 @@
 import type { Database } from '../../types'
 
 /**
- * 意外异常的文案
- *
- * SQL与fs的原始报错是英文 用户看不懂 | 前面补一句人话 说清是哪一步失败
- * 只用于catch里的兜底 业务失败自己有文案 别走这个
- */
-export function unexpected(what: string, err: unknown): string {
-  return `${what}失败：${err instanceof Error ? err.message : String(err)}`
-}
-
-/**
  * 组内新对话的 sort_index
  * 取当前最大值 +1 插到最前 | 列表按 sort_index 倒序读 越大的越靠前
  * 空组为 0

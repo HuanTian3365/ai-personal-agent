@@ -1,4 +1,4 @@
-import { Button } from '@renderer/components/ui/button'
+﻿import { Button } from '@renderer/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -37,7 +37,7 @@ export default function GroupDelete({
   /** 提交 */
   const handleSubmit = async (): Promise<void> => {
     setSubmitting(true)
-    const res = await onSubmit(groupId)
+    const res = await onSubmit({ id: groupId })
     setSubmitting(false)
     if (res.success) {
       handleOpenChange(false)

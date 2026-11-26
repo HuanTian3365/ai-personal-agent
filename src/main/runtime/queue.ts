@@ -12,6 +12,7 @@
 
 import { randomUUID } from 'node:crypto'
 import type { HYEQueueItem } from '@shared/types/hyExpand'
+import type { ConversationUpdateExpandR } from '@shared/types/ipcContract'
 import { getDatabase, getRepository } from '../database'
 
 /** 每会话一条队列 | key: 会话ID */
@@ -25,10 +26,11 @@ const SCOPE = 'sendMessage'
  * 过滤掉已经落到消息表的数据
  */
 function load(conversationId: string): HYEQueueItem[] {
-  // 获取会话扩展字段
-  const expand = getRepository().readExpand(conversationId)
+  // 获取会话扩展字段 | 读不出来就当没有队列 已落库的对话不受影响
+  const expand = getRepository().conversationReadExpand({ id: conversationId })
+  if (!expand.success) return []
   // 获取队列列表
-  const queue = expand.sendMessage?.queue ?? []
+  const queue = expand.data.sendMessage?.queue ?? []
   if (!Array.isArray(queue)) return []
   // sql,获取对应id的消息
   const saved = getDatabase().prepare('SELECT 1 FROM hy_message WHERE id = ?')
@@ -63,11 +65,15 @@ function write(conversationId: string, queue: HYEQueueItem[]): void {
 }
 
 /** 把内存里的队列写回库 */
-function persist(conversationId: string): Promise<void> {
+function persist(conversationId: string): Promise<ConversationUpdateExpandR> {
   const queue = queues.get(conversationId) ?? []
   // 只写库里有的三个字段 | claimed是运行态 落库后没人回滚 重启就成幽灵项
   const stored = queue.map(({ id, text, target }) => ({ id, text, target }))
-  return getRepository().updateExpand(conversationId, SCOPE, { queue: stored })
+  return getRepository().conversationUpdateExpand({
+    id: conversationId,
+    scope: SCOPE,
+    patch: { queue: stored }
+  })
 }
 
 /** 新增队列消息,返回写入后的整条队列 */

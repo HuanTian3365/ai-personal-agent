@@ -1,4 +1,4 @@
-import { Button } from '@renderer/components/ui/button'
+﻿import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
 import {
   Dialog,
@@ -9,11 +9,7 @@ import {
 } from '@renderer/components/ui/dialog'
 import { expandApi } from '@renderer/lib/ipc'
 import { FieldSet, FieldGroup, Field, FieldLabel, FieldError } from '@renderer/components/ui/field'
-import type {
-  CreateGroupInput,
-  CreateGroupOutput,
-  GroupCreateError
-} from '@shared/types/ipcContract'
+import type { GroupCreateOutput, GroupCreateError, GroupCreateI } from '@shared/types/ipcContract'
 import { useState } from 'react'
 
 /** 新建分组：文件夹可选、名称可选，但两者不能同时为空 */
@@ -23,7 +19,7 @@ interface Props {
   workspaceTitle: string
   onOpenChange: (open: boolean) => void
   /** 返回 true 表示建成功，弹窗自行关闭 */
-  onSubmit: (input: CreateGroupInput) => Promise<CreateGroupOutput>
+  onSubmit: (input: GroupCreateI) => Promise<GroupCreateOutput>
 }
 
 export default function CreateGroupDialog({

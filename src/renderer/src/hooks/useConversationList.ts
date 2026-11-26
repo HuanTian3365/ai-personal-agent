@@ -3,8 +3,8 @@ import type { HYConversation, HYGroup, HYWorkspace } from '@shared/types/hyEntit
 import { agentApi, conversationApi, expandApi } from '@renderer/lib/ipc'
 import { useNavigate } from 'react-router'
 import type {
-  CreateGroupInput,
-  CreateGroupOutput,
+  GroupCreateOutput,
+  GroupCreateI,
   GroupDeleteF,
   GroupRenameF
 } from '@shared/types/ipcContract'
@@ -23,7 +23,7 @@ export interface UseWorkspaceListResult {
   /** 错误信息 */
   error: string | null
   /** 新建分组 */
-  createGroup: (input: CreateGroupInput) => Promise<CreateGroupOutput>
+  createGroup: (input: GroupCreateI) => Promise<GroupCreateOutput>
   /** 分组展开|收起 */
   toggleGroupOpen: (id: string, open: boolean) => Promise<void>
   /** 新建一个对话并跳转 */
@@ -39,7 +39,7 @@ export interface GroupNode {
   /**
    * 分组唯一标识，直接用分组记录 id；默认分组为 '<workspaceId>:ungrouped'。
    * 同时当 React key 和「切换展开」的入参，所以必须是库里真实存在的分组 id：
-   * setGroupOpen 按 id 更新，传一个只在渲染层存在的虚拟 key 会静默更新 0 行，
+   * groupExpand 按 id 更新，传一个只在渲染层存在的虚拟 key 会静默更新 0 行，
    * 界面上表现为「点了没反应」，且不会报错。
    */
   key: string
@@ -90,9 +90,9 @@ export function useConversationList(): UseWorkspaceListResult {
   /** 拉取侧边栏数据 */
   const refresh = useCallback(async (): Promise<void> => {
     const [ws, groupRes, conversationRes] = await Promise.all([
-      conversationApi.listWorkspaces(),
-      conversationApi.listGroups(),
-      conversationApi.listConversations()
+      conversationApi.workspaceList(),
+      conversationApi.groupList(),
+      conversationApi.conversationList()
     ])
     setIsLoading(false)
     // 三个都要 | 任一个失败就整体报错 不拼半棵树
@@ -128,7 +128,7 @@ export function useConversationList(): UseWorkspaceListResult {
 
   /** 新增分组 */
   const createGroup = useCallback(
-    async (input: CreateGroupInput): Promise<CreateGroupOutput> => {
+    async (input: GroupCreateI): Promise<GroupCreateOutput> => {
       // 不绑目录就不用校验路径
       if (input.path) {
         const valid = await expandApi.validPath(input.path)
@@ -136,14 +136,14 @@ export function useConversationList(): UseWorkspaceListResult {
           return { success: false, error: { path: '目录不存在' } }
         }
       }
-      const res = await conversationApi.createGroup(input)
+      const res = await conversationApi.groupCreate(input)
       // main只给一句话 这里按输入框分开贴 | 名称类的错统一落到另一个框下面
       if (!res.success) {
         return { success: false, error: { another: res.error } }
       }
       await refresh()
       setError(null)
-      return { success: true, data: res.data }
+      return { success: true, data: undefined }
     },
     [refresh]
   )
@@ -152,7 +152,7 @@ export function useConversationList(): UseWorkspaceListResult {
   const addConversation = useCallback(
     async (groupId: string | null): Promise<void> => {
       // 新建对话
-      const res = await conversationApi.createConversation(groupId)
+      const res = await conversationApi.conversationCreate(groupId)
       if (!res.success) {
         setError(res.error)
         return
@@ -166,7 +166,7 @@ export function useConversationList(): UseWorkspaceListResult {
       // 收起就先展开 否则新对话建好了侧栏看不见
       // 展开失败不阻断 对话已经落地 最多是侧栏要手动点开
       if (target !== undefined && target.openStatus === false) {
-        await conversationApi.setGroupExpand(target.id, true)
+        await conversationApi.groupExpand(target.id, true)
       }
       // 刷新
       await refresh()
@@ -181,7 +181,7 @@ export function useConversationList(): UseWorkspaceListResult {
       setGroups((prev) => prev.map((g) => (g.id === id ? { ...g, openStatus: target } : g)))
     }
     flip(open)
-    const res = await conversationApi.setGroupExpand(id, open)
+    const res = await conversationApi.groupExpand(id, open)
     // 失败就翻回去 免得界面和库里对不上
     if (!res.success) {
       flip(!open)
@@ -207,8 +207,8 @@ export function useConversationList(): UseWorkspaceListResult {
 
   /** 删除分组 */
   const groupDelete = useCallback<GroupDeleteF>(
-    async (id) => {
-      const res = await conversationApi.groupDelete(id)
+    async (input) => {
+      const res = await conversationApi.groupDelete(input.id)
       // 删成功后整棵树要重拉 组内会话已落到未分组 侧栏位置会变
       if (res.success) await refresh()
       return res
@@ -235,7 +235,7 @@ function buildWorkspaceSections(
   conversations: HYConversation[]
 ): WorkspaceSection[] {
   return workspaces.map((workspace) => {
-    // 普通分组：顺序由 listGroups 给出，这里不再排
+    // 普通分组：顺序由 groupList 给出，这里不再排
     const nodes: GroupNode[] = groups
       .filter((group) => group.workspaceId === workspace.id && !group.defaultFlag)
       .map((group) => ({

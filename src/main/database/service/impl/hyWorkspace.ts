@@ -2,7 +2,7 @@ import type { DatabaseRepository } from '../types'
 import type { Database } from '../../types'
 import { toWorkspace } from './converter'
 import type { Row } from './converter'
-import { unexpected } from './utils'
+import { errorText } from '@main/utils/error'
 
 /**
  * 工作区层 | hy_workspace 的读方法
@@ -11,15 +11,15 @@ import { unexpected } from './utils'
  */
 export function createWorkspaceMethods(
   database: Database
-): Pick<DatabaseRepository, 'listWorkspaces'> {
+): Pick<DatabaseRepository, 'workspaceList'> {
   return {
     /** 工作区列表 */
-    async listWorkspaces() {
+    async workspaceList() {
       try {
         const rows = database.prepare('SELECT * FROM hy_workspace ORDER BY sort_index ASC').all()
         return { success: true, data: rows.map((r) => toWorkspace(r as Row)) }
       } catch (err) {
-        return { success: false, error: unexpected('读取工作区', err) }
+        return { success: false, error: errorText('读取工作区', err) }
       }
     }
   }

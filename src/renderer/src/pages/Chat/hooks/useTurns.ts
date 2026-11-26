@@ -1,4 +1,4 @@
-import { agentApi, conversationApi } from '@renderer/lib/ipc'
+﻿import { agentApi, conversationApi } from '@renderer/lib/ipc'
 import { useEffect, useRef, useState } from 'react'
 import type { TurnMessageBlock, TMReasoning, TurnMessage } from '@shared/types/message'
 import type { MessageEventSend } from '@shared/types/message'
@@ -109,9 +109,9 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
       try {
         const [listRes, infoRes, snap, queued] = await Promise.all([
           // 获取消息列表
-          conversationApi.listMessages(conversationId),
+          conversationApi.messageList(conversationId),
           // 获取会话信息
-          conversationApi.getConversation(conversationId),
+          conversationApi.conversationInfo(conversationId),
           // 获取进行中那一轮的快照
           agentApi.snapshot(conversationId),
           // 获取排队区内容

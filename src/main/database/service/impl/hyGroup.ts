@@ -6,7 +6,8 @@ import { DEFAULT_WORKSPACE_ID } from '../../init/data'
 import type { Database } from '../../types'
 import { toGroup } from './converter'
 import type { Row } from './converter'
-import { nextGroupSortIndex, unexpected } from './utils'
+import { nextGroupSortIndex } from './utils'
+import { errorText } from '@main/utils/error'
 
 /**
  * 分组层 | hy_group 的读写方法
@@ -18,17 +19,17 @@ import { nextGroupSortIndex, unexpected } from './utils'
  *
  * 所以 path 可以为空 判形态只看 default_flag 不要拿 path IS NULL 反推
  *
- * 失败一律走Result不throw | 业务失败给用户能读的文案 意外异常走unexpected
+ * 失败一律走Result不throw | 业务失败给用户能读的文案 意外异常走errorText
  */
 export function createGroupMethods(
   database: Database
 ): Pick<
   DatabaseRepository,
-  'listGroups' | 'createGroup' | 'setGroupOpen' | 'groupDelete' | 'groupRename'
+  'groupList' | 'groupCreate' | 'groupExpand' | 'groupDelete' | 'groupRename'
 > {
   return {
     /** 分组列表 */
-    async listGroups() {
+    async groupList() {
       try {
         // 给出的数据按sort_index从大到小排列,大的(新创建的)在前
         const rows = database
@@ -36,11 +37,11 @@ export function createGroupMethods(
           .all()
         return { success: true, data: rows.map((r) => toGroup(r as Row)) }
       } catch (err) {
-        return { success: false, error: unexpected('读取分组', err) }
+        return { success: false, error: errorText('读取分组', err) }
       }
     },
     /** 新建分组 */
-    async createGroup(input) {
+    async groupCreate(input) {
       try {
         const workspaceId = input.workspaceId ?? DEFAULT_WORKSPACE_ID
 
@@ -87,29 +88,31 @@ export function createGroupMethods(
           )
           .run(id, workspaceId, title, real, sortIndex, now, now)
 
-        const row = database.prepare('SELECT * FROM hy_group WHERE id = ?').get(id) as Row
-        return { success: true, data: toGroup(row) }
+        // 不返回新行 调用方要列表自己重拉 | 返回没人读等于白查一次
+        return { success: true, data: undefined }
       } catch (err) {
-        return { success: false, error: unexpected('新建分组', err) }
+        return { success: false, error: errorText('新建分组', err) }
       }
     },
     /** 分组展开|收起 */
-    async setGroupOpen(id, open) {
+    async groupExpand(input) {
       try {
         const info = database
           .prepare('UPDATE hy_group SET open_status = ? WHERE id = ?')
-          .run(open ? 1 : 0, id)
+          .run(input.open ? 1 : 0, input.id)
         // 影响0行说明id不存在 不报成功免得界面以为改下去了
         if (info.changes === 0) return { success: false, error: '分组不存在' }
         return { success: true, data: undefined }
       } catch (err) {
-        return { success: false, error: unexpected('改分组展开状态', err) }
+        return { success: false, error: errorText('改分组展开状态', err) }
       }
     },
     /** 删除分组 */
-    async groupDelete(id) {
+    async groupDelete(input) {
       try {
-        const row = database.prepare('SELECT default_flag FROM hy_group WHERE id = ?').get(id) as
+        const row = database
+          .prepare('SELECT default_flag FROM hy_group WHERE id = ?')
+          .get(input.id) as
           | {
               default_flag: number
             }
@@ -119,10 +122,10 @@ export function createGroupMethods(
         // 界面已对默认分组隐藏入口 后端仍拦一道 渲染层递过来的参数一律当不可信
         if (row.default_flag === 1) return { success: false, error: '默认分组不可删除' }
         // 组内会话的group_id由外键ON DELETE SET NULL自动落到未分组 文件夹与消息一律不动
-        database.prepare('DELETE FROM hy_group WHERE id = ?').run(id)
+        database.prepare('DELETE FROM hy_group WHERE id = ?').run(input.id)
         return { success: true, data: undefined }
       } catch (err) {
-        return { success: false, error: unexpected('删除分组', err) }
+        return { success: false, error: errorText('删除分组', err) }
       }
     },
     /** 重命名分组 */
@@ -135,7 +138,7 @@ export function createGroupMethods(
         if (info.changes === 0) return { success: false, error: '分组不存在' }
         return { success: true, data: undefined }
       } catch (err) {
-        return { success: false, error: unexpected('重命名分组', err) }
+        return { success: false, error: errorText('重命名分组', err) }
       }
     }
   }
