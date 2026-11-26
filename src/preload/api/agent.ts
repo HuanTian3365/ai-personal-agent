@@ -1,7 +1,7 @@
 import { ipcRenderer } from 'electron'
 import { IPC } from '@shared/ipc'
 import type { AgentEventEnvelope } from '@shared/types/agentEvent'
-import type { HYEQueueItemView } from '@shared/types/queueItem'
+import type { HYEQueueItemView } from '@shared/types/ipcContract'
 import type { MessageEventSend } from '@shared/types/message'
 import type {
   QueueEditAction,

@@ -1,5 +1,5 @@
-﻿import type { TurnMessageBlock, MessageUsage, TurnMessage } from '@shared/types/message'
-import type { HYEQueueItemView } from './queueItem'
+import type { TurnMessageBlock, MessageUsage, TurnMessage } from '@shared/types/message'
+import type { HYEQueueItem } from './hyExpand'
 /** 推给渲染层的事件 | 纯数据 不含seq之类的传输字段 */
 export type AgentEvent =
   | AETurnStart
@@ -137,5 +137,6 @@ export interface AETitle {
 export interface AEQueue {
   type: 'queue'
   conversationId: string
-  queue: HYEQueueItemView[]
+  /** 库里三个字段 + 运行态的claimed | 完整定义见ipcContract.ts的HYEQueueItemView */
+  queue: (HYEQueueItem & { claimed?: boolean })[]
 }

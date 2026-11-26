@@ -4,7 +4,7 @@ import type { TurnMessageBlock, TMReasoning, TurnMessage } from '@shared/types/m
 import type { MessageEventSend } from '@shared/types/message'
 import type { SendMode } from '@shared/types/ipcContract'
 import type { AgentEvent, AgentEventEnvelope } from '@shared/types/agentEvent'
-import type { HYEQueueItemView } from '@shared/types/queueItem'
+import type { HYEQueueItemView } from '@shared/types/ipcContract'
 
 export interface UseTurnsResult {
   /** 当前对话的历史轮 */

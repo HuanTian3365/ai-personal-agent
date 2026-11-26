@@ -8,7 +8,7 @@
  */
 
 import type { AgentEvent, AgentEventEnvelope } from '@shared/types/agentEvent'
-import type { HYEQueueItemView } from '@shared/types/queueItem'
+import type { HYEQueueItemView } from '@shared/types/ipcContract'
 import type { StreamSnapshot } from '@shared/types/ipcContract'
 import { broadcast } from '../ipc/broadcast'
 
