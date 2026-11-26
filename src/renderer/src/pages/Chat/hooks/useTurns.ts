@@ -4,7 +4,7 @@ import type { TurnMessageBlock, TMReasoning, TurnMessage } from '@shared/types/m
 import type { MessageEventSend } from '@shared/types/message'
 import type { SendMode } from '@shared/types/ipcContract'
 import type { AgentEvent, AgentEventEnvelope } from '@shared/types/agentEvent'
-import type { HYEQueueItemView } from '@shared/types/ipcContract'
+import type { HYEQueueItem } from '@shared/types/hyExpand'
 
 export interface UseTurnsResult {
   /** 当前对话的历史轮 */
@@ -20,7 +20,7 @@ export interface UseTurnsResult {
   /** 读历史失败时的错误 */
   error: string | null
   /** 排队区内容 | 生成期间发出去还没发的那些 */
-  queue: HYEQueueItemView[]
+  queue: HYEQueueItem[]
   /** 发送消息 | mode=queue 排队 mode=insert 插队 */
   send: (message: MessageEventSend, mode?: SendMode) => Promise<boolean>
   /** 中断消息 */
@@ -52,12 +52,12 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
   /** 错误信息 */
   const [error, setError] = useState<string | null>(null)
   /** 排队区内容 */
-  const [queue, setQueue] = useState<HYEQueueItemView[]>([])
+  const [queue, setQueue] = useState<HYEQueueItem[]>([])
 
   /** 当前对话ID */
   const currentIdRef = useRef(conversationId)
   /** 队列的即时镜像,事件处理器要用最新值 React的state会滞后一帧 */
-  const queueRef = useRef<HYEQueueItemView[]>([])
+  const queueRef = useRef<HYEQueueItem[]>([])
   /** 最后一条事件的全局序号|丢弃seq小于等于它的事件(已经重放完了) */
   const snapSeqRef = useRef(0)
   /** 读历史期间收到的事件,快照之后才到事件的要在快照重放完后补上 */
@@ -66,7 +66,7 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
   const readyRef = useRef(false)
 
   /** 同时更新状态与镜像 */
-  function applyQueue(next: HYEQueueItemView[]): void {
+  function applyQueue(next: HYEQueueItem[]): void {
     queueRef.current = next
     setQueue(next)
   }

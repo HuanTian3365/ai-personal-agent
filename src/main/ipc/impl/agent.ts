@@ -1,5 +1,5 @@
 import { IPC } from '@shared/ipc'
-import type { HYEQueueItemView } from '@shared/types/ipcContract'
+import type { HYEQueueItem } from '@shared/types/hyExpand'
 import type { MessageEventSend } from '@shared/types/message'
 import type { SendMode, SendResult, StreamSnapshot } from '@shared/types/ipcContract'
 import { submitMessage } from '../../runtime/drive'
@@ -59,7 +59,7 @@ export default function registerAgentIpc(ipcMain: Electron.IpcMain): void {
   })
 
   /** 取该对话的排队内容 */
-  ipcMain.handle(IPC.agent.queue, (_event, conversationId: unknown): HYEQueueItemView[] => {
+  ipcMain.handle(IPC.agent.queue, (_event, conversationId: unknown): HYEQueueItem[] => {
     if (typeof conversationId !== 'string' || conversationId.trim() === '') {
       throw new Error('agent.queue: conversationId 必须是非空字符串')
     }

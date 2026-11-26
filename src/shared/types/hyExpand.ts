@@ -18,6 +18,12 @@ export interface HYEQueueItem {
   text: string
   /** next-turn: 等本轮结束当新一轮发 next-step: 下一个step推进当前轮 即界面上的插队 */
   target: 'next-turn' | 'next-step'
+  /**
+   * 已被本轮领走 | 渲染层靠它判断这条插队还等不等得到位置
+   *
+   * 运行态 不落库: 落了重启没人回滚 那条排队项就成了幽灵
+   */
+  claimed?: boolean
 }
 
 /** hy_conversation 的expand列 */

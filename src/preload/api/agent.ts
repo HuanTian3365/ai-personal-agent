@@ -1,7 +1,7 @@
 import { ipcRenderer } from 'electron'
 import { IPC } from '@shared/ipc'
 import type { AgentEventEnvelope } from '@shared/types/agentEvent'
-import type { HYEQueueItemView } from '@shared/types/ipcContract'
+import type { HYEQueueItem } from '@shared/types/hyExpand'
 import type { MessageEventSend } from '@shared/types/message'
 import type {
   QueueEditAction,
@@ -34,7 +34,7 @@ const agentApi = {
   insert: (conversationId: string, itemId: string): Promise<void> =>
     ipcRenderer.invoke(IPC.agent.insert, conversationId, itemId),
   // to main -> 取该对话的排队内容
-  queue: (conversationId: string): Promise<HYEQueueItemView[]> =>
+  queue: (conversationId: string): Promise<HYEQueueItem[]> =>
     ipcRenderer.invoke(IPC.agent.queue, conversationId),
   // to main -> 改排队里的一条
   updateQueue: (conversationId: string, itemId: string, action: QueueEditAction): Promise<void> =>

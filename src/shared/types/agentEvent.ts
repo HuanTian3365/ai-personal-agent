@@ -137,6 +137,5 @@ export interface AETitle {
 export interface AEQueue {
   type: 'queue'
   conversationId: string
-  /** 库里三个字段 + 运行态的claimed | 完整定义见ipcContract.ts的HYEQueueItemView */
-  queue: (HYEQueueItem & { claimed?: boolean })[]
+  queue: HYEQueueItem[]
 }
