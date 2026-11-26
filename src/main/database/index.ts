@@ -1,5 +1,5 @@
 import { dirname } from 'node:path'
-import { ensureDir } from '@main/lib/file'
+import { createDir } from '@main/lib/file'
 import migrate from './init/migrate'
 import { createSqliteRepository } from './service/impl/sqlite'
 import type { DatabaseRepository } from './service/types'
@@ -25,7 +25,7 @@ let store: DatabaseRepository | null = null
 export async function openDatabase(databasePath: string): Promise<Database> {
   if (database !== null) return database
 
-  await ensureDir(dirname(databasePath))
+  await createDir(dirname(databasePath))
   const { default: BetterSqlite3 } = await import('better-sqlite3')
   const instance = new BetterSqlite3(databasePath)
 

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { TurnMessage } from '@shared/types/message'
 import { CopyIcon, Database, Loader } from 'lucide-react'
+import { cn } from 'cn'
 
-import { cn } from '@renderer/lib/utils'
-import { formatClock, formatDuration, formatTokenCount } from '@renderer/lib/format'
+import { formatClock, formatDuration, formatTokenCount } from '@renderer/utils/format'
 import { MessageFooter } from '@renderer/components/ui/message'
 import { copyText } from '@renderer/lib/copy'
 import { Button } from '@renderer/components/ui/button'

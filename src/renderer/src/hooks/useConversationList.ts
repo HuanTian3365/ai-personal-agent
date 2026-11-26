@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Conversation, Group, Workspace } from '@shared/types/conversation'
-import { agentApi, conversationApi } from '@renderer/lib/ipc'
+import { agentApi, conversationApi, expandApi } from '@renderer/lib/ipc'
 import { useNavigate } from 'react-router'
 import type { CreateGroupInput } from '@shared/types/conversationService'
 
@@ -18,7 +18,10 @@ export interface UseWorkspaceListResult {
   /** 错误信息 */
   error: string | null
   /** 新建分组；成功返回 true（弹窗据此关闭），失败写进 error 并返回 false */
-  createGroup: (input: CreateGroupInput) => Promise<boolean>
+  createGroup: (input: CreateGroupInput) => Promise<{
+    success: boolean
+    error: string | null
+  }>
   /** 分组展开|收起 */
   toggleGroupOpen: (id: string, open: boolean) => Promise<void>
   /** 新建一个对话 */
@@ -70,6 +73,11 @@ export function useConversationList(): UseWorkspaceListResult {
   // 加载状态|错误信息
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  /** 侧边栏树状数据 */
+  const sections = useMemo<WorkspaceSection[]>(
+    () => buildWorkspaceSections(workspaces, groups, conversations),
+    [workspaces, groups, conversations]
+  )
 
   /** 拉取侧边栏数据 */
   const refresh = useCallback(async (): Promise<void> => {
@@ -92,34 +100,46 @@ export function useConversationList(): UseWorkspaceListResult {
 
   // 第一次打开时拉取侧边栏数据
   useEffect(() => {
-    // 这条规则以为下面会同步改状态；refresh 里第一个 setState 在 await 之后，实际不会
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void refresh()
   }, [refresh])
 
-  // 标题更新：core 在第一轮聊完后把新标题推过来。
-  // 只改这一条的标题，不整个重新加载——为了一个字段重拉三张表，不划算。
+  // 事件监听
   useEffect(() => {
     const off = agentApi.onEvent(({ event }) => {
-      if (event.type !== 'title') return
-      setConversations((prev) =>
-        prev.map((c) => (c.id === event.conversationId ? { ...c, title: event.title } : c))
-      )
+      // 标题更新
+      if (event.type === 'title') {
+        setConversations((prev) =>
+          prev.map((c) => (c.id === event.conversationId ? { ...c, title: event.title } : c))
+        )
+      }
     })
     return off
   }, [])
 
+  /** ====================  方法  ==================== */
+
   /** 新增分组 */
   const createGroup = useCallback(
-    async (input: CreateGroupInput): Promise<boolean> => {
+    async (
+      input: CreateGroupInput
+    ): Promise<{
+      success: boolean
+      error: string | null
+    }> => {
       try {
+        const valid = await expandApi.validPath(input.path)
+        if (!valid) {
+          setError('无效路径')
+          return { success: false, error: '无效路径' }
+        }
         await conversationApi.createGroup(input)
         await refresh()
         setError(null)
-        return true
+        return { success: true, error: null }
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err))
-        return false
+        return { success: false, error: err instanceof Error ? err.message : String(err) }
       }
     },
     [refresh]
@@ -153,12 +173,6 @@ export function useConversationList(): UseWorkspaceListResult {
       setError(err instanceof Error ? err.message : String(err))
     }
   }, [])
-
-  /** 侧边栏树状数据 */
-  const sections = useMemo<WorkspaceSection[]>(
-    () => buildWorkspaceSections(workspaces, groups, conversations),
-    [workspaces, groups, conversations]
-  )
 
   return {
     sections,

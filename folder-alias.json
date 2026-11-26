@@ -35,11 +35,20 @@
     "src/shared/types/conversationService.ts": {
         "description": "会话方法"
     },
+    "src/shared/types/hyDefinition.ts": {
+        "description": "底层扩展数据"
+    },
+    "src/shared/types/constant.ts": {
+        "description": "工具常量"
+    },
     "src/core/index.ts": {
         "description": "门面"
     },
     "src/core/export.ts": {
         "description": "对外出口"
+    },
+    "src/core/env.d.ts": {
+        "description": "环境声明"
     },
     "src/core/agent": {
         "description": "对话编排"
@@ -62,11 +71,17 @@
     "src/core/graph/chat.ts": {
         "description": "图定义"
     },
-    "src/core/graph/saver.ts": {
-        "description": "存储实现"
+    "src/core/graph/checkpoint.ts": {
+        "description": "存档实现"
+    },
+    "src/core/graph/nodes.ts": {
+        "description": "图节点"
     },
     "src/core/graph/state.ts": {
         "description": "图状态"
+    },
+    "src/core/llm": {
+        "description": "模型接入"
     },
     "src/core/llm/model.ts": {
         "description": "模型初始化"
@@ -80,17 +95,29 @@
     "src/core/message/buildHumanMessage.ts": {
         "description": "用户消息"
     },
+    "src/core/message/parseStream.ts": {
+        "description": "流式解析"
+    },
     "src/core/tools": {
         "description": "工具"
     },
     "src/core/tools/index.ts": {
         "description": "工具清单"
     },
-    "src/core/tools/file.ts": {
+    "src/core/tools/register.ts": {
+        "description": "工具注册"
+    },
+    "src/core/tools/impl": {
+        "description": "工具实现"
+    },
+    "src/core/tools/impl/file.ts": {
         "description": "文件工具"
     },
-    "src/core/tools/shell.ts": {
+    "src/core/tools/impl/shell.ts": {
         "description": "命令行工具"
+    },
+    "src/core/tools/impl/time.ts": {
+        "description": "时间工具"
     },
     "src/core/tools/error.ts": {
         "description": "工具报错"
@@ -98,14 +125,38 @@
     "src/core/utils": {
         "description": "工具函数"
     },
-    "src/core/utils/log.ts": {
-        "description": "原始日志"
+    "src/core/utils/usage.ts": {
+        "description": "用量累加"
     },
-    "src/core/utils/parseStream.ts": {
-        "description": "流式解析"
+    "src/core/lib": {
+        "description": "状态封装"
+    },
+    "src/core/lib/log.ts": {
+        "description": "原始日志"
     },
     "src/core/test": {
         "description": "自检脚本"
+    },
+    "src/core/test/test.ts": {
+        "description": "自检入口"
+    },
+    "src/core/test/chat-test.ts": {
+        "description": "真实对话测试"
+    },
+    "src/core/test/checkpoint-roundtrip.ts": {
+        "description": "转换往返"
+    },
+    "src/core/test/graph-integration.ts": {
+        "description": "图集成"
+    },
+    "src/core/test/linear-growth.ts": {
+        "description": "体积增长"
+    },
+    "src/core/test/migrate.ts": {
+        "description": "旧表迁移"
+    },
+    "src/core/test/verify-migration.ts": {
+        "description": "迁移核对"
     },
     "src/main/index.ts": {
         "description": "主进程入口"
@@ -122,10 +173,25 @@
     "src/main/config/paths.ts": {
         "description": "路径常量"
     },
+    "src/main/config/file": {
+        "description": "配置实现"
+    },
+    "src/main/config/file/config.ts": {
+        "description": "接入配置"
+    },
     "src/main/utils": {
         "description": "主进程工具"
     },
-    "src/main/utils/debug.ts": {
+    "src/main/utils/parse.ts": {
+        "description": "JSON解析"
+    },
+    "src/main/lib": {
+        "description": "主进程封装"
+    },
+    "src/main/lib/file.ts": {
+        "description": "文件封装"
+    },
+    "src/main/lib/debug.ts": {
         "description": "调试输出"
     },
     "src/main/ipc": {
@@ -134,14 +200,20 @@
     "src/main/ipc/index.ts": {
         "description": "注册中心"
     },
+    "src/main/ipc/broadcast.ts": {
+        "description": "事件广播"
+    },
+    "src/main/ipc/impl": {
+        "description": "通道实现"
+    },
     "src/main/ipc/impl/agent.ts": {
         "description": "对话注册"
     },
     "src/main/ipc/impl/conversation.ts": {
         "description": "会话注册"
     },
-    "src/main/ipc/impl/dialog.ts": {
-        "description": "对话框注册"
+    "src/main/ipc/impl/expand.ts": {
+        "description": "目录接口"
     },
     "src/main/database": {
         "description": "数据库层"
@@ -170,6 +242,12 @@
     "src/main/database/service/types.ts": {
         "description": "接口定义"
     },
+    "src/main/database/service/impl": {
+        "description": "存储实现"
+    },
+    "src/main/database/service/impl/sqlite": {
+        "description": "SQLite实现"
+    },
     "src/main/database/service/impl/sqlite/converter.ts": {
         "description": "行转换"
     },
@@ -179,11 +257,29 @@
     "src/main/database/service/impl/sqlite/utils.ts": {
         "description": "排序工具"
     },
+    "src/main/runtime": {
+        "description": "运行调度"
+    },
+    "src/main/runtime/drive.ts": {
+        "description": "消息驱动"
+    },
+    "src/main/runtime/queue.ts": {
+        "description": "排队插入"
+    },
+    "src/main/runtime/run.ts": {
+        "description": "消息队列"
+    },
     "src/preload/index.ts": {
         "description": "预加载入口"
     },
+    "src/preload/index.d.ts": {
+        "description": "接口类型"
+    },
     "src/preload/mount.ts": {
         "description": "接口组装"
+    },
+    "src/preload/api": {
+        "description": "接口实现"
     },
     "src/preload/api/agent.ts": {
         "description": "对话接口"
@@ -191,17 +287,38 @@
     "src/preload/api/conversation.ts": {
         "description": "会话接口"
     },
-    "src/preload/api/dialog.ts": {
-        "description": "对话框接口"
+    "src/preload/api/expand.ts": {
+        "description": "路径接口"
     },
-    "src/renderer/src/lib/ipc.ts": {
-        "description": "调用封装"
+    "src/renderer/src": {
+        "description": "界面源码"
     },
-    "src/renderer/src/lib/highlighter.tsx": {
-        "description": "代码高亮"
+    "src/renderer/src/main.tsx": {
+        "description": "挂载入口"
     },
-    "src/renderer/src/router/routers.tsx": {
-        "description": "路由表"
+    "src/renderer/src/App.tsx": {
+        "description": "应用外壳"
+    },
+    "src/renderer/src/env.d.ts": {
+        "description": "环境声明"
+    },
+    "src/renderer/src/assets": {
+        "description": "静态资源"
+    },
+    "src/renderer/src/style": {
+        "description": "样式入口"
+    },
+    "src/renderer/src/components": {
+        "description": "共享组件"
+    },
+    "src/renderer/src/components/ui": {
+        "description": "基础组件"
+    },
+    "src/renderer/src/components/ThemeProvider.tsx": {
+        "description": "主题提供"
+    },
+    "src/renderer/src/hooks": {
+        "description": "复用钩子"
     },
     "src/renderer/src/hooks/useConversationList.ts": {
         "description": "会话列表"
@@ -209,8 +326,44 @@
     "src/renderer/src/hooks/useTheme.ts": {
         "description": "主题"
     },
-    "src/renderer/src/pages/Chat/hooks/useTurns.ts": {
-        "description": "对话状态"
+    "src/renderer/src/hooks/use-highlighted-code.ts": {
+        "description": "高亮钩子"
+    },
+    "src/renderer/src/hooks/useMobile.ts": {
+        "description": "移动判定"
+    },
+    "src/renderer/src/lib": {
+        "description": "界面封装"
+    },
+    "src/renderer/src/lib/ipc.ts": {
+        "description": "调用封装"
+    },
+    "src/renderer/src/lib/highlighter.tsx": {
+        "description": "代码高亮"
+    },
+    "src/renderer/src/lib/copy.ts": {
+        "description": "剪贴板"
+    },
+    "src/renderer/src/utils": {
+        "description": "纯函数"
+    },
+    "src/renderer/src/utils/format.ts": {
+        "description": "时间格式化"
+    },
+    "src/renderer/src/router": {
+        "description": "路由"
+    },
+    "src/renderer/src/router/routers.tsx": {
+        "description": "路由表"
+    },
+    "src/renderer/src/layouts": {
+        "description": "外壳布局"
+    },
+    "src/renderer/src/layouts/index.tsx": {
+        "description": "布局入口"
+    },
+    "src/renderer/src/layouts/components": {
+        "description": "侧栏组件"
     },
     "src/renderer/src/layouts/components/Sidebar.tsx": {
         "description": "侧栏框架"
@@ -232,6 +385,21 @@
     },
     "src/renderer/src/layouts/components/SidebarConversationGroup.tsx": {
         "description": "分组"
+    },
+    "src/renderer/src/layouts/components/SidebarCreateGroupDialog.tsx": {
+        "description": "新建分组"
+    },
+    "src/renderer/src/pages": {
+        "description": "页面集合"
+    },
+    "src/renderer/src/pages/Chat": {
+        "description": "对话页"
+    },
+    "src/renderer/src/pages/Chat/index.tsx": {
+        "description": "页面入口"
+    },
+    "src/renderer/src/pages/Chat/components": {
+        "description": "对话组件"
     },
     "src/renderer/src/pages/Chat/components/ChatHeader.tsx": {
         "description": "头部"
@@ -257,11 +425,14 @@
     "src/renderer/src/pages/Chat/components/MessageBlockUnknown.tsx": {
         "description": "未知块"
     },
-    "src/renderer/src/pages/Chat/components/MessageBlockSystem.tsx": {
-        "description": "系统块"
-    },
     "src/renderer/src/pages/Chat/components/MessageBlockUser.tsx": {
         "description": "用户块"
+    },
+    "src/renderer/src/pages/Chat/components/MessageBlockTips.tsx": {
+        "description": "提示块"
+    },
+    "src/renderer/src/pages/Chat/components/TurnStatus.tsx": {
+        "description": "轮状态"
     },
     "src/renderer/src/pages/Chat/components/InputBox.tsx": {
         "description": "输入框"
@@ -269,19 +440,25 @@
     "src/renderer/src/pages/Chat/components/InputQueue.tsx": {
         "description": "排队列表"
     },
-    "src/main/runtime/drive.ts": {
-        "description": "消息驱动"
+    "src/renderer/src/pages/Chat/hooks": {
+        "description": "对话钩子"
     },
-    "src/main/runtime/queue.ts": {
-        "description": "排队插入"
+    "src/renderer/src/pages/Chat/hooks/useTurns.ts": {
+        "description": "对话状态"
     },
-    "src/main/runtime/run.ts": {
-        "description": "消息队列"
+    "src/renderer/src/pages/Chat/hooks/useTurnScroll.ts": {
+        "description": "滚动控制"
     },
-    "src/shared/types/hyDefinition.ts": {
-        "description": "底层扩展数据"
+    "src/renderer/src/pages/Setting": {
+        "description": "设置页"
     },
-    "src/renderer/src/layouts/components/SidebarCreateGroupDialog.tsx": {
-        "description": "新建分组"
+    "src/renderer/src/pages/Setting/index.tsx": {
+        "description": "页面入口"
+    },
+    "src/renderer/src/pages/Welcome": {
+        "description": "欢迎页"
+    },
+    "src/renderer/src/pages/Welcome/index.tsx": {
+        "description": "页面入口"
     }
 }

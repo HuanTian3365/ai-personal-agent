@@ -47,6 +47,8 @@ export const IPC = {
   /** 扩展功能：不属于对话本身的能力都挂这里（现在只有系统对话框） */
   expand: {
     /** 选一个目录 */
-    pickDirectory: 'expand:pickDirectory'
+    pickDirectory: 'expand:pickDirectory',
+    /** 校验路径是否存在，返回 boolean */
+    validPath: 'expand:validPath'
   }
 } as const

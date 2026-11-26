@@ -3,9 +3,9 @@ import type { MUser } from '@shared/types/message'
 import { Bubble, BubbleContent } from '@renderer/components/ui/bubble'
 import { Button } from '@renderer/components/ui/button'
 import { CopyIcon } from 'lucide-react'
-import { formatClock } from '@renderer/lib/format'
+import { cn } from 'cn'
+import { formatClock } from '@renderer/utils/format'
 import { copyText } from '@renderer/lib/copy'
-import { cn } from '@renderer/lib/utils'
 
 interface Props {
   context: MUser

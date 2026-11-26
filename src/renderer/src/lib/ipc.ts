@@ -36,7 +36,9 @@ export const conversationApi = {
 
 export const expandApi = {
   /** 选择目录 */
-  pickDirectory: () => window.api.expand.pickDirectory()
+  pickDirectory: () => window.api.expand.pickDirectory(),
+  /** 校验路径是否存在 */
+  validPath: (target: string) => window.api.expand.validPath(target)
 }
 export const agentApi = {
   /** 发送消息 | mode 决定排队还是插队 */

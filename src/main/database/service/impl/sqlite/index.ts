@@ -7,7 +7,7 @@ import type { Database } from '../../../types'
 import { toConversation, toGroup, toWorkspace } from './converter'
 import type { Row } from './converter'
 import { nextConversationSortIndex } from './utils'
-import { parseJson } from '@main/lib/parse'
+import { parseJson } from '@main/utils/parse'
 
 /**
  * 基于 better-sqlite3 的存储实现。

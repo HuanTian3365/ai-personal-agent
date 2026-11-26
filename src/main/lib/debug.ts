@@ -1,13 +1,13 @@
 /**
  * 临时调试打印：把某些字段的值落到 log/debug.json。
  *
- * 和对话日志（utils/log.ts）不是一回事——这里不管一轮对话，纯粹是想看什么就记什么。
+ * 和对话日志（core/lib/log.ts）不是一回事——这里不管一轮对话，纯粹是想看什么就记什么。
  * 两种写法输出同一种格式——JSON 数组 `[{ "index": 0, "content": ... }]`：
  * debugContent 追加到已有记录之后（保留历史）、debugContentRewrite 覆盖成全新的。
  */
 import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { ensureDir } from '@main/lib/file'
+import { createDir } from '@main/lib/file'
 
 /** 调试目录，相对 cwd（dev 下就是项目根）。打包后 cwd 可能指向安装目录，和 log.ts 是同一个问题 */
 const LOG_DIR = 'log'
@@ -60,7 +60,7 @@ export async function debugContent(...content: unknown[]): Promise<void> {
  */
 export async function debugContentRewrite(...content: unknown[]): Promise<void> {
   try {
-    await ensureDir(LOG_DIR)
+    await createDir(LOG_DIR)
     const records = content.map((item, index) => ({ index, content: item }))
     await writeFile(LOG_FILE, buildJson(records), 'utf8')
   } catch {
@@ -71,7 +71,7 @@ export async function debugContentRewrite(...content: unknown[]): Promise<void> 
 /** 读已有记录 -> 追加本次参数 -> 整体重写 | 一条记录就是一个 DebugRecord */
 async function appendRecords(content: unknown[]): Promise<void> {
   try {
-    await ensureDir(LOG_DIR)
+    await createDir(LOG_DIR)
     const records = await readRecords()
     const start = records.length
     content.forEach((item, offset) => {

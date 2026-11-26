@@ -1,6 +1,6 @@
 import type BetterSqlite3 from 'better-sqlite3'
 import { closeCheckpointStore, openCheckpointStore } from './graph/checkpoint'
-import { setLogDir } from './utils/log'
+import { setLogDir } from './lib/log'
 
 /** core 需要的运行期依赖，全部由 main 注入（core 不依赖 Electron，拿不到 app.getPath） */
 export interface CoreDeps {

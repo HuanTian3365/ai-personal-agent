@@ -10,7 +10,7 @@
 import { app } from 'electron'
 import { join } from 'node:path'
 import { is } from '@electron-toolkit/utils'
-import { ensureDir } from '@main/lib/file'
+import { createDir } from '@main/lib/file'
 
 /** 数据根目录：打包 `~/.huanyu`，开发 `~/.huanyu-dev`；`HUANYU_HOME` 可整体覆盖 */
 export const HUANYU_HOME =
@@ -29,5 +29,5 @@ export const paths = {
 
 /** 建好运行时要用的目录。已存在就跳过，重复调用无副作用 */
 export async function ensureDirs(): Promise<void> {
-  await Promise.all([paths.data, paths.logs].map((dir) => ensureDir(dir)))
+  await Promise.all([paths.data, paths.logs].map((dir) => createDir(dir)))
 }
