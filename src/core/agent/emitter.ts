@@ -1,12 +1,12 @@
 import type { AETurnEnd, AgentEvent } from '@shared/types/agentEvent'
-import type { ContentBlock } from '@shared/types/message'
-import type { MessageEventSend } from '@shared/types/messageService'
+import type { TurnMessageBlock } from '@shared/types/message'
+import type { MessageEventSend } from '@shared/types/message'
 
 interface Result {
   title: (title: string) => void
   turnStart: (turnId: string, message: MessageEventSend) => void
   turnEnd: (turnId: string, status: AETurnEnd['status'], usage?: AETurnEnd['usage']) => void
-  blockAdd: (turnId: string, block: ContentBlock) => void
+  blockAdd: (turnId: string, block: TurnMessageBlock) => void
   reasoningStart: (turnId: string, blockId: string) => void
   reasoningDelta: (turnId: string, blockId: string, text: string) => void
   reasoningEnd: (turnId: string, blockId: string) => void
@@ -67,7 +67,7 @@ export default function createEmitter(
         endTime: Date.now()
       }),
     /** 一次性块,应对一些特殊消息 */
-    blockAdd: (turnId: string, block: ContentBlock) =>
+    blockAdd: (turnId: string, block: TurnMessageBlock) =>
       emit({ type: 'block-add', conversationId, turnId, block }),
     /** 开始思考 */
     reasoningStart: (turnId: string, blockId: string) =>

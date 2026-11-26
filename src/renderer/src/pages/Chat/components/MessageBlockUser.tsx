@@ -1,5 +1,5 @@
 import { Message, MessageContent, MessageFooter } from '@renderer/components/ui/message'
-import type { MUser } from '@shared/types/message'
+import type { TMUser } from '@shared/types/message'
 import { Bubble, BubbleContent } from '@renderer/components/ui/bubble'
 import { Button } from '@renderer/components/ui/button'
 import { CopyIcon } from 'lucide-react'
@@ -8,7 +8,7 @@ import { formatClock } from '@renderer/utils/format'
 import { copyText } from '@renderer/lib/copy'
 
 interface Props {
-  context: MUser
+  context: TMUser
   isLast?: boolean
 }
 

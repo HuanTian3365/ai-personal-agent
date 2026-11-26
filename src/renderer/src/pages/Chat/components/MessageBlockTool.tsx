@@ -10,10 +10,10 @@ import {
   TraceCollapsibleContent
 } from '@renderer/components/ui/trace'
 import { TOOL_INTENT_KEY } from '@shared/types/constant'
-import type { MTool, TurnMessage } from '@shared/types/message'
+import type { TMTool, TurnMessage } from '@shared/types/message'
 
 interface Props {
-  context: MTool
+  context: TMTool
   /** 所在轮的状态,轮已结束而工具还在跑,说明没等到结果 */
   turnStatus: TurnMessage['status']
 }

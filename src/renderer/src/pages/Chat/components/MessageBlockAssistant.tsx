@@ -1,10 +1,10 @@
-import type { MAssistant } from '@shared/types/message'
+import type { TMAssistant } from '@shared/types/message'
 import MessageBlockReasoning from './MessageBlockReasoning'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
 interface Props {
-  context: MAssistant
+  context: TMAssistant
 }
 
 export default function MessageBlockAssistant({ context }: Props): React.JSX.Element {

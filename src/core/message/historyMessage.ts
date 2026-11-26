@@ -1,7 +1,7 @@
 import type { AIMessage, BaseMessage, ToolMessage } from '@langchain/core/messages'
 import { getChatGraph } from '@core/graph/chat'
 import { addUsage } from '@core/utils/usage'
-import type { ContentBlock, MTool, TurnMessage } from '@shared/types/message'
+import type { TurnMessageBlock, TMTool, TurnMessage } from '@shared/types/message'
 import { parseContent, parseReasoning } from './parseStream'
 
 /** 读一个会话的全部历史消息 */
@@ -29,15 +29,15 @@ function parseLangChainMessage(messages: BaseMessage[]): TurnMessage[] {
 
   messages.forEach((msg, index) => {
     // tipsIsHide 的提示只发给模型 不进界面 | 放在最前 免得它改轮结束时间
-    if (msg.HyMessageCustom?.tipsIsHide === true) return
+    if (msg.HYEMessageCustom?.tipsIsHide === true) return
     // 消息id
     const id = msg.id ?? `msg-${index}`
     // 当前消息产生时间
-    const ts = msg.HyMessageField?.createdAt ?? 0
+    const ts = msg.HYMessageField?.createdAt ?? 0
     try {
       /** ====================  用户消息|插入消息  ==================== */
       if (msg.type === 'human') {
-        const insertFlag = msg.HyMessageCustom?.insertFlag === true
+        const insertFlag = msg.HYEMessageCustom?.insertFlag === true
         insertTurn(
           {
             id,
@@ -65,7 +65,7 @@ function parseLangChainMessage(messages: BaseMessage[]): TurnMessage[] {
         }
 
         // 会话是否被中断,中断的话视为此轮被中断
-        const aborted = msg.HyMessageCustom?.aborted === true
+        const aborted = msg.HYEMessageCustom?.aborted === true
         if (aborted) {
           if (turn !== undefined) turn.status = 'aborted'
         }
@@ -112,7 +112,7 @@ function parseLangChainMessage(messages: BaseMessage[]): TurnMessage[] {
               // 结果还没回填 先记成正在跑 | ToolMessage 到了再改成 done / error
               // 一直没等到就保持 running 不下结论:可能还在跑 也可能断了 这一层判不出来
               status: 'running'
-            } as MTool,
+            } as TMTool,
             ts
           )
         })
@@ -152,7 +152,7 @@ function parseLangChainMessage(messages: BaseMessage[]): TurnMessage[] {
   /**
    * 根据ID寻找工具块,用于工具结果回填
    */
-  function findToolBlock(toolCallId: string): MTool | undefined {
+  function findToolBlock(toolCallId: string): TMTool | undefined {
     for (let i = result.length - 1; i >= 0; i -= 1) {
       const turn = result[i]
       if (turn === undefined) continue
@@ -165,7 +165,7 @@ function parseLangChainMessage(messages: BaseMessage[]): TurnMessage[] {
   }
 
   /** 轮消息构建 */
-  function insertTurn(content: ContentBlock, ts: number): void {
+  function insertTurn(content: TurnMessageBlock, ts: number): void {
     // 第一个消息或者一条非插入的用户消息->开新的一轮
     if (
       result.length === 0 ||

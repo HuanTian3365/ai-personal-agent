@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import type { ContentBlock, TurnMessage } from '@shared/types/message'
+import type { TurnMessageBlock, TurnMessage } from '@shared/types/message'
 import MessageBlockUser from './MessageBlockUser'
 import MessageBlockAssistant from './MessageBlockAssistant'
 import MessageBlockReasoning from './MessageBlockReasoning'
@@ -50,7 +50,7 @@ function TurnBlock({
   turnStatus,
   isLast
 }: {
-  block: ContentBlock
+  block: TurnMessageBlock
   /** 所在轮的状态 | 工具块用它判断是不是没等到结果 */
   turnStatus: TurnMessage['status']
   isLast: boolean

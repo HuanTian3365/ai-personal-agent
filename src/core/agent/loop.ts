@@ -6,7 +6,7 @@ import type { BaseMessage } from '@langchain/core/messages'
 import { parseContent, parseReasoning } from '@core/message/parseStream'
 import { addUsage } from '@core/utils/usage'
 import { getConversationTitle } from './title'
-import type { MessageEventSend } from '@shared/types/messageService'
+import type { MessageEventSend } from '@shared/types/message'
 import type { AgentEvent } from '@shared/types/agentEvent'
 import type { MessageUsage } from '@shared/types/message'
 import { init, initBlockState, initUsage } from './init'
@@ -139,7 +139,7 @@ export async function sendMessage({
       }
     })
     // 中断标记是业务字段 走hy_custom 跟消息一起落进hy_message
-    aborted.HyMessageCustom = { aborted: true }
+    aborted.HYEMessageCustom = { aborted: true }
 
     // 已经发起,但没等到结果的工具调用各补一条error的ToolMessage
     // 否则checkpoint里会留下孤立的tool_calls下一轮请求会被严格实现的provider拒绝
@@ -161,7 +161,7 @@ export async function sendMessage({
       role: 'user',
       content: '（用户中断了上一轮对话，该条回复的内容不是完整内容）'
     })
-    tips.HyMessageCustom = { tipsIsHide: true }
+    tips.HYEMessageCustom = { tipsIsHide: true }
 
     try {
       // 顺序必须是 先补齐的 ToolMessage 再 aborted 标记 最后 tips 反过来就对不上了

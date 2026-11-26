@@ -7,9 +7,10 @@
  * 渲染层没有追加入口。
  */
 
-import type { CreateGroupInput } from '@shared/types/conversationService'
+import type { CreateGroupInput } from '@shared/types/ipcContract'
 import type { AgentEventEnvelope } from '@shared/types/agentEvent'
-import type { MessageEventSend, QueueEditAction, SendMode } from '@shared/types/messageService'
+import type { MessageEventSend } from '@shared/types/message'
+import type { QueueEditAction, SendMode } from '@shared/types/ipcContract'
 
 export const conversationApi = {
   /** ====================  工作区  ==================== */

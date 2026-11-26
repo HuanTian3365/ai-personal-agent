@@ -119,7 +119,16 @@ export function createSqliteRepository(database: Database): DatabaseRepository {
         )
         .run(id, workspaceId, groupId, title, sortIndex, now, now)
 
-      return { id, workspaceId, groupId, title, sortIndex, createdAt: now, updatedAt: now }
+      return {
+        id,
+        workspaceId,
+        groupId,
+        title,
+        sortIndex,
+        expand: {},
+        createdAt: now,
+        updatedAt: now
+      }
     },
     /** 更新会话标题 */
     async updateConversationTitle(id, title) {

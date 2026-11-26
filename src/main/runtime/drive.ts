@@ -7,7 +7,8 @@
 
 import { sendMessage, setInsertSource } from '@core/export'
 import type { AgentEvent } from '@shared/types/agentEvent'
-import type { MessageEventSend, SendMode, SendResult } from '@shared/types/messageService'
+import type { MessageEventSend } from '@shared/types/message'
+import type { SendMode, SendResult } from '@shared/types/ipcContract'
 import { broadcast } from '../ipc/broadcast'
 import {
   claimInserts,

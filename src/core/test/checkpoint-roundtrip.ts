@@ -131,7 +131,7 @@ async function main(): Promise<void> {
     additional_kwargs: { status: 'aborted' }
   })
   // 业务自定义字段
-  aborted.HyMessageCustom = { aborted: true }
+  aborted.HYEMessageCustom = { aborted: true }
 
   const originals = [human, ai, tool, aborted]
   const originalSnapshots = await Promise.all(originals.map((item) => snapshot(item)))
@@ -186,10 +186,10 @@ async function main(): Promise<void> {
     check(`第 ${index + 1} 条 ${message.type} 一致`, deepEqual(stripped, original))
   }
 
-  console.log('\n[3] HyMessageField 行级字段')
+  console.log('\n[3] HYMessageField 行级字段')
   for (let index = 0; index < loaded.length; index += 1) {
-    const field = loaded[index].HyMessageField
-    check(`第 ${index + 1} 条有 HyMessageField`, field !== undefined)
+    const field = loaded[index].HYMessageField
+    check(`第 ${index + 1} 条有 HYMessageField`, field !== undefined)
     if (field === undefined) continue
     check(`  seq = ${index + 1}`, field.seq === index + 1, `实际 ${field.seq}`)
     check('  conversationId 正确', field.conversationId === THREAD, field.conversationId)
@@ -209,28 +209,28 @@ async function main(): Promise<void> {
   }
   check(
     '用户消息 metadata.source = input',
-    loaded[0].HyMessageField?.metadata.source === 'input',
-    String(loaded[0].HyMessageField?.metadata.source)
+    loaded[0].HYMessageField?.metadata.source === 'input',
+    String(loaded[0].HYMessageField?.metadata.source)
   )
   check(
     '后续消息 metadata.source = loop',
-    loaded[1].HyMessageField?.metadata.source === 'loop',
-    String(loaded[1].HyMessageField?.metadata.source)
+    loaded[1].HYMessageField?.metadata.source === 'loop',
+    String(loaded[1].HYMessageField?.metadata.source)
   )
 
-  console.log('\n[4] HyMessageCustom 业务字段')
+  console.log('\n[4] HYEMessageCustom 业务字段')
   check(
     'aborted 读得回来',
-    loaded[3].HyMessageCustom?.aborted === true,
-    JSON.stringify(loaded[3].HyMessageCustom)
+    loaded[3].HYEMessageCustom?.aborted === true,
+    JSON.stringify(loaded[3].HYEMessageCustom)
   )
   check(
-    '普通消息 HyMessageCustom 是空对象',
-    deepEqual(loaded[0].HyMessageCustom, {}),
-    JSON.stringify(loaded[0].HyMessageCustom)
+    '普通消息 HYEMessageCustom 是空对象',
+    deepEqual(loaded[0].HYEMessageCustom, {}),
+    JSON.stringify(loaded[0].HYEMessageCustom)
   )
   check(
-    'HyMessageCustom 没污染 additional_kwargs',
+    'HYEMessageCustom 没污染 additional_kwargs',
     (loaded[3].additional_kwargs as Record<string, unknown>).hy_custom === undefined &&
       loaded[3].additional_kwargs.status === 'aborted'
   )

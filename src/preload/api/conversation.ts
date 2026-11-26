@@ -1,7 +1,7 @@
 import { ipcRenderer } from 'electron'
 import { IPC } from '@shared/ipc'
-import type { Conversation, Group, Workspace } from '@shared/types/conversation'
-import type { CreateGroupInput } from '@shared/types/conversationService'
+import type { HYConversation, HYGroup, HYWorkspace } from '@shared/types/hyEntity'
+import type { CreateGroupInput } from '@shared/types/ipcContract'
 import type { TurnMessage } from '@shared/types/message'
 
 /**
@@ -12,22 +12,22 @@ import type { TurnMessage } from '@shared/types/message'
 const conversationApi = {
   /** ====================  工作区  ==================== */
   workspace: {
-    list: (): Promise<Workspace[]> => ipcRenderer.invoke(IPC.workspace.list)
+    list: (): Promise<HYWorkspace[]> => ipcRenderer.invoke(IPC.workspace.list)
   },
   /** ====================  分组  ==================== */
   group: {
-    list: (): Promise<Group[]> => ipcRenderer.invoke(IPC.group.list),
-    create: (input: CreateGroupInput): Promise<Group> =>
+    list: (): Promise<HYGroup[]> => ipcRenderer.invoke(IPC.group.list),
+    create: (input: CreateGroupInput): Promise<HYGroup> =>
       ipcRenderer.invoke(IPC.group.create, input),
     expand: (id: string, open: boolean): Promise<void> =>
       ipcRenderer.invoke(IPC.group.expand, id, open)
   },
   /** ====================  会话  ==================== */
   conversation: {
-    list: (): Promise<Conversation[]> => ipcRenderer.invoke(IPC.conversation.list),
-    create: (groupId: string | null): Promise<Conversation> =>
+    list: (): Promise<HYConversation[]> => ipcRenderer.invoke(IPC.conversation.list),
+    create: (groupId: string | null): Promise<HYConversation> =>
       ipcRenderer.invoke(IPC.conversation.create, groupId),
-    info: (id: string): Promise<Conversation | null> =>
+    info: (id: string): Promise<HYConversation | null> =>
       ipcRenderer.invoke(IPC.conversation.info, id)
   },
   /** ====================  消息  ==================== */

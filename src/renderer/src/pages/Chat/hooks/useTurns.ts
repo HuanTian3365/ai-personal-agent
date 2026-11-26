@@ -1,8 +1,10 @@
 import { agentApi, conversationApi } from '@renderer/lib/ipc'
 import { useEffect, useRef, useState } from 'react'
-import type { ContentBlock, MReasoning, TurnMessage } from '@shared/types/message'
-import type { MessageEventSend, SendMode } from '@shared/types/messageService'
-import type { AgentEvent, AgentEventEnvelope, QueueItem } from '@shared/types/agentEvent'
+import type { TurnMessageBlock, TMReasoning, TurnMessage } from '@shared/types/message'
+import type { MessageEventSend } from '@shared/types/message'
+import type { SendMode } from '@shared/types/ipcContract'
+import type { AgentEvent, AgentEventEnvelope } from '@shared/types/agentEvent'
+import type { HYEQueueItemView } from '@shared/types/hyExpand'
 
 export interface UseTurnsResult {
   /** 当前对话的历史轮 */
@@ -18,7 +20,7 @@ export interface UseTurnsResult {
   /** 读历史失败时的错误 */
   error: string | null
   /** 排队区内容 | 生成期间发出去还没发的那些 */
-  queue: QueueItem[]
+  queue: HYEQueueItemView[]
   /** 发送消息 | mode=queue 排队 mode=insert 插队 */
   send: (message: MessageEventSend, mode?: SendMode) => Promise<boolean>
   /** 中断消息 */
@@ -50,12 +52,12 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
   /** 错误信息 */
   const [error, setError] = useState<string | null>(null)
   /** 排队区内容 */
-  const [queue, setQueue] = useState<QueueItem[]>([])
+  const [queue, setQueue] = useState<HYEQueueItemView[]>([])
 
   /** 当前对话ID */
   const currentIdRef = useRef(conversationId)
   /** 队列的即时镜像,事件处理器要用最新值 React的state会滞后一帧 */
-  const queueRef = useRef<QueueItem[]>([])
+  const queueRef = useRef<HYEQueueItemView[]>([])
   /** 最后一条事件的全局序号|丢弃seq小于等于它的事件(已经重放完了) */
   const snapSeqRef = useRef(0)
   /** 读历史期间收到的事件,快照之后才到事件的要在快照重放完后补上 */
@@ -64,7 +66,7 @@ export function useTurns(conversationId: string | null): UseTurnsResult {
   const readyRef = useRef(false)
 
   /** 同时更新状态与镜像 */
-  function applyQueue(next: QueueItem[]): void {
+  function applyQueue(next: HYEQueueItemView[]): void {
     queueRef.current = next
     setQueue(next)
   }
@@ -332,7 +334,7 @@ function turnEventHandler(
         }
         // 思考已经并进助手块 重新打开它的reasoning 内容留着继续往后写
         if (hit.type === 'assistant') {
-          const reasoning: MReasoning = hit.reasoning ?? {
+          const reasoning: TMReasoning = hit.reasoning ?? {
             type: 'reasoning',
             id: event.blockId,
             content: '',
@@ -503,7 +505,7 @@ function patchBlock(
   turns: TurnMessage[],
   turnId: string,
   blockId: string,
-  fn: (block: ContentBlock) => ContentBlock
+  fn: (block: TurnMessageBlock) => TurnMessageBlock
 ): TurnMessage[] {
   return patchTurn(turns, turnId, (turn) => ({
     ...turn,

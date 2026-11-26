@@ -7,13 +7,13 @@ import {
   TraceCollapsibleContent,
   TraceCollapsibleTrigger
 } from '@renderer/components/ui/trace'
-import type { MTips } from '@shared/types/message'
+import type { TMTips } from '@shared/types/message'
 import { MonitorCog } from 'lucide-react'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
 interface Props {
-  context: MTips
+  context: TMTips
 }
 
 export default function MessageBlockTips({ context }: Props): React.JSX.Element {

@@ -8,7 +8,8 @@ import type {
   CheckpointTuple
 } from '@langchain/langgraph-checkpoint'
 import type BetterSqlite3 from 'better-sqlite3'
-import type { HyMessageCustom, HyMessageExpand, HyMessageField } from '@shared/types/hyDefinition'
+import type { HYEMessageCustom, HYEMessageExpand } from '@shared/types/hyExpand'
+import type { HYMessageField } from '@shared/types/hyEntity'
 
 /**
  * LangChain 消息 ⇄ 消息表的转换层 | 取代原来的 checkpoint saver
@@ -281,7 +282,7 @@ CREATE TABLE IF NOT EXISTS ${MESSAGES} (
    * 消息 -> 行
    *
    * 外壳只留 lc / type / id，正文全在 kwargs。
-   * hy_custom 塞进 kwargs 跟着正文走；HyMessageField 是行级信息 不序列化。
+   * hy_custom 塞进 kwargs 跟着正文走；HYMessageField 是行级信息 不序列化。
    */
   private async toRow(
     message: BaseMessage,
@@ -300,10 +301,10 @@ CREATE TABLE IF NOT EXISTS ${MESSAGES} (
     const sourceData = { lc: outer.lc, type: outer.type, id: outer.id }
     const kwargs = { ...(outer.kwargs ?? {}) }
     // 只挂我们自己写进去的字段 provider 写的一律原样不动
-    const custom = message.HyMessageCustom
+    const custom = message.HYEMessageCustom
     if (custom !== undefined && Object.keys(custom).length > 0) kwargs.hy_custom = custom
 
-    const expand: HyMessageExpand = { status: 'message' }
+    const expand: HYEMessageExpand = { status: 'message' }
 
     // 主键用消息自己的id: 界面块.队列项.重放查重都按它认消息 另生成一个就是同一条消息两套身份
     // 没有id的消息(部分provider.流式拼接)才现生成 只补空不覆盖
@@ -339,18 +340,18 @@ CREATE TABLE IF NOT EXISTS ${MESSAGES} (
    * 所以必须在这里手动挂回。反过来 dumpsTyped 也不会把它带进 payload | 发给模型天然不泄漏。
    */
   private attach(message: BaseMessage, row: MessageRow): void {
-    const kwargs = JSON.parse(row.message) as { hy_custom?: HyMessageCustom }
-    const field: HyMessageField = {
+    const kwargs = JSON.parse(row.message) as { hy_custom?: HYEMessageCustom }
+    const field: HYMessageField = {
       id: row.id,
       conversationId: row.conversation_id,
       seq: row.seq,
       sourceData: JSON.parse(row.source_data) as Record<string, unknown>,
       metadata: JSON.parse(row.metadata) as CheckpointMetadata,
-      expand: JSON.parse(row.expand) as HyMessageExpand,
+      expand: JSON.parse(row.expand) as HYEMessageExpand,
       createdAt: row.created_at
     }
-    message.HyMessageField = field
-    message.HyMessageCustom = kwargs.hy_custom ?? {}
+    message.HYMessageField = field
+    message.HYEMessageCustom = kwargs.hy_custom ?? {}
   }
 }
 

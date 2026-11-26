@@ -1,11 +1,7 @@
 import { IPC } from '@shared/ipc'
-import type { QueueItem } from '@shared/types/agentEvent'
-import type {
-  MessageEventSend,
-  SendMode,
-  SendResult,
-  StreamSnapshot
-} from '@shared/types/messageService'
+import type { HYEQueueItemView } from '@shared/types/hyExpand'
+import type { MessageEventSend } from '@shared/types/message'
+import type { SendMode, SendResult, StreamSnapshot } from '@shared/types/ipcContract'
 import { submitMessage } from '../../runtime/drive'
 import { editQueueItem, listQueue, markInsert, removeQueueItem } from '../../runtime/queue'
 import { abortRun, emitInsertBlock, emitQueue, getSnapshot } from '../../runtime/run'
@@ -63,7 +59,7 @@ export default function registerAgentIpc(ipcMain: Electron.IpcMain): void {
   })
 
   /** 取该对话的排队内容 */
-  ipcMain.handle(IPC.agent.queue, (_event, conversationId: unknown): QueueItem[] => {
+  ipcMain.handle(IPC.agent.queue, (_event, conversationId: unknown): HYEQueueItemView[] => {
     if (typeof conversationId !== 'string' || conversationId.trim() === '') {
       throw new Error('agent.queue: conversationId 必须是非空字符串')
     }

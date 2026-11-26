@@ -1,133 +1,106 @@
-/** 消息格式 */
-export type ContentBlock = MUser | MAssistant | MReasoning | MTool | MError | MUnknown | MTips
+/** 一轮里的一条消息 (TM=轮消息结构) */
+export type TurnMessageBlock =
+  TMUser | TMAssistant | TMReasoning | TMTool | TMError | TMUnknown | TMTips
 
 /**
- * 轮对话信息
+ * 一轮对话
  *
- * 以用户发起的消息作为始终判断,期间的消息归为一轮
+ * 从用户发出去到agent停下算一轮 中间的消息都归这一轮
  */
 export interface TurnMessage {
-  /** 发起消息的id,没有发起时取本轮第一条消息的id */
+  /** 发起消息的id | 没有发起时取本轮第一条的id */
   id: string
-  /** 用户发送的消息 */
-  user: MUser | null
-  /** 本轮回复的消息 */
-  items: ContentBlock[]
-  /** 本轮轮状态 */
+  /** null表示这一轮没有用户消息 */
+  user: TMUser | null
+  /** 本轮产出的消息块 | 按时间排 */
+  items: TurnMessageBlock[]
   status: 'running' | 'done' | 'aborted'
-  /** 本轮用量 */
   usage: MessageUsage
-  /** 开始时间:agent开始执行时间 */
   startTime?: number
-  /** 结束时间:agent结束执行时间 */
+  /** 历史投影取最后一条消息的时间 */
   endTime?: number
 }
 
-/** 消息用量 */
+/** 一轮的token用量 */
 export interface MessageUsage {
-  /** 输入Token */
   inputTokens: number
-  /** 输出Token */
   outputTokens: number
-  /** 缓存读Token */
   cacheReadTokens: number
-  /** 缓存写Token */
   cacheWriteTokens: number
-  /** 总Token */
   totalTokens: number
 }
 
+/** 用户发出的一条消息 | 不带type和id 这两样开轮时补上 */
+export type MessageEventSend = Omit<TMUser, 'type' | 'id'>
+
 /** ====================  内部类型实现  ==================== */
-/** 用户消息格式 */
-export interface MUser {
+/** 用户发的消息 | 既是本轮发起的那条 也是生成中插进来的块 */
+export interface TMUser {
   type: 'user'
-  /** 用户消息id->kwargs.id */
   id: string
-  /** 发送时间 */
   time?: number
-  /** 用户输入内容 */
   content?: string
-  /** 扩展信息 */
   expandInfo?: {
-    /** 是否为插入对话 */
+    /** 是不是生成中插进来的 */
     insertFlag?: boolean
   }
-  /** 用户附加的资源,预留,用于未来扩展多模态功能 */
+  /** 预留 | 目前没有生产者也没有消费者 */
   resource?: Record<string, unknown>
 }
-/** 助手消息内容 */
-export interface MAssistant {
+/** 助手的回复 */
+export interface TMAssistant {
   type: 'assistant'
-  /** 助手消息id->kwargs.id */
   id: string
-  /** 助手输出内容 */
   content: string
-  /** 助手思考内容 */
-  reasoning?: MReasoning
-  /** 模型名称 */
+  /** 这条回复的思考 | 与items里的TMReasoning二选一 不会同时存在 */
+  reasoning?: TMReasoning
   modelName?: string
-  /** 模型供应商 */
   modelProvider?: string
 }
 
-/** 思考消息内容 */
-export interface MReasoning {
+/** 一段思考 */
+export interface TMReasoning {
   type: 'reasoning'
-  /** 助手消息id->kwargs.id */
   id: string
-  /** 思考内容 */
   content: string
-  /** 消息状态 */
   status: 'running' | 'done'
 }
 
-/** 工具消息内容
- *
- * 当AIMessage发起tool_calls时,插入工具消息
- *
- * 等工具返回结果时,按照tool_calls.id找到插入的消息关联起来
- */
-export interface MTool {
+/** 一次工具调用 */
+export interface TMTool {
   type: 'tool'
-  /** 工具调用id->kwargs.tool_call_id */
+  /** 模型的tool_call_id | 拿它认回结果 模型没给就现造一个 */
   id: string
-  /** 工具名 */
   name: string
-  /** 调用参数(模型给的原始对象) */
+  /** 模型给的原始参数 */
   args: Record<string, unknown> | null
-  /** 工具返回的文本,还没跑完是null */
+  /** 还没跑完是null */
   result: string | null
-  /** 工具状态 */
+  /** 没等到结果就一直running | 这层判不出是还在跑还是断了 */
   status: 'running' | 'done' | 'error'
 }
 
-/** 错误消息内容 */
-export interface MError {
+/** 一次报错 */
+export interface TMError {
   type: 'error'
+  /** 实时抛的错在这里现造 不等同于消息id */
   id: string
-  /** 错误信息 */
   message: string
-  /** 错误来源 */
+  /** internal是我们自己的兜底 | 目前只有model在生产 */
   source: 'model' | 'internal'
 }
-/** 未知消息内容 */
-export interface MUnknown {
+/** 认不出来的块 | 原样留着 不丢数据 */
+export interface TMUnknown {
   type: 'unknown'
   id: string
-  /** 未知消息类型 */
+  /** 目前恒为BaseMessage */
   rawType: string
-  /** 未知消息内容 */
   raw: unknown
 }
 
-/** 提示消息内容
- *
- * 不是协议层的 system 消息 | 是我们自己发出的状态提示(中断.插入等)
- * 发给模型时走 user 通道 不占 system 层级 避免覆盖人格
- */
-export interface MTips {
+/** 我们自己发出的提示 | 中断 插入这类状态 不是模型的system消息 */
+export interface TMTips {
   type: 'tips'
   id: string
-  /** 提示内容 */
   content: string
 }

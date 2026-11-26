@@ -1,4 +1,4 @@
-import type { MessageEventSend } from '@shared/types/messageService'
+import type { MessageEventSend } from '@shared/types/message'
 import { ContentBlock, HumanMessage } from 'langchain'
 
 /**

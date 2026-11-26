@@ -9,12 +9,12 @@ import {
   TraceTitle,
   TraceCollapsibleContent
 } from '@renderer/components/ui/trace'
-import type { MReasoning } from '@shared/types/message'
+import type { TMReasoning } from '@shared/types/message'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
 interface Props {
-  context: MReasoning
+  context: TMReasoning
 }
 
 /** 思考过程 */

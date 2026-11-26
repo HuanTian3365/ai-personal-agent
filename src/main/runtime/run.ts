@@ -7,8 +7,9 @@
  * 只管台账与推送:队列在queue.ts驱动循环在drive.ts,core不知道这里存在。
  */
 
-import type { AgentEvent, AgentEventEnvelope, QueueItem } from '@shared/types/agentEvent'
-import type { StreamSnapshot } from '@shared/types/messageService'
+import type { AgentEvent, AgentEventEnvelope } from '@shared/types/agentEvent'
+import type { HYEQueueItemView } from '@shared/types/hyExpand'
+import type { StreamSnapshot } from '@shared/types/ipcContract'
 import { broadcast } from '../ipc/broadcast'
 
 /** 一个会话正在进行中的一轮 */
@@ -81,7 +82,7 @@ export function recordEvent(event: AgentEvent): AgentEventEnvelope {
  *
  * 不进本轮事件缓冲:队列不属于某一轮,切回会话时单独拉agent:queue
  */
-export function emitQueue(conversationId: string, queue: QueueItem[]): void {
+export function emitQueue(conversationId: string, queue: HYEQueueItemView[]): void {
   broadcast({ seq: ++nextSeq, event: { type: 'queue', conversationId, queue } })
 }
 

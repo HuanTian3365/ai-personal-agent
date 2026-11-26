@@ -1,5 +1,6 @@
-import type { ContentBlock, MessageUsage, TurnMessage } from '@shared/types/message'
-/** Agent事件本体 | core产出的纯数据 不带任何传输层字段 */
+﻿import type { TurnMessageBlock, MessageUsage, TurnMessage } from '@shared/types/message'
+import type { HYEQueueItemView } from './hyExpand'
+/** 推给渲染层的事件 | 纯数据 不含seq之类的传输字段 */
 export type AgentEvent =
   | AETurnStart
   | AETurnEnd
@@ -17,43 +18,54 @@ export type AgentEvent =
   | AEQueue
   | AETitle
 
+/**
+ * 事件信封
+ *
+ * 给事件加一个推送序号 渲染层拿它区分[快照已包含]和[快照之后才到]
+ */
+export interface AgentEventEnvelope {
+  /** 全局递增 由main填 */
+  seq: number
+  event: AgentEvent
+}
+
 /** ====================  事件实现  ==================== */
 // 公共实现
 interface AEBlockBase {
-  /** 会话ID */
   conversationId: string
-  /** 轮ID(用户消息id) */
+  /** 用用户消息的id当轮id */
   turnId: string
-  /** AI 消息用chunk.id,工具用tool_call_id */
+  /** AI消息用chunk.id 工具用tool_call_id */
   blockId: string
 }
 
-/** 启动轮 */
+/** 开一轮 */
 export interface AETurnStart {
   type: 'turn-start'
   conversationId: string
-  /** 用户消息id作为根id,user必填,items空数组,status=running */
+  /** 只有user有值 items空 status=running */
   turn: TurnMessage
 }
-/** 结束轮 */
+/** 结束一轮 */
 export interface AETurnEnd {
   type: 'turn-end'
   conversationId: string
-  /** 轮ID(用户消息id) */
+  /** 用用户消息的id当轮id */
   turnId: string
-  /** running 不会出现在 end 里 */
+  /** running不会出现在这里 */
   status: 'done' | 'aborted'
   usage?: MessageUsage
   endTime?: number
 }
 
-/** 开始思考 */
+/** 开始一段思考 */
 export interface AEReasoningStart extends AEBlockBase {
   type: 'reasoning-start'
 }
 /** 思考中 */
 export interface AEReasoningDelta extends AEBlockBase {
   type: 'reasoning-delta'
+  /** 这一片 不是累计 */
   text: string
 }
 /** 思考结束 */
@@ -61,13 +73,14 @@ export interface AEReasoningEnd extends AEBlockBase {
   type: 'reasoning-end'
 }
 
-/** 开始回复 */
+/** 开始一段回复 */
 export interface AEAssistantStart extends AEBlockBase {
   type: 'assistant-start'
 }
 /** 回复中 */
 export interface AEAssistantDelta extends AEBlockBase {
   type: 'assistant-delta'
+  /** 这一片 不是累计 */
   text: string
 }
 /** 回复结束 */
@@ -77,84 +90,52 @@ export interface AEAssistantEnd extends AEBlockBase {
   modelProvider?: string
 }
 
-/** 开始调用工具 */
+/** 开始调工具 */
 export interface AEToolStart extends AEBlockBase {
   type: 'tool-start'
   name: string
 }
-/** 工具传参 */
+/** 工具参数到了 */
 export interface AEToolArgs extends AEBlockBase {
   type: 'tool-args'
+  /** 模型给的原始参数 */
   args: Record<string, unknown> | null
 }
-/** 工具结果 */
+/** 工具跑完了 */
 export interface AEToolEnd extends AEBlockBase {
   type: 'tool-end'
   status: 'done' | 'error'
   result: string
 }
 
-/** 一次性块,应对一些特殊消息 */
+/** 临时插一个块 | 不走流式 一次给全 */
 export interface AEBlockAdd {
   type: 'block-add'
   conversationId: string
+  /** 用用户消息的id当轮id */
   turnId: string
-  block: ContentBlock
+  block: TurnMessageBlock
 }
 
-/**
- * 撤掉一个块。
- *
- * 只给插队用: 点插队时先把消息画进当前轮 本轮没领走(这一轮没有下一个step)
- * 就撤掉并退回排队区 否则界面会留一条刷新就消失的假消息
- */
+/** 撤掉一个块 | 插队没被本轮领走时回滚 */
 export interface AEBlockRemove {
   type: 'block-remove'
   conversationId: string
+  /** 用用户消息的id当轮id */
   turnId: string
   blockId: string
 }
 
-/** 更新标题 */
+/** 标题变了 */
 export interface AETitle {
   type: 'title'
   conversationId: string
   title: string
 }
 
-/** 队列消息 */
+/** 排队区变了 | 整份推过去 不是增量 */
 export interface AEQueue {
   type: 'queue'
   conversationId: string
-  queue: QueueItem[]
-}
-
-/**
- * 排队项
- *
- * 生成期间用户又发的一条先躺在这里:next-turn等本轮结束作为新一轮发出
- * next-step在下一个step边界推进当前轮(界面上的插队)
- */
-export interface QueueItem {
-  /** 消息id */
-  id: string
-  /** 消息内容 */
-  text: string
-  /** 投递方式 | next-turn: 等本轮结束(排队) next-step: 推进当前轮(插队) */
-  target: 'next-turn' | 'next-step'
-  /** 是否已被当前轮领取|领取后不再参与[本轮要不要继续]的判断,见core/graph/nodes.ts */
-  claimed?: boolean
-}
-
-/**
- * 推送信封
- *
- * seq 由main在转发前注入 全局单调递增 core不知道它的存在
- * 切回会话时渲染层拿它区分「快照已包含」与「快照之后才到」的事件
- */
-export interface AgentEventEnvelope {
-  /** 推送序号 */
-  seq: number
-  /** 事件本体 */
-  event: AgentEvent
+  queue: HYEQueueItemView[]
 }

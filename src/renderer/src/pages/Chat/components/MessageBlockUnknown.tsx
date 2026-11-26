@@ -5,10 +5,10 @@ import {
   CollapsibleContent,
   CollapsibleTrigger
 } from '@renderer/components/ui/collapsible'
-import type { MUnknown } from '@shared/types/message'
+import type { TMUnknown } from '@shared/types/message'
 
 interface Props {
-  context: MUnknown
+  context: TMUnknown
 }
 
 /** 未知 block：降级提示 + 可展开看原始数据，不崩、不丢信息 */

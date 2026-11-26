@@ -11,11 +11,11 @@
  */
 
 import { randomUUID } from 'node:crypto'
-import type { QueueItem } from '@shared/types/agentEvent'
+import type { HYEQueueItemView } from '@shared/types/hyExpand'
 import { getDatabase, getRepository } from '../database'
 
 /** 每会话一条队列 | key: 会话ID */
-const queues = new Map<string, QueueItem[]>()
+const queues = new Map<string, HYEQueueItemView[]>()
 
 const SCOPE = 'sendMessage'
 
@@ -24,7 +24,7 @@ const SCOPE = 'sendMessage'
  *
  * 过滤掉已经落到消息表的数据
  */
-function load(conversationId: string): QueueItem[] {
+function load(conversationId: string): HYEQueueItemView[] {
   // 获取会话扩展字段
   const expand = getRepository().readExpand(conversationId)
   // 获取队列列表
@@ -44,7 +44,7 @@ function load(conversationId: string): QueueItem[] {
 }
 
 /** 取某会话的队列,首次访问从库加载 */
-export function listQueue(conversationId: string): QueueItem[] {
+export function listQueue(conversationId: string): HYEQueueItemView[] {
   const cached = queues.get(conversationId)
   if (cached !== undefined) return cached
   const loaded = load(conversationId)
@@ -53,7 +53,7 @@ export function listQueue(conversationId: string): QueueItem[] {
 }
 
 /** 更新队列 */
-function write(conversationId: string, queue: QueueItem[]): void {
+function write(conversationId: string, queue: HYEQueueItemView[]): void {
   queues.set(conversationId, queue)
 }
 
@@ -67,8 +67,8 @@ function persist(conversationId: string): Promise<void> {
 export async function pushQueue(
   conversationId: string,
   text: string,
-  target: QueueItem['target']
-): Promise<QueueItem[]> {
+  target: HYEQueueItemView['target']
+): Promise<HYEQueueItemView[]> {
   const queue = [...listQueue(conversationId), { id: randomUUID(), text, target }]
   write(conversationId, queue)
   await persist(conversationId)
@@ -121,7 +121,7 @@ export async function markInsert(conversationId: string, itemId: string): Promis
 }
 
 /** 从队列里拿走第一条排队消息,没有返回null */
-export function claimNextTurn(conversationId: string): QueueItem | null {
+export function claimNextTurn(conversationId: string): HYEQueueItemView | null {
   const queue = listQueue(conversationId)
   const at = queue.findIndex((item) => item.target === 'next-turn')
   const hit = at === -1 ? undefined : queue[at]
@@ -136,7 +136,7 @@ export function claimNextTurn(conversationId: string): QueueItem | null {
 }
 
 /** 获取所有插入的没有被领的消息,并且标记为已领取 */
-export function claimInserts(conversationId: string): QueueItem[] {
+export function claimInserts(conversationId: string): HYEQueueItemView[] {
   const queue = listQueue(conversationId)
   const pending = queue.filter((item) => item.target === 'next-step' && item.claimed !== true)
   if (pending.length === 0) return []
@@ -161,7 +161,7 @@ export function hasUnclaimedInserts(conversationId: string): boolean {
  *
  * 同时把target改回next-turn:这一轮没领走,说明它没插进去,下次当普通排队发
  */
-export function releaseInserts(conversationId: string): QueueItem[] {
+export function releaseInserts(conversationId: string): HYEQueueItemView[] {
   const queue = listQueue(conversationId)
   const released = queue.filter((item) => item.claimed === true)
   if (released.length === 0) return []
@@ -180,7 +180,7 @@ export function releaseInserts(conversationId: string): QueueItem[] {
  *
  * 走到这里说明这一轮没有下一个step边界,插队项等不到了.退回排队才不会丢
  */
-export function revertInserts(conversationId: string): QueueItem[] {
+export function revertInserts(conversationId: string): HYEQueueItemView[] {
   const queue = listQueue(conversationId)
   const pending = queue.filter((item) => item.target === 'next-step')
   if (pending.length === 0) return []

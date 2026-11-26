@@ -2,7 +2,7 @@ import { ChatGraph, getChatGraph, toRunnableConfig } from '@core/graph/chat'
 import buildHumanMessage from '@core/message/buildHumanMessage'
 import { LangGraphRunnableConfig } from '@langchain/langgraph'
 import type { MessageUsage } from '@shared/types/message'
-import type { MessageEventSend } from '@shared/types/messageService'
+import type { MessageEventSend } from '@shared/types/message'
 import { BaseMessage, HumanMessage } from 'langchain'
 
 interface InitProps {

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { Conversation, Group, Workspace } from '@shared/types/conversation'
+import type { HYConversation, HYGroup, HYWorkspace } from '@shared/types/hyEntity'
 import { agentApi, conversationApi, expandApi } from '@renderer/lib/ipc'
 import { useNavigate } from 'react-router'
-import type { CreateGroupInput } from '@shared/types/conversationService'
+import type { CreateGroupInput } from '@shared/types/ipcContract'
 
 /**
  * 侧栏要用的三种形状（下面两个接口 + 这个返回类型）与文件末尾的 buildWorkspaceSections 是一套，
@@ -45,13 +45,13 @@ export interface GroupNode {
   /** 展开状态 */
   isOpen: boolean
   /** 对话列表 */
-  conversations: Conversation[]
+  conversations: HYConversation[]
 }
 
 /** 一个工作区块（侧栏的顶层区块） */
 export interface WorkspaceSection {
   /** 工作区信息 */
-  workspace: Workspace
+  workspace: HYWorkspace
   /** 分组节点列表 */
   groups: GroupNode[]
 }
@@ -67,9 +67,9 @@ export interface WorkspaceSection {
 export function useConversationList(): UseWorkspaceListResult {
   const navigate = useNavigate()
   // 工作区|分组|对话
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([])
-  const [groups, setGroups] = useState<Group[]>([])
-  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [workspaces, setWorkspaces] = useState<HYWorkspace[]>([])
+  const [groups, setGroups] = useState<HYGroup[]>([])
+  const [conversations, setConversations] = useState<HYConversation[]>([])
   // 加载状态|错误信息
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -128,10 +128,13 @@ export function useConversationList(): UseWorkspaceListResult {
       error: string | null
     }> => {
       try {
-        const valid = await expandApi.validPath(input.path)
-        if (!valid) {
-          setError('无效路径')
-          return { success: false, error: '无效路径' }
+        // 不绑目录就不用校验路径
+        if (input.path != null) {
+          const valid = await expandApi.validPath(input.path)
+          if (!valid) {
+            setError('无效路径')
+            return { success: false, error: '无效路径' }
+          }
         }
         await conversationApi.createGroup(input)
         await refresh()
@@ -186,9 +189,9 @@ export function useConversationList(): UseWorkspaceListResult {
 
 /** 构建侧边栏树状数据：工作区 → 分组 → 对话 */
 function buildWorkspaceSections(
-  workspaces: Workspace[],
-  groups: Group[],
-  conversations: Conversation[]
+  workspaces: HYWorkspace[],
+  groups: HYGroup[],
+  conversations: HYConversation[]
 ): WorkspaceSection[] {
   return workspaces.map((workspace) => {
     // 普通分组：顺序由 listGroups 给出，这里不再排

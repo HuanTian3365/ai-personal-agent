@@ -1,7 +1,7 @@
-import type { MError } from '@shared/types/message'
+import type { TMError } from '@shared/types/message'
 
 interface Props {
-  context: MError
+  context: TMError
 }
 
 export default function MessageBlockError({ context }: Props): React.JSX.Element {

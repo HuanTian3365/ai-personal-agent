@@ -5,13 +5,13 @@ import SidebarFooter from './SidebarFooter'
 import SidebarHeader from './SidebarHeader'
 import SidebarConversationList from './SidebarConversationList'
 import { useConversationList } from '@renderer/hooks/useConversationList'
-import type { Workspace } from '@shared/types/conversation'
+import type { HYWorkspace } from '@shared/types/hyEntity'
 import SidebarCreateGroupDialog from './SidebarCreateGroupDialog'
 
 export default function Sidebar(): React.JSX.Element {
   const { sections, isLoading, error, addConversation, createGroup, toggleGroupOpen } =
     useConversationList()
-  const [createTarget, setCreateTarget] = React.useState<Workspace | null>(null)
+  const [createTarget, setCreateTarget] = React.useState<HYWorkspace | null>(null)
   return (
     <SidebarShell>
       <SidebarHeader onAddConversation={addConversation} isLoading={isLoading} />
@@ -31,7 +31,8 @@ export default function Sidebar(): React.JSX.Element {
         }}
         onSubmit={async (input) => {
           if (createTarget === null) return false
-          return createGroup({ ...input, workspaceId: createTarget.id })
+          const result = await createGroup({ ...input, workspaceId: createTarget.id })
+          return result.success
         }}
       />
       <SidebarFooter />

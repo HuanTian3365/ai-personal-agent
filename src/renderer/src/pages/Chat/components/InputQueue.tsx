@@ -6,7 +6,7 @@ import {
   CollapsibleTrigger
 } from '@renderer/components/ui/collapsible'
 import { Input } from '@renderer/components/ui/input'
-import type { QueueItem } from '@shared/types/agentEvent'
+import type { HYEQueueItemView } from '@shared/types/hyExpand'
 import {
   CheckIcon,
   ChevronDownIcon,
@@ -20,7 +20,7 @@ import { useState } from 'react'
 
 interface Props {
   /** 排队内容 | 真相在 main 这里只负责画 */
-  queue: QueueItem[]
+  queue: HYEQueueItemView[]
   /** 把一条改成插队 */
   onInsert: (itemId: string) => void
   /** 改一条的文案 */
@@ -101,7 +101,7 @@ function QueueRow({
   onInsert,
   onRemove
 }: {
-  item: QueueItem
+  item: HYEQueueItemView
   onSave: (text: string) => void
   onInsert: () => void
   onRemove: () => void

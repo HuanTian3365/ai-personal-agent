@@ -1,10 +1,10 @@
 import * as React from 'react'
 import { SidebarMenuSubButton } from '@renderer/components/ui/sidebar'
-import type { Conversation } from '@shared/types/conversation'
+import type { HYConversation } from '@shared/types/hyEntity'
 import { NavLink } from 'react-router'
 
 interface Props {
-  conversation: Conversation
+  conversation: HYConversation
 }
 
 export default function SidebarConversationItem({ conversation }: Props): React.JSX.Element {

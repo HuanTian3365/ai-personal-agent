@@ -10,7 +10,7 @@ import SidebarConversationGroup from './SidebarConversationGroup'
 import SidebarWorkspaceHeader from './SidebarWorkspaceHeader'
 import { CircleX, Loader } from 'lucide-react'
 import type { WorkspaceSection } from '@renderer/hooks/useConversationList'
-import type { Workspace } from '@shared/types/conversation'
+import type { HYWorkspace } from '@shared/types/hyEntity'
 
 /**
  * 会话列表的三层渲染：工作区（SidebarGroup 区块）→ 分组（SidebarConversationGroup）→ 对话（SidebarConversationItem）
@@ -21,7 +21,7 @@ interface Props {
   isLoading: boolean
   error: string | null
   onAddConversation: (groupId: string | null) => Promise<void>
-  onAddGroup: (workspace: Workspace) => void
+  onAddGroup: (workspace: HYWorkspace) => void
   onToggleOpen: (id: string, open: boolean) => Promise<void>
 }
 
