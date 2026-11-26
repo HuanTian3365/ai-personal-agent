@@ -6,13 +6,14 @@ import { objectInput } from '@main/utils/input'
 import { shell } from 'electron'
 
 export default function registerConversationIpc(ipcMain: Electron.IpcMain): void {
-  // ========== 工作区列表
+  /** ====================  工作区  ==================== */
+  // 工作区列表
   ipcMain.handle(IPC.workspace.list, () => getRepository().workspaceList())
 
-  // ========== 分组列表
+  /** ====================  分组  ==================== */
+  // 分组列表
   ipcMain.handle(IPC.group.list, () => getRepository().groupList())
-
-  // ========== 新增分组
+  // 新增分组
   ipcMain.handle(IPC.group.create, (_event, request: unknown) => {
     const fields = objectInput(request)
     if (fields === null) return { success: false, error: '入参必须是对象' }
@@ -33,8 +34,7 @@ export default function registerConversationIpc(ipcMain: Electron.IpcMain): void
       title: title.trim()
     })
   })
-
-  // ========== 分组展开收起
+  // 分组展开状态
   ipcMain.handle(IPC.group.expand, (_event, request: unknown) => {
     const fields = objectInput(request)
     if (fields === null) return { success: false, error: '入参必须是对象' }
@@ -47,8 +47,7 @@ export default function registerConversationIpc(ipcMain: Electron.IpcMain): void
     }
     return getRepository().groupExpand({ id, open })
   })
-
-  // ========== 打开分组目录
+  // 打开分组目录
   ipcMain.handle(IPC.group.folder, async (_event, request: unknown) => {
     const fields = objectInput(request)
     if (fields === null) return { success: false, error: '入参必须是对象' }
@@ -65,8 +64,7 @@ export default function registerConversationIpc(ipcMain: Electron.IpcMain): void
       return { success: false, error: errorText('打开文件夹', err) }
     }
   })
-
-  // ========== 删除分组
+  // 删除分组
   ipcMain.handle(IPC.group.delete, (_event, request: unknown) => {
     const fields = objectInput(request)
     if (fields === null) return { success: false, error: '入参必须是对象' }
@@ -76,8 +74,7 @@ export default function registerConversationIpc(ipcMain: Electron.IpcMain): void
     }
     return getRepository().groupDelete({ id })
   })
-
-  // ========== 重命名分组
+  // 重命名分组
   ipcMain.handle(IPC.group.rename, (_event, request: unknown) => {
     const fields = objectInput(request)
     if (fields === null) return { success: false, error: '入参必须是对象' }
@@ -91,10 +88,10 @@ export default function registerConversationIpc(ipcMain: Electron.IpcMain): void
     return getRepository().groupRename({ id, title: title.trim() })
   })
 
-  // ========== 会话列表
+  /** ====================  会话  ==================== */
+  // 会话列表
   ipcMain.handle(IPC.conversation.list, () => getRepository().conversationList())
-
-  // ========== 新建对话
+  // 新建对话
   ipcMain.handle(IPC.conversation.create, (_event, request: unknown) => {
     const fields = objectInput(request)
     if (fields === null) return { success: false, error: '入参必须是对象' }
@@ -104,8 +101,7 @@ export default function registerConversationIpc(ipcMain: Electron.IpcMain): void
     }
     return getRepository().conversationCreate({ groupId })
   })
-
-  // ========== 获取对话信息
+  // 获取对话信息
   ipcMain.handle(IPC.conversation.info, (_event, request: unknown) => {
     const fields = objectInput(request)
     if (fields === null) return { success: false, error: '入参必须是对象' }
@@ -115,8 +111,8 @@ export default function registerConversationIpc(ipcMain: Electron.IpcMain): void
     }
     return getRepository().conversationInfo({ id })
   })
-
-  // ========== 消息列表
+  /** ====================  消息  ==================== */
+  // 消息列表
   ipcMain.handle(IPC.message.list, (_event, request: unknown) => {
     const fields = objectInput(request)
     if (fields === null) return { success: false, error: '入参必须是对象' }
