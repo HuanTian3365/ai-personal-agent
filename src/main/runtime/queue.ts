@@ -32,15 +32,20 @@ function load(conversationId: string): HYEQueueItemView[] {
   if (!Array.isArray(queue)) return []
   // sql,获取对应id的消息
   const saved = getDatabase().prepare('SELECT 1 FROM hy_message WHERE id = ?')
-  return queue.filter((item) => {
-    // 过滤掉不是队列消息的数据
-    if (item === null || typeof item !== 'object') return false
-    const { id, text, target } = item
-    if (typeof id !== 'string' || typeof text !== 'string') return false
-    if (target !== 'next-turn' && target !== 'next-step') return false
-    // 查一下这条id在消息表里有没有,没有就留在队列里(还没发出去),有就扔掉(已经发过了)
-    return saved.get(id) === undefined
-  })
+  return (
+    queue
+      .filter((item) => {
+        // 过滤掉不是队列消息的数据
+        if (item === null || typeof item !== 'object') return false
+        const { id, text, target } = item
+        if (typeof id !== 'string' || typeof text !== 'string') return false
+        if (target !== 'next-turn' && target !== 'next-step') return false
+        // 查一下这条id在消息表里有没有,没有就留在队列里(还没发出去),有就扔掉(已经发过了)
+        return saved.get(id) === undefined
+      })
+      // 逐字段重建: 库里不该有claimed 旧数据带进来也丢掉 重启后一律当没领走
+      .map(({ id, text, target }) => ({ id, text, target, claimed: false }))
+  )
 }
 
 /** 取某会话的队列,首次访问从库加载 */
@@ -60,7 +65,9 @@ function write(conversationId: string, queue: HYEQueueItemView[]): void {
 /** 把内存里的队列写回库 */
 function persist(conversationId: string): Promise<void> {
   const queue = queues.get(conversationId) ?? []
-  return getRepository().updateExpand(conversationId, SCOPE, { queue })
+  // 只写库里有的三个字段 | claimed是运行态 落库后没人回滚 重启就成幽灵项
+  const stored = queue.map(({ id, text, target }) => ({ id, text, target }))
+  return getRepository().updateExpand(conversationId, SCOPE, { queue: stored })
 }
 
 /** 新增队列消息,返回写入后的整条队列 */
