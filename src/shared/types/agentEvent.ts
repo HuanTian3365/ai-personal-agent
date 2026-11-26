@@ -17,19 +17,6 @@ export type AgentEvent =
   | AEQueue
   | AETitle
 
-/**
- * 推送信封
- *
- * seq 由main在转发前注入 全局单调递增 core不知道它的存在
- * 切回会话时渲染层拿它区分「快照已包含」与「快照之后才到」的事件
- */
-export interface AgentEventEnvelope {
-  /** 推送序号 */
-  seq: number
-  /** 事件本体 */
-  event: AgentEvent
-}
-
 /** ====================  事件实现  ==================== */
 // 公共实现
 interface AEBlockBase {
@@ -157,4 +144,17 @@ export interface QueueItem {
   target: 'next-turn' | 'next-step'
   /** 是否已被当前轮领取|领取后不再参与[本轮要不要继续]的判断,见core/graph/nodes.ts */
   claimed?: boolean
+}
+
+/**
+ * 推送信封
+ *
+ * seq 由main在转发前注入 全局单调递增 core不知道它的存在
+ * 切回会话时渲染层拿它区分「快照已包含」与「快照之后才到」的事件
+ */
+export interface AgentEventEnvelope {
+  /** 推送序号 */
+  seq: number
+  /** 事件本体 */
+  event: AgentEvent
 }
