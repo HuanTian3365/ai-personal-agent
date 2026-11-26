@@ -304,11 +304,13 @@ async function main(): Promise<void> {
   check('messages 变短时抛错', threw)
 
   console.log('\n[9] 会话不存在时账本写不进去要报错')
+  // 用没落过库的消息 | 主键已统一成消息身份 复用human会先撞主键 测不到账本这条路径
+  const orphanMessage = new HumanMessage({ content: '孤儿消息', id: 'msg-orphan-1' })
   let missingThrew = false
   try {
     await saver2.put(
       { configurable: { thread_id: 'conv-not-exists' } },
-      makeCheckpoint('cp-x', [human]),
+      makeCheckpoint('cp-x', [orphanMessage]),
       makeMetadata('input', -1)
     )
   } catch (err) {

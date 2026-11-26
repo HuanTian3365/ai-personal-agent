@@ -19,7 +19,8 @@ import type { HyMessageCustom, HyMessageExpand, HyMessageField } from '@shared/t
  * `hy_conversation.langgraph_state` 上，总体是 O(n)。
  *
  * 保留 LangChain 的消息协议：读走 `loadsTyped`、写走 `dumpsTyped`，消息内容一个字节不改。
- * 只砍掉序列化外壳里能无条件重建的部分（见 `toRow`）。
+ * 只保留序列化外壳 lc / type / id，正文全在 kwargs（见 `toRow`）。
+ * 行主键就是消息身份 `message.id`：界面块 / 队列项 / 重放查重都按它认消息。
  *
  * 三条硬约束：
  * - 消息只增不删：`RemoveMessage` 会让 messages 变短，这里显式抛错而不是静默忽略
@@ -279,7 +280,7 @@ CREATE TABLE IF NOT EXISTS ${MESSAGES} (
   /**
    * 消息 -> 行
    *
-   * 砍掉序列化外壳里能无条件重建的部分（lc / type / id），其余原样保留。
+   * 外壳只留 lc / type / id，正文全在 kwargs。
    * hy_custom 塞进 kwargs 跟着正文走；HyMessageField 是行级信息 不序列化。
    */
   private async toRow(
@@ -304,8 +305,12 @@ CREATE TABLE IF NOT EXISTS ${MESSAGES} (
 
     const expand: HyMessageExpand = { status: 'message' }
 
+    // 主键用消息自己的id: 界面块.队列项.重放查重都按它认消息 另生成一个就是同一条消息两套身份
+    // 没有id的消息(部分provider.流式拼接)才现生成 只补空不覆盖
+    const rowId = message.id === undefined || message.id === '' ? randomUUID() : message.id
+
     return {
-      id: randomUUID(),
+      id: rowId,
       rest: [
         JSON.stringify(sourceData),
         JSON.stringify(kwargs),
