@@ -54,7 +54,7 @@ export interface HYEMessageCustom {
 // 让所有LangChain消息带上行级字段与业务自定义字段 只对类型生效 不产生运行时代码
 // 副作用: 任何参与编译的单元里BaseMessage都多出这两个属性
 // TODO(优化): 挪进core(只有node侧用得到BaseMessage) 让shared不再依赖@langchain
-// 见 docs/08-讨论/10.2026-11-26-类型定义与存储选型及插队残留.md §1.4
+// 见 docs/04-待办/16.发起-TODO-shared-types分组规则未成文.md
 declare module '@langchain/core/messages' {
   interface BaseMessage {
     HYMessage?: HYMessage
