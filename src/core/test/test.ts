@@ -1,6 +1,6 @@
 /**
  * core 层自检脚本。
- * 跑法：pnpm test（= tsx src/core/test/test.ts）
+ * 跑法：pnpm test src/core/test/test.ts
  *
  * 只用 node:assert，不引入测试框架。断言失败直接抛错，进程退出码非 0。
  */

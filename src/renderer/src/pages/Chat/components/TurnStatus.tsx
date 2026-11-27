@@ -18,6 +18,16 @@ export default function TurnStatus({ turn, isLast, children }: Props): React.JSX
   // 本轮使用时间
   const elapsedMs = (turn.endTime ?? 0) - (turn.startTime ?? 0)
 
+  // 缓存命中率 | inputTokens 为 0 时没有分母 显示 0.00% 而不是 NaN
+  const cacheHitRate =
+    turn.usage.inputTokens === 0
+      ? '0.00%'
+      : ((turn.usage.cacheReadTokens / turn.usage.inputTokens) * 100).toFixed(2) + '%'
+
+  // 未缓存输入 = 输入 - 缓存命中(OpenAI 兼容协议里 cached 是 prompt 的子集)
+  // 不要用 cacheWriteTokens:那条路径上 cache_creation 不会填 这一列恒为 0
+  const uncachedInput = turn.usage.inputTokens - turn.usage.cacheReadTokens
+
   // 获取agent正文
   function getCopyContent(): string {
     const last = turn.items.at(-1)
@@ -96,14 +106,11 @@ export default function TurnStatus({ turn, isLast, children }: Props): React.JSX
                 <div className="*:flex *:flex-row *:items-center *:justify-between *:w-full *:text-sm *:text-gray-300 *:mt-1">
                   <div>
                     <p>缓存命中</p>
-                    <p>
-                      {((turn.usage.cacheReadTokens / turn.usage.inputTokens) * 100).toFixed(2) +
-                        '%'}
-                    </p>
+                    <p>{cacheHitRate}</p>
                   </div>
                   <div>
                     <p>未缓存输入</p>
-                    <p>{turn.usage.cacheWriteTokens}</p>
+                    <p>{uncachedInput}</p>
                   </div>
                   <div>
                     <p>缓存读取</p>

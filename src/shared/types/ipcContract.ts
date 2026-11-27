@@ -199,6 +199,16 @@ export interface ConversationInfoReq {
 export type ConversationInfoRes = Result<HYConversation | null>
 export type ConversationInfoFun = (request: ConversationInfoReq) => ConversationInfoRes
 
+// ========== 读对话标题 | 只在core内部用 没开IPC通道
+/** 只取 title 一列:标题生成靠它判「还是空的吗」 不走 conversationInfo(那里会兜底成非空) */
+export interface ConversationReadTitleReq {
+  id: string
+}
+export type ConversationReadTitleRes = Result<string>
+export type ConversationReadTitleFun = (
+  request: ConversationReadTitleReq
+) => ConversationReadTitleRes
+
 // ========== 更新对话标题 | 只在core内部用 没开IPC通道
 export interface ConversationUpdateTitleReq {
   id: string
@@ -237,6 +247,14 @@ export interface MessageListReq {
 }
 export type MessageListRes = Result<TurnMessage[]>
 export type MessageListFun = (request: MessageListReq) => MessageListRes
+
+// ========== 消息是否已落库 | 只在队列内部用 没开IPC通道
+/** 判重口径:同一 id 已经进过 hy_message 就说明这条排队项发过了 */
+export interface MessageExistsReq {
+  id: string
+}
+export type MessageExistsRes = Result<boolean>
+export type MessageExistsFun = (request: MessageExistsReq) => MessageExistsRes
 
 /** ====================  expand  ==================== */
 

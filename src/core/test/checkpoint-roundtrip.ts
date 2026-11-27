@@ -5,9 +5,7 @@
  * ToolMessage 的 metadata.versions）就是不可逆的数据损失，必须逐字段验。
  *
  * 跑法（better-sqlite3 是 Electron ABI 编译的，纯 Node 加载会崩）：
- *   $env:ELECTRON_RUN_AS_NODE = "1"
- *   node_modules/electron/dist/electron.exe node_modules/tsx/dist/cli.mjs src/core/test/checkpoint-roundtrip.ts
- *   Remove-Item Env:\ELECTRON_RUN_AS_NODE
+ *   pnpm test:electron src/core/test/checkpoint-roundtrip.ts
  */
 import BetterSqlite3 from 'better-sqlite3'
 import { AIMessage, HumanMessage, RemoveMessage, ToolMessage } from '@langchain/core/messages'

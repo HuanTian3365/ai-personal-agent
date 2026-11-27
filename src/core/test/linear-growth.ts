@@ -6,9 +6,7 @@
  * （每步一份全量快照）的理论值对比。不调真实模型，不产生费用。
  *
  * 跑法：
- *   $env:ELECTRON_RUN_AS_NODE = "1"
- *   node_modules/electron/dist/electron.exe node_modules/tsx/dist/cli.mjs src/core/test/linear-growth.ts
- *   Remove-Item Env:\ELECTRON_RUN_AS_NODE
+ *   pnpm test:electron src/core/test/linear-growth.ts
  */
 import BetterSqlite3 from 'better-sqlite3'
 import { AIMessage, HumanMessage } from '@langchain/core/messages'

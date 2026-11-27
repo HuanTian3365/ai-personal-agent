@@ -3,7 +3,7 @@ import buildHumanMessage from '@core/message/buildHumanMessage'
 import { LangGraphRunnableConfig } from '@langchain/langgraph'
 import type { MessageUsage } from '@shared/types/message'
 import type { MessageEventSend } from '@shared/types/message'
-import { BaseMessage, HumanMessage } from 'langchain'
+import { HumanMessage } from 'langchain'
 
 interface InitProps {
   /** 会话ID */
@@ -22,8 +22,6 @@ export interface InitResult {
   loopConfig: LangGraphRunnableConfig
   /** 用户是否中断了对话 */
   isAborted: () => boolean
-  /** 历史消息 */
-  historyMessage: BaseMessage[]
   /** 用户消息 */
   userMessage: HumanMessage
 }
@@ -42,15 +40,12 @@ export async function init({
   const loopConfig = toRunnableConfig({ threadId: conversationId, signal })
   /** ====================  用户是否中断了对话  ==================== */
   const isAborted = (): boolean => signal?.aborted === true
-  /** ====================  历史消息  ==================== */
-  const historyMessage = (await model.getState(loopConfig)).values?.messages ?? []
   /** ====================  用户消息  ==================== */
   const userMessage = buildHumanMessage(message, messageId)
   return {
     model,
     loopConfig,
     isAborted,
-    historyMessage,
     userMessage
   }
 }

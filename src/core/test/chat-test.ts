@@ -6,9 +6,7 @@
  * 元信息、账本与体积。
  *
  * 会真实调用模型，产生费用。跑法：
- *   $env:ELECTRON_RUN_AS_NODE = "1"
- *   node_modules/electron/dist/electron.exe node_modules/tsx/dist/cli.mjs src/core/test/chat-test.ts [数据库路径] [轮次]
- *   Remove-Item Env:\ELECTRON_RUN_AS_NODE
+ *   pnpm test:electron src/core/test/chat-test.ts [数据库路径] [轮次]
  *
  * 不传路径时用临时库（每轮从零开始，不污染开发库）。
  * 只跑某一轮：第二个参数传 1-5。
@@ -211,7 +209,7 @@ async function main(): Promise<void> {
     process.exit(1)
   }
 
-  const dbPath = process.argv[2] ?? join(tmpdir(), 'huanyu-chat-test', 'memory.db')
+  const dbPath = process.argv[2] ?? join(tmpdir(), 'huanyu-chat-test', 'databases.db')
   const only = process.argv[3] === undefined ? undefined : Number.parseInt(process.argv[3], 10)
   const logDir = join(tmpdir(), 'huanyu-chat-test', 'logs')
   mkdirSync(logDir, { recursive: true })

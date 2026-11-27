@@ -8,6 +8,7 @@ import type {
   CheckpointTuple
 } from '@langchain/langgraph-checkpoint'
 import type BetterSqlite3 from 'better-sqlite3'
+import { DDL_MESSAGE } from '@shared/table'
 import type { HYEMessageCustom, HYEMessageExpand } from '@shared/types/hyExpand'
 import type { HYMessage } from '@shared/types/hyEntity'
 
@@ -83,19 +84,8 @@ class SqliteSaver extends BaseCheckpointSaver {
   private ensureSchema(): void {
     if (this.ready) return
 
-    // 与 main/database/init/sql.ts 的 DDL 保持一致 | 那边建新库 这里兜 core 单独跑
-    this.database.exec(`
-CREATE TABLE IF NOT EXISTS ${MESSAGES} (
-  id              TEXT PRIMARY KEY,
-  conversation_id TEXT    NOT NULL,
-  seq             INTEGER NOT NULL,
-  source_data     TEXT    NOT NULL,
-  message         TEXT    NOT NULL,
-  metadata        TEXT    NOT NULL DEFAULT '{}',
-  expand          TEXT    NOT NULL DEFAULT '{}',
-  created_at      BIGINT  NOT NULL,
-  UNIQUE (conversation_id, seq)
-);`)
+    // 表结构只有一份 在 @shared/table.ts | main 建新库 这里兜 core 单独跑(pnpm test)
+    this.database.exec(DDL_MESSAGE)
 
     this.countStmt = this.database.prepare(
       `SELECT COUNT(*) AS n FROM ${MESSAGES} WHERE conversation_id = ?`

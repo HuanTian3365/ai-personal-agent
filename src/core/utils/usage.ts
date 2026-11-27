@@ -16,11 +16,13 @@ import type { MessageUsage } from '@shared/types/message'
 export function addUsage(prev: MessageUsage, usage: AIMessage['usage_metadata']): MessageUsage {
   if (usage === undefined) return prev
   const details = usage.input_token_details
+  // 每个字段都兜 0:类型上它们都是必填,但 provider 实际会缺(尤其 total_tokens)。
+  // 少兜一个,undefined 一进来就变 NaN,之后每次累加都是 NaN,整轮用量全废
   return {
-    inputTokens: prev.inputTokens + usage.input_tokens,
-    outputTokens: prev.outputTokens + usage.output_tokens,
+    inputTokens: prev.inputTokens + (usage.input_tokens ?? 0),
+    outputTokens: prev.outputTokens + (usage.output_tokens ?? 0),
     cacheReadTokens: prev.cacheReadTokens + (details?.cache_read ?? 0),
     cacheWriteTokens: prev.cacheWriteTokens + (details?.cache_creation ?? 0),
-    totalTokens: prev.totalTokens + usage.total_tokens
+    totalTokens: prev.totalTokens + (usage.total_tokens ?? 0)
   }
 }

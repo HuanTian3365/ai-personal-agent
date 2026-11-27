@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 会话消息队列
  *
  * 生成期间用户再次发送时先落在这里
@@ -13,7 +13,7 @@
 import { randomUUID } from 'node:crypto'
 import type { HYEQueueItem } from '@shared/types/hyExpand'
 import type { ConversationUpdateExpandRes } from '@shared/types/ipcContract'
-import { getDatabase, getRepository } from '../database'
+import { getRepository } from '../database'
 
 /** 每会话一条队列 | key: 会话ID */
 const queues = new Map<string, HYEQueueItem[]>()
@@ -32,8 +32,12 @@ function load(conversationId: string): HYEQueueItem[] {
   // 获取队列列表
   const queue = expand.data.sendMessage?.queue ?? []
   if (!Array.isArray(queue)) return []
-  // sql,获取对应id的消息
-  const saved = getDatabase().prepare('SELECT 1 FROM hy_message WHERE id = ?')
+  // 判重:这条排队项是不是已经落过库(发过了) | 走仓储 不在 main 里拼 SQL
+  // 查不出来就按「没发过」处理:宁可多发一条 也不要静默吞掉用户输入
+  const alreadySaved = (id: string): boolean => {
+    const res = getRepository().messageExists({ id })
+    return res.success && res.data
+  }
   return (
     queue
       .filter((item) => {
@@ -43,7 +47,7 @@ function load(conversationId: string): HYEQueueItem[] {
         if (typeof id !== 'string' || typeof text !== 'string') return false
         if (target !== 'next-turn' && target !== 'next-step') return false
         // 查一下这条id在消息表里有没有,没有就留在队列里(还没发出去),有就扔掉(已经发过了)
-        return saved.get(id) === undefined
+        return !alreadySaved(id)
       })
       // 逐字段重建: 库里不该有claimed 旧数据带进来也丢掉 重启后一律当没领走
       .map(({ id, text, target }) => ({ id, text, target, claimed: false }))

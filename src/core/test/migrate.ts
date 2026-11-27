@@ -5,9 +5,7 @@
  * hy_message，执行账本写进 hy_conversation.langgraph_state，然后删掉两张旧表。
  *
  * 跑法（better-sqlite3 是 Electron ABI 编译的，纯 Node 加载会崩）：
- *   $env:ELECTRON_RUN_AS_NODE = "1"
- *   node_modules/electron/dist/electron.exe node_modules/tsx/dist/cli.mjs src/core/test/migrate.ts "<db 路径>"
- *   Remove-Item Env:\ELECTRON_RUN_AS_NODE
+ *   pnpm test:electron src/core/test/migrate.ts "<db 路径>"
  *
  * 不传路径时用下面的默认值（用户机器的备份库）。脚本自己先复制一份 .before-migrate，
  * 原库不会被就地改坏；重复跑是幂等的（先清该会话的 hy_message 再灌）。

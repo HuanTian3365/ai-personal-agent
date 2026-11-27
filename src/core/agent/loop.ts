@@ -34,7 +34,7 @@ export async function sendMessage({
 }: Props): Promise<void> {
   /** ====================  初始化  ==================== */
   // 初始化依赖数据
-  const { model, loopConfig, isAborted, historyMessage, userMessage }: InitResult = await init({
+  const { model, loopConfig, isAborted, userMessage }: InitResult = await init({
     conversationId,
     signal,
     message,
@@ -42,8 +42,8 @@ export async function sendMessage({
   })
   // 注册事件机
   const emitter = createEmitter(emit, conversationId)
-  // 初始化标题
-  getConversationTitle(historyMessage.length === 0, conversationId, userMessage, emitter.title)
+  // 生成标题 | 判据由它自己读库里的 title 是否为空,不看有没有历史
+  getConversationTitle(conversationId, userMessage, emitter.title)
   // 启动轮
   emitter.turnStart(messageId, message)
 

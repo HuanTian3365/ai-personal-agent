@@ -1,4 +1,4 @@
-import { HumanMessage } from '@langchain/core/messages'
+﻿import { HumanMessage } from '@langchain/core/messages'
 import { getStore } from '@core/database'
 import { getBaseModel } from '@core/llm/model'
 import { parseContent } from '@core/message/parseStream'
@@ -9,17 +9,23 @@ const MAX_TITLE_LENGTH = 100
 /**
  * 生成对话标题
  *
- * 根据用户输入内容反推对话标题
+ * 判据是「库里这条会话的 title 还是空的吗」,不是「checkpoint 历史为空吗」:
+ * - 用历史判会漏:首轮失败或中断时历史可能已经有了(中断路径会补 aborted 与 tips 消息),
+ *   于是「不是首轮」→ 标题永远不再生成
+ * - 空标题判据是幂等的:生成失败、落库失败都不留痕,下次进来还能再试一次
+ *
+ * 读那一列不用 conversationInfo:那边会把空标题兜底成「新的对话」,判不出空。
  */
 export async function getConversationTitle(
-  isFirstTurn: boolean,
   conversationId: string,
   message: HumanMessage,
   emit: (title: string) => void
 ): Promise<void> {
-  // 非首次对话,不处理
-  if (!isFirstTurn) return
-  // 首次对话,尝试生成标题
+  // 已经有标题就不动
+  const current = getStore().conversationReadTitle({ id: conversationId })
+  // 读不出来(会话不在了 / 库出问题)一律不生成:宁可不给名字,也不覆盖用户已经看见的
+  if (!current.success || current.data !== '') return
+  // 标题还是空的,尝试生成一次
   try {
     const model = await getBaseModel()
     const prompt = [

@@ -15,6 +15,7 @@ type ConversationMethods = Pick<
   | 'conversationCreate'
   | 'conversationUpdateTitle'
   | 'conversationInfo'
+  | 'conversationReadTitle'
   | 'conversationReadExpand'
   | 'conversationUpdateExpand'
 >
@@ -96,8 +97,28 @@ export function createConversationMethods(database: Database): ConversationMetho
         return { success: false, error: errorText('读取会话信息', err) }
       }
     },
-    /** 读会话级业务扩展 JSON | 没写过或会话不存在都给空对象 调用方按缺省处理 */
-    conversationReadExpand(request) {
+    /**
+     * 只读标题一列
+     *
+     * 为什么不让调用方走 conversationInfo:converter 会把空标题兜底成「新的对话」,
+     * 那条路读到的 title 永远非空,「标题还是空的吗」这个判据就失效了。
+     * 这里返回库里的原样值(空串就是空串)。
+     */
+    conversationReadTitle(request) {
+      try {
+        const row = database
+          .prepare('SELECT title FROM hy_conversation WHERE id = ?')
+          .get(request.id) as { title: string } | undefined
+        // 会话不在了不该静默成功:调用方据此不生成标题,而不是以为「标题是空的」去生成
+        if (row === undefined) return { success: false, error: '会话不存在' }
+        return { success: true, data: row.title }
+      } catch (err) {
+        return { success: false, error: errorText('读取会话标题', err) }
+      }
+    },
+    /** 读会话级业务扩展 JSON | 没写过或会话不存在都给空对象 调用方按缺省处理 */ conversationReadExpand(
+      request
+    ) {
       try {
         const row = database
           .prepare('SELECT expand FROM hy_conversation WHERE id = ?')

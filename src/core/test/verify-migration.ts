@@ -5,9 +5,7 @@
  * 只读，不改任何东西。
  *
  * 跑法：
- *   $env:ELECTRON_RUN_AS_NODE = "1"
- *   node_modules/electron/dist/electron.exe node_modules/tsx/dist/cli.mjs src/core/test/verify-migration.ts "<迁移后的库>" ["<迁移前的备份>"]
- *   Remove-Item Env:\ELECTRON_RUN_AS_NODE
+ *   pnpm test:electron src/core/test/verify-migration.ts "<迁移后的库>" ["<迁移前的备份>"]
  *
  * 第二个参数不传时，自动在同目录找最新的 *.before-migrate-* 文件。
  */

@@ -19,12 +19,12 @@ export const HUANYU_HOME =
 /** 各处用到的具体路径 */
 export const paths = {
   home: HUANYU_HOME,
-  /** 数据库目录（业务表与 checkpoint 表共用的 workSpace.db 在这里） */
+  /** 数据库目录（业务表与正文表共用的 databases.db 在这里） */
   data: join(HUANYU_HOME, 'data'),
   /** 调试日志目录（core 的 log/log.txt） */
   logs: join(HUANYU_HOME, 'logs'),
-  /** 数据库文件 */
-  db: join(HUANYU_HOME, 'data', 'memory.db')
+  /** 数据库文件 | 名字取得泛化:里面既有对话列表三层 也有消息正文 以后还会有更多表 */
+  db: join(HUANYU_HOME, 'data', 'databases.db')
 }
 
 /** 建好运行时要用的目录。已存在就跳过，重复调用无副作用 */

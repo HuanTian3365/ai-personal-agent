@@ -3,6 +3,7 @@ import type {
   ConversationInfoFun,
   ConversationListFun,
   ConversationReadExpandFun,
+  ConversationReadTitleFun,
   ConversationUpdateExpandFun,
   ConversationUpdateTitleFun,
   GroupCreateFun,
@@ -11,6 +12,7 @@ import type {
   GroupListFun,
   GroupRenameFun,
   GroupReorderFun,
+  MessageExistsFun,
   WorkspaceListFun
 } from '@shared/types/ipcContract'
 
@@ -48,8 +50,13 @@ export interface DatabaseRepository {
   conversationUpdateTitle: ConversationUpdateTitleFun
   /** 获取对话信息 */
   conversationInfo: ConversationInfoFun
+  /** 只读标题一列 | 标题生成靠它判空 core用 */
+  conversationReadTitle: ConversationReadTitleFun
   /** 读会话扩展信息 */
   conversationReadExpand: ConversationReadExpandFun
   /** 按职责合并写会话扩展信息 | 只覆盖 scope 这一层 */
   conversationUpdateExpand: ConversationUpdateExpandFun
+  /** ====================  消息  ==================== */
+  /** 这条消息是否已经落库 | 队列判重用(发过的排队项按 id 认回) */
+  messageExists: MessageExistsFun
 }
