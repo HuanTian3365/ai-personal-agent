@@ -37,7 +37,7 @@ export function parseContent(content: unknown): string {
  * 取思考
  *
  * glm|deepseek这类模型把思考放在additional_kwargs.reasoning_content,不在content里
- * 只读content会把整段思考丢掉(踩过,见docs/待实现/05.BUG)
+ * 只读content会把整段思考丢掉(踩过,见docs/99-归档/待办/09.完成-BUG-思考与正文交错时实时丢掉第二段思考.md)
  * 参数不要求BaseMessage|任何带additional_kwargs的对象都能用
  */
 export function parseReasoning(chunk: { additional_kwargs?: Record<string, unknown> }): string {

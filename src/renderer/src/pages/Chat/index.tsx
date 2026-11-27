@@ -8,7 +8,7 @@ import InputQueue from './components/InputQueue'
 /**
  * 对话页：读历史 + 发送 + 流式 + 排队。
  *
- * 设计见 docs/开发计划/04.未实现-排队与插队/V1/01.开发.md
+ * 设计见 docs/99-归档/计划/04.已完成-排队与插队/V1/01.开发.md
  */
 export default function ChatIndex(): React.JSX.Element {
   const { conversationId } = useParams<{ conversationId: string }>()

@@ -13,7 +13,7 @@ import { errorText } from '@main/utils/error'
 /**
  * 分组层 | hy_group 的读写方法
  *
- * 三种形态共用这张表(见 docs/规范与定义/02):
+ * 三种形态共用这张表(见 docs/02-规范/02.对话列表三层架构.md):
  * - 绑目录分组: default_flag=0 且 path 非空
  * - 纯命名分组: default_flag=0 且 path 为 null
  * - 默认分组:   default_flag=1 且 path 恒为 null

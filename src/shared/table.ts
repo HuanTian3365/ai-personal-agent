@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS hy_workspace
 (
     id         TEXT PRIMARY KEY, -- 工作区标识。内置 'workspace'/'ciallo'，允许自定义；用可读字符串便于代码直接引用
     title      TEXT    NOT NULL, -- 显示名，用户可改名；前端优先按 id 查 i18n 字典，查不到回落此值
-    sort_index INTEGER NOT NULL, -- 工作区显示顺序，升序从 0 起
+    sort_index INTEGER NOT NULL, -- 工作区显示顺序，升序；种子值 1、2
     created_at BIGINT  NOT NULL, -- 创建时间，Unix 毫秒
     updated_at BIGINT  NOT NULL  -- 最后修改时间，Unix 毫秒
 );`
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS hy_group
     path         TEXT,                                                            -- 目录绝对路径；NULL = 不绑目录的命名分组，或默认分组
     default_flag INTEGER NOT NULL DEFAULT 0,                                      -- 1=默认分组(收未分组对话)，0=普通分组
     open_status  INTEGER NOT NULL DEFAULT 1,                                      -- 展开状态：0 收起 / 1 展开
-    sort_index   INTEGER NOT NULL,                                                -- 同一工作区内显示顺序，升序
+    sort_index   INTEGER NOT NULL,                                                -- 同一工作区内显示顺序，降序：数字大的在前(新分组取 MAX+1，恒排最前)
     created_at   BIGINT  NOT NULL,                                                -- 创建时间，Unix 毫秒
     updated_at   BIGINT  NOT NULL,                                                -- 最后修改时间，Unix 毫秒
     -- 默认分组必须无路径；普通分组的 path 可空(纯命名分组)，非空时由应用层保证是规范化目录
@@ -73,11 +73,11 @@ CREATE TABLE IF NOT EXISTS hy_conversation
     id             TEXT PRIMARY KEY,                                                -- 对话 id，UUID v4
     workspace_id   TEXT    NOT NULL REFERENCES hy_workspace (id) ON DELETE RESTRICT, -- 所属工作区；冗余字段，未分组对话靠它定级
     group_id       TEXT,                                                            -- 所属分组；NULL=未分组，显示在该工作区的默认分组内
-    title          TEXT    NOT NULL,                                                -- 标题，默认「新对话」
-    sort_index     INTEGER NOT NULL,                                                -- 组内手动排序，升序=显示顺序；新对话取 MIN-1 插到最前，允许负数
+    title          TEXT    NOT NULL,                                                -- 标题；新建时存空串，界面兜底显示「新的对话」
+    sort_index     INTEGER NOT NULL,                                                -- 组内手动排序，降序读：数字大的在前；新对话取 MAX+1，恒排最前
     created_at     BIGINT  NOT NULL,                                                -- 创建时间，Unix 毫秒
     updated_at     BIGINT  NOT NULL,                                                -- 最后修改时间，Unix 毫秒；「最近更新」视图排序依据
-    langgraph_state TEXT   NOT NULL DEFAULT '{}',                                   -- LangGraph 执行账本 JSON：{ checkpoint_id, channel_versions, versions_seen, 其余 channel }
+    langgraph_state TEXT   NOT NULL DEFAULT '{}',                                   -- LangGraph 执行账本 JSON：{ checkpoint_id, ts, metadata, channel_versions, versions_seen, 其余 channel }
     expand         TEXT    NOT NULL DEFAULT '{}',                                   -- 会话级业务扩展 JSON：第一层 key 声明职责，如 sendMessage.queue / chatView
     FOREIGN KEY (group_id) REFERENCES hy_group (id) ON DELETE SET NULL
 );`

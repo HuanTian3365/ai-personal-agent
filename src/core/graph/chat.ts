@@ -24,7 +24,7 @@ import { callModel, getInsertSource, threadIdOf } from './nodes'
  * 都没有 -> 收尾
  *
  * 终止性靠「插队消息一被取走就打上已领取标记」保证: 取完 hasUnclaimed 就是 false
- * 不靠轮次上限 见 docs/开发计划/04.未实现-排队与插队/V1/01.开发.md §3.8
+ * 不靠轮次上限 见 docs/99-归档/计划/04.已完成-排队与插队/V1/01.开发.md §3.8
  */
 function routeAfterModel(state: typeof ChatState.State, config: LangGraphRunnableConfig): string {
   if (toolsCondition(state) === 'tools') return 'tools'
