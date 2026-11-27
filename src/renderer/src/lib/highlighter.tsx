@@ -31,9 +31,22 @@ const aliases: Record<string, keyof typeof languages> = {
   zsh: 'bash'
 }
 
+/** 载入后的高亮器：一行一组节点，外加最后一行之后的语法状态 */
+interface LangHighlighter {
+  highlight: (
+    code: string,
+    state?: GrammarState
+  ) => {
+    /** 一行一组，组内是这一行的 token 节点 */
+    lines: React.ReactNode[][]
+    /** 接着往下写的语法状态 */
+    state: GrammarState | undefined
+  }
+}
+
 let highlighter: Promise<HighlighterCore> | undefined
 
-function getHighlighter() {
+function getHighlighter(): Promise<HighlighterCore> {
   highlighter ??= createHighlighterCore({
     themes: [import('shiki/themes/github-light.mjs'), import('shiki/themes/github-dark.mjs')],
     langs: [],
@@ -43,7 +56,7 @@ function getHighlighter() {
   return highlighter
 }
 
-function getLanguage(language: string) {
+function getLanguage(language: string): keyof typeof languages | 'ansi' | null {
   const name = language.toLowerCase()
 
   if (name === 'ansi') {
@@ -59,7 +72,7 @@ function getLanguage(language: string) {
 
 // Loads a language and returns a highlighter for it, or null for a language
 // that is not listed.
-export async function loadHighlighter(language: string) {
+export async function loadHighlighter(language: string): Promise<LangHighlighter | null> {
   const lang = getLanguage(language)
 
   if (!lang) {
@@ -76,7 +89,7 @@ export async function loadHighlighter(language: string) {
     // Returns one React node per line, and the grammar state after the last
     // line. Pass that state back to continue where the code left off.
     highlight(code: string, state?: GrammarState) {
-      const tokenize = (text: string) =>
+      const tokenize = (text: string): ReturnType<HighlighterCore['codeToTokens']>['tokens'] =>
         shiki.codeToTokens(text, {
           lang,
           themes: { light: 'github-light', dark: 'github-dark' },
@@ -108,7 +121,10 @@ export async function loadHighlighter(language: string) {
 }
 
 // Returns one React node per line, or null for a language that is not listed.
-export async function highlightCode(code: string, language: string) {
+export async function highlightCode(
+  code: string,
+  language: string
+): Promise<React.ReactNode[][] | null> {
   const highlighter = await loadHighlighter(language)
 
   return highlighter ? highlighter.highlight(code).lines : null

@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import { loadHighlighter } from '@renderer/lib/highlighter'
 
-export function useHighlightedCode(value: string, language: string) {
+export function useHighlightedCode(value: string, language: string): React.ReactNode[] {
   // A trailing newline would render as an extra empty line.
   const code = value.endsWith('\n') ? value.slice(0, -1) : value
   const [loaded, setLoaded] = React.useState<{

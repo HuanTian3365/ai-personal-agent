@@ -14,7 +14,10 @@ export default defineConfig(
       // shadcn 生成物：规范规定禁止手改，且用双引号 + CRLF 生成，
       // 与项目 prettier 配置（单引号 + LF）不一致，逐个修没有意义
       'src/renderer/src/components/ui/**',
-      'src/renderer/src/hooks/useMobile.ts'
+      'src/renderer/src/hooks/useMobile.ts',
+      // mcp/ 是自用的调试面板与探针脚本（.mjs，裸 JS），不是产品代码：
+      // 按 TS 那套规则查它，光是 no-undef / no-unused-vars 就能刷出两百条
+      'mcp/**'
     ]
   },
   tseslint.configs.recommended,
